@@ -1,0 +1,23 @@
+# Private school records, uploaded private files and credentials stay off GitHub.
+/data/
+**/node_modules/
+**/.wrangler/
+/cloudflare/dist/
+.env
+.env.*
+**/.dev.vars*
+**/auth.json
+**/logins.json
+**/sms.json
+**/payment.json
+*.log
+*.tmp
+*.part
+*.zip
+*.7z
+/deploy/github-cloudflare-update/
+/deploy/GitHub-Complete-Source/
+/deploy/github-publish-checkout/
+/private-backups/
+/.online-sync/
+
