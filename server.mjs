@@ -1,3 +1,4 @@
+// Cloudflare Git deployment enabled
 // Shahin's ICT Care — লোকাল সার্ভার
 // চালাতে: node server.mjs   (অথবা "Start Website.bat" এ ডাবল-ক্লিক)
 // সব তথ্য data/database.json ফাইলে থাকে; পাসওয়ার্ড থাকে data/auth.json-এ।
