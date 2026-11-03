@@ -282,7 +282,7 @@ window.U = {
     let h = 0; for (const ch of String(title)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     const [a, b] = P[h % P.length];
     const price = course ? (course.salePrice || course.price ? "৳" + U.bn(Number(course.salePrice || course.price).toLocaleString("en-IN")) : "ফ্রি") : "";
-    return `<span class="ap-poster ap-${kind}" style="--pa:${a};--pb:${b}"><span class="ap-ring"></span><span class="ap-brand"><img src="/images/logo.svg" alt="">Shahin's ICT Care</span>
+    return `<span class="ap-poster ap-${kind}" style="--pa:${a};--pb:${b}"><span class="ap-ring"></span><span class="ap-brand"><img src="/images/logo-nav.png" alt="শাহিন’স আইসিটি কেয়ার">Shahin's ICT Care</span>
       ${kind === "oc" && price ? `<span class="ap-price">${e(price)}</span>` : ""}<b class="ap-t">${e(title)}</b>${sub ? `<span class="ap-s">${e(sub)}</span>` : ""}${meta ? `<span class="ap-m">${e(meta)}</span>` : ""}</span>`;
   },
   // ফ্রি ক্লাস আর অনলাইন কোর্সের কার্ড (মূল পাতা আর /courses, /free-classes পাতায় একই রকম)
