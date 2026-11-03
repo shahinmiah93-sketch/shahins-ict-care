@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- ছবি না থাকলে ছেলে শিক্ষার্থীর আইকন -->
+  <rect width="120" height="120" fill="#dcefe6"/>
+  <path d="M14 120c2-24 20-35 46-35s44 11 46 35z" fill="#0f5c4f"/>
+  <path d="M47 86l13 16 13-16z" fill="#f4f8f6"/>
+  <path d="M52 76h16v12l-8 8-8-8z" fill="#e8b98f"/>
+  <ellipse cx="60" cy="52" rx="20" ry="23" fill="#f1c9a2"/>
+  <ellipse cx="39.5" cy="54" rx="3.5" ry="6" fill="#e8b98f"/>
+  <ellipse cx="80.5" cy="54" rx="3.5" ry="6" fill="#e8b98f"/>
+  <path d="M39 50c-2-18 9-29 23-29 13 0 22 9 20 27-4-8-10-12-19-13-9 0-17 4-24 15z" fill="#1d2430"/>
+</svg>

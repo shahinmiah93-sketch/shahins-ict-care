@@ -1,0 +1,63 @@
+/* অনলাইন কুইজ পেজ (/quiz) — site.css + apply.css-এর উপর */
+.qp-wrap.qp-full{grid-template-columns:1fr}
+.qp-form{grid-template-columns:1fr 1fr;padding:0;border:0;box-shadow:none;margin-top:6px}
+.qp-acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin:10px 0 0}
+.qp-form .qp-acts{margin:0}
+.btn.sm{padding:8px 16px;font-size:14.5px}
+.qp-preview{margin-top:26px;padding-top:18px;border-top:1px dashed var(--line)}
+.qp-h{font-size:20px!important;margin:18px 0 10px}.qp-h:first-child{margin-top:0}
+.qp-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.qp-q{padding:16px 18px;border-radius:18px;border:1px solid var(--line);background:#fffdf8}
+.qp-qh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.qp-qh b{font-size:17px;color:var(--em2)}
+.qp-q p{margin:6px 0 0;color:var(--muted);font-size:15px}.qp-q .qp-acts{justify-content:flex-start}
+.qp-neg{color:#b4233c}
+.qp-chip{display:inline-block;padding:3px 12px;border-radius:999px;font-weight:700;font-size:14px;background:#f3ecdb}
+.qp-chip.ok{background:#e1f4ea;color:#0b6b52}.qp-chip.warn{background:#fff1d6;color:#8a5a00}
+.qp-mini{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.qp-mini li{padding:10px 14px;border-radius:14px;background:#fffdf8;border:1px solid var(--line)}.qp-mini b{display:block;color:var(--em2)}.qp-mini small{color:var(--muted)}
+.qp-note{margin:16px 0 0;padding:10px 14px;border-radius:14px;background:#f2f8f5;font-size:14.5px;color:var(--em2)}.qp-note a{color:var(--em2);font-weight:700}
+.qp-me{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}.qp-me dt{color:var(--muted)}.qp-me dd{margin:0;font-weight:600}
+.qp-muted{color:var(--muted)}
+.qp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.qp-tiles div{padding:14px;border-radius:16px;border:1px solid var(--line);background:#fffdf8}.qp-tiles small{display:block;color:var(--muted)}.qp-tiles b{font-size:24px}
+.qp-tiles .dark{background:linear-gradient(150deg,var(--em2),var(--navy));color:#fff;border:0}.qp-tiles .dark small{color:#cfe3dc}.qp-tiles .dark b{color:var(--gold)}
+.qp-tiles b.ok{color:#0b6b52}.qp-tiles b.bad{color:#b4233c}
+/* কুইজ দেওয়ার সময় (শিক্ষার্থী প্যানেলের মতো) */
+.qr-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}.qr-top p{margin:4px 0 0;color:var(--muted)}
+.qr-timer{position:sticky;top:90px;padding:10px 18px;border-radius:16px;background:linear-gradient(150deg,var(--em2),var(--navy));color:var(--gold);font:800 26px/1 Consolas,'Hind Siliguri',monospace;letter-spacing:.05em}
+.qr-timer.low{background:linear-gradient(150deg,#9b1c3c,#b4233c);color:#fff;animation:qrblink 1s infinite}@keyframes qrblink{50%{opacity:.6}}
+.qr-prog{height:8px;border-radius:999px;background:#eef3f1;overflow:hidden;margin:14px 0 4px}.qr-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--em2),var(--gold2));transition:width .2s}
+.qr-cnt{margin:0 0 10px;color:var(--muted);font-weight:600;font-size:14px}
+.qr-qs{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.qr-qs>li{padding:14px;border-radius:16px;border:1px solid var(--line);background:#fffdf8}.qr-qs>li>b{display:block;margin-bottom:10px;font-size:16px}
+.qr-os{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qr-os button,.qr-r{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;text-align:left;font:inherit;font-weight:600;color:var(--ink);cursor:pointer}
+.qr-os button span,.qr-r span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;font-weight:800}
+.qr-os button:hover{border-color:var(--gold2)}.qr-os button.on{border-color:var(--em2);background:#e1f4ea}.qr-os button.on span{background:var(--em2);color:var(--gold)}
+.qr-r{cursor:default}.qr-r.ok{border-color:#187460;background:#e1f4ea}.qr-r.bad{border-color:#b4233c;background:#fde3e8}
+.qr-clear{margin-top:8px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.qr-ex{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#fff8e6;color:#5e4205}
+@media(max-width:900px){.qp-wrap{grid-template-columns:1fr}}
+@media(max-width:640px){.qr-os,.qp-form{grid-template-columns:1fr}.qp-tiles{grid-template-columns:1fr 1fr}}
+/* ট্যালেন্ট হান্ট পেজ (/talent-hunt) */
+.th-done{display:grid;gap:8px;justify-items:start;margin-top:6px}
+.th-roll{padding:12px 22px;border:2px dashed var(--gold2);border-radius:16px;background:#fff8e6;text-align:center}.th-roll small{display:block;color:#8a5a00;font-weight:700}.th-roll b{font:800 30px/1.2 Consolas,'Hind Siliguri',monospace;color:var(--em2)}
+.th-table{width:100%;border-collapse:collapse;font-size:15px}.th-table th,.th-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}.th-table th{background:#f6efdf;font-size:14px}.th-table .num{text-align:right}
+.th-table tr.top td{background:#fff8e6}
+/* অনলাইন কোর্সের পাতা (/course, /courses, /free-classes) */
+.lc-cover{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px;margin-bottom:12px}
+.lc-desc{white-space:pre-line;color:var(--ink);margin:0}
+.lc-feat{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}.lc-feat li{color:var(--em2)}
+.lc-lock{margin:6px 0 0;padding-left:22px;display:grid;gap:6px}.lc-lock span{color:var(--muted)}.lc-lock button{border:0;background:none;padding:0;font:inherit;color:var(--em2);font-weight:700;cursor:pointer;text-align:left}.lc-lock small{color:#0b6b52;font-weight:500}
+.lc-enroll{margin-top:22px;padding-top:18px;border-top:1px dashed var(--line)}
+.lc-status{display:grid;gap:8px;justify-items:start}
+.lc-bigprice b{font-size:30px}
+.lc-player{display:grid;gap:12px}.lc-screen{aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden}.lc-screen iframe,.lc-screen video{width:100%;height:100%;border:0;display:block}
+.lc-now small{color:var(--gold2);font-weight:700}.lc-now b{display:block;font-size:20px;color:var(--em2)}
+.lc-list{margin-top:18px}.lc-list ol{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.lc-list li button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:#fffdf8;font:inherit;text-align:left;cursor:pointer}
+.lc-list li button span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;font-weight:800;font-size:13px}
+.lc-list li button.on{border-color:var(--em2);background:#e1f4ea;font-weight:700}.lc-list li button.on span{background:var(--em2);color:var(--gold)}
+.lc-my{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px}
+.lc-myc{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;border:1px solid var(--line);background:#fffdf8;text-decoration:none;color:var(--ink)}
+.lc-myc img{width:84px;aspect-ratio:16/9;object-fit:cover;border-radius:10px}.lc-myc b{display:block;color:var(--em2)}.lc-myc small{color:var(--muted)}

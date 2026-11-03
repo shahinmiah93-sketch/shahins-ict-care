@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- ছবি না থাকলে (লিঙ্গ দেওয়া নেই / অন্যান্য) সাধারণ আইকন -->
+  <rect width="120" height="120" fill="#e3ebf4"/>
+  <circle cx="60" cy="48" r="21" fill="#8aa0b8"/>
+  <path d="M16 120c2-26 20-38 44-38s42 12 44 38z" fill="#8aa0b8"/>
+</svg>

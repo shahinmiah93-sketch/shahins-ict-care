@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#062d29">
+<title>অ্যাডমিন প্যানেল — Shahin's ICT Care</title>
+<link rel="icon" href="/images/logo.svg">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/exams.css">
+<link rel="stylesheet" href="/css/admin-theme.css">
+<link rel="stylesheet" href="/css/datepick.css">
+</head>
+<body>
+
+<!-- লগইন / প্রথমবার পাসওয়ার্ড -->
+<div class="login-screen" id="loginScreen" hidden>
+  <div class="login-box" id="loginBox">
+    <img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার">
+    <h1>Admin Panel</h1>
+    <p id="loginHint">Log in to continue</p>
+    <!-- ধাপ দেখানো: ১ PIN → ২ ইমেইল ও পাসওয়ার্ড (প্রথমবার: সব একসাথে সেটআপ) -->
+    <ol class="login-steps" id="loginSteps"><li class="on">PIN</li><li>Email &amp; Password</li></ol>
+    <form id="loginForm" novalidate>
+      <label data-f="pin">Admin PIN (6 digits)<input class="pin-in" type="password" name="pin" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+      <label data-f="pin2" hidden>Confirm PIN<input class="pin-in" type="password" name="pin2" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+      <label data-f="email" hidden>Email<input type="email" name="email" autocomplete="username"></label>
+      <label data-f="password" hidden>Password<input type="password" name="password" autocomplete="current-password"></label>
+      <label data-f="confirm" hidden>Confirm password<input type="password" name="confirm" autocomplete="new-password"></label>
+      <p class="err" id="loginErr"></p>
+      <button class="btn gold" type="submit" id="loginBtn">Next →</button>
+      <button class="login-alt" type="button" id="loginBack" hidden>← Re-enter PIN</button>
+    </form>
+    <a class="back" href="/">← Back to website</a>
+  </div>
+</div>
+
+<!-- মূল প্যানেল -->
+<div class="app" id="app" hidden>
+  <aside class="side" id="side">
+    <a class="brand brand-full" href="#dashboard"><img src="/images/logo-nav.png" alt="Shahin's ICT Care" width="420" height="285"><small>অ্যাডমিন প্যানেল</small></a>
+    <!-- মেনু: ১০টা — প্রতিটার ভেতরের পাতাগুলো পাতার উপরে বোতাম হিসেবে (admin.js-এর SECTIONS)।
+         ভেতরের পাতার সংখ্যাগুলো (appBadge…) লুকানো থাকে; মেনুতে দেখায় তাদের যোগফল -->
+    <a class="nav-item" href="#dashboard"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5.5h4v5.5"/></svg></i>ড্যাশবোর্ড</a>
+    <a class="nav-item" href="#admission"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c.6-3.8 3.2-6 6.5-6 1.5 0 2.8.4 3.9 1.2"/><path d="M18 14.5v6M15 17.5h6"/></svg></i>ভর্তি<span class="badge sbadge" hidden></span><span class="kids" hidden><span class="badge" id="appBadge" hidden></span><span class="badge" id="oaBadge" hidden></span><span class="badge" id="enqBadge" hidden></span></span></a>
+    <a class="nav-item" href="#students"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5 2.5 9.5 12 14l9.5-4.5L12 5Z"/><path d="M6.5 11.5V16c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3v-4.5"/><path d="M21.5 9.5V15"/></svg></i>শিক্ষার্থী</a>
+    <a class="nav-item" href="#attendance"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2.2 2.2L15.5 13"/></svg></i>দৈনিক হাজিরা</a>
+    <a class="nav-item" href="#fees"><i><b class="nav-tk">৳</b></i>ফি ও পেমেন্ট</a>
+    <a class="nav-item" href="#exams"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14 3.5V8.5h5"/><path d="m9.5 15 1.8 1.8 3.4-3.6"/></svg></i>পরীক্ষা ও ফলাফল</a>
+    <a class="nav-item" href="#books"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h4.5v15H5z"/><path d="M9.5 6.5h4v13h-4z"/><path d="m14.5 7 3.6-1 2.9 12.6-3.6.9z"/></svg></i>বই ও শিট<span class="badge" id="bookBadge" hidden></span></a>
+    <a class="nav-item" href="#sms"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16v10.5H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></i>SMS প্যানেল</a>
+    <a class="nav-item" href="#bloodbank"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5s6.5 7 6.5 11a6.5 6.5 0 0 1-13 0c0-4 6.5-11 6.5-11Z"/><path d="M9 15a3 3 0 0 0 3 3"/></svg></i>ব্লাড ব্যাংক</a>
+    <a class="nav-item" href="#website"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.600 5.900 12 3.500Z"/></svg></i>ওয়েবসাইট<span class="badge sbadge" hidden></span><span class="kids" hidden><span class="badge" id="learnBadge" hidden></span><span class="badge" id="qnaBadge" hidden></span></span></a>
+    <a class="nav-item" href="#courses"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.500C10 4.800 7 4.300 3.500 4.800v14c3.500-.5 6.500 0 8.500 1.700 2-1.700 5-2.200 8.500-1.700v-14C17 4.300 14 4.800 12 6.500Z"/><path d="M12 6.500v14"/></svg></i>কোর্স মডিউল ও ব্যাচ</a>
+    <a class="nav-item" href="#teachers"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.400 13.500a1.700 1.700 0 0 0 .3 1.900l.1.100a2 2 0 1 1-2.800 2.800l-.1-.1a1.700 1.700 0 0 0-2.900 1.200v.1a2 2 0 0 1-4 0v-.1a1.700 1.700 0 0 0-2.900-1.200l-.1.100a2 2 0 1 1-2.800-2.800l.1-.1a1.700 1.700 0 0 0-1.200-2.900H3a2 2 0 0 1 0-4h.1a1.700 1.700 0 0 0 1.200-2.900l-.1-.1a2 2 0 1 1 2.800-2.800l.1.100a1.700 1.700 0 0 0 2.900-1.200V3a2 2 0 0 1 4 0v.1a1.700 1.700 0 0 0 2.900 1.200l.1-.1a2 2 0 1 1 2.800 2.800l-.1.100a1.700 1.700 0 0 0 1.200 2.900h.1a2 2 0 0 1 0 4h-.1a1.700 1.700 0 0 0-1.500 1Z"/></svg></i>সেটআপ</a>
+    <div class="foot">
+      <a href="/" target="_blank">→ ওয়েবসাইট দেখুন</a>
+      <a href="#" id="logoutBtn">⎋ লগআউট</a>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="মেনু">☰</button>
+      <h1 id="pageTitle">ড্যাশবোর্ড</h1>
+      <span class="date" id="todayDate"></span>
+      <button class="btn sm line" id="printPageBtn" title="এই পাতাটা প্রিন্ট / PDF করুন">প্রিন্ট</button>
+    </header>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<dialog class="modal" id="modal">
+  <form method="dialog" id="modalForm">
+    <div class="modal-head"><h2 id="modalTitle"></h2><button type="button" id="modalX" aria-label="বন্ধ করুন">×</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"><p class="err" id="modalErr"></p><button type="button" class="btn line" id="modalCancel">বাতিল</button><button type="submit" class="btn gold" id="modalSave">সেভ করুন</button></div>
+  </form>
+</dialog>
+
+<script src="/js/common.js"></script>
+<script src="/js/examcalc.js"></script>
+<script src="/js/admin-exams.js"></script>
+<script src="/js/admin-quiz.js"></script>
+<script src="/js/admin-results.js"></script>
+<script src="/js/admin-homework.js"></script>
+<script src="/js/admin-banners.js"></script>
+<script src="/js/admin-gallery.js"></script>
+<script src="/js/admin-qna.js"></script>
+<script src="/js/admin-achievers.js"></script>
+<script src="/js/admin-leads.js"></script>
+<script src="/js/admin-talent.js"></script>
+<script src="/js/admin-learn.js"></script>
+<script src="/js/admin-sms.js"></script>
+<script src="/js/admin-books.js"></script>
+<script src="/js/admin.js"></script>
+<script src="/js/datepick.js"></script>
+</body>
+</html>

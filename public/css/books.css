@@ -1,0 +1,82 @@
+/* বই ও শিট (/books) — প্রতিদিন শিখির মতো কালো-সোনালি ধাঁচ; বাঁয়ে বইয়ের কার্ড, ডানে কার্ট ও অর্ডার ফর্ম (মোবাইলে নিচে) */
+body.books-page{background:#07070a;color:#e9e9ef}
+.bks{min-height:70vh;padding-bottom:60px}
+.bks-load{text-align:center;color:#a9a9b2;padding:120px 16px 40px;grid-column:1/-1}
+.bks-hero{padding:140px 0 36px;text-align:center;background:radial-gradient(900px 420px at 20% 0%,rgba(243,197,93,.14),transparent 60%),radial-gradient(900px 420px at 85% 10%,rgba(61,155,255,.12),transparent 60%)}
+.bks-hero h1{margin:12px 0 6px;color:#fff;font:900 clamp(30px,5vw,52px)/1.2 var(--serif)}
+.bks-hero h1 small{display:block;margin-top:4px;font:700 clamp(13px,1.6vw,16px)/1.4 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:#f3c55d}
+.bks-hero p{margin:0 auto;max-width:620px;color:#c9c9d2;font-size:clamp(15px,1.8vw,18px)}
+.dl-free{display:inline-block;padding:6px 14px;border-radius:999px;border:1px solid rgba(74,222,128,.5);background:rgba(74,222,128,.1);color:#7ee2a8;font:700 13px/1.4 var(--sans)}
+.bks-wrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+@media(max-width:980px){.bks-wrap{grid-template-columns:minmax(0,1fr)}}
+
+/* বইয়ের কার্ড */
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:18px}
+@media(max-width:560px){.bk-grid{grid-template-columns:1fr 1fr;gap:10px}.bk-cb{padding:10px}.bk-cb h3{font-size:15px}.bk-cb p{display:none}.bk-price b{font-size:18px}.bk-add{padding:9px 6px;font-size:13px}}
+.bk-card{display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,#141418,#0d0d10);border:1px solid rgba(243,197,93,.22);transition:transform .25s,box-shadow .25s}
+.bk-card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.bk-card.out{opacity:.6}
+.bk-cv{position:relative;aspect-ratio:3/4;background:#1b1b21}
+.bk-cv img{width:100%;height:100%;object-fit:cover;display:block}
+.bk-cv-ph{display:grid;place-items:center;align-content:center;gap:10px;height:100%;padding:18px;text-align:center;background:radial-gradient(circle at 30% 20%,rgba(243,197,93,.25),transparent 60%),linear-gradient(160deg,#1f2a28,#0b1513)}
+.bk-cv-ph span{font-size:46px}.bk-cv-ph b{color:#fff;font:800 17px/1.35 var(--sans)}
+.bk-kind,.bk-off{position:absolute;top:10px;padding:3px 10px;border-radius:999px;font:700 12px/1.5 var(--sans)}
+.bk-kind{left:10px;background:rgba(0,0,0,.65);color:#f3c55d;border:1px solid rgba(243,197,93,.4)}
+.bk-off{right:10px;background:linear-gradient(135deg,#ff6a3d,#f0306e);color:#fff}
+.bk-cb{display:flex;flex-direction:column;gap:6px;flex:1;padding:14px}
+.bk-cb h3{margin:0;color:#fff;font:800 17px/1.35 var(--sans)}
+.bk-cb small{color:#a9a9b2;font-size:13px}
+.bk-cb p{margin:0;color:#c3c3cc;font-size:13.5px;line-height:1.6}
+.bk-price{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-top:auto;padding-top:6px}
+.bk-price b{color:#f3c55d;font-size:21px}.bk-price s{color:#7c7c86}.bk-price em{font-style:normal;color:#ff9a7a;font-size:12.5px;font-weight:700}
+.bk-add{width:100%;justify-content:center}
+.bk-none{display:block;padding:10px;border-radius:12px;text-align:center;background:rgba(255,255,255,.06);color:#a9a9b2;font-weight:700}
+.bk-step{display:flex;align-items:center;justify-content:space-between;border-radius:999px;background:rgba(243,197,93,.12);border:1px solid rgba(243,197,93,.45);padding:4px}
+.bk-step button{width:38px;height:38px;border-radius:50%;border:0;background:#f3c55d;color:#1a1206;font:800 20px/1 var(--sans);cursor:pointer}
+.bk-step b{color:#fff;font-size:17px}
+
+/* কার্ট ও অর্ডার */
+.bk-cart{position:sticky;top:96px;display:grid;gap:12px;padding:18px;border-radius:22px;background:#111115;border:1px solid rgba(243,197,93,.35);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+@media(max-width:980px){.bk-cart{position:static}}
+.bk-cart h2{margin:0;color:#fff;font:800 20px/1.3 var(--sans)}.bk-cart h2 small{color:#f3c55d;font-size:14px}
+.bk-cart.empty p{margin:0;color:#a9a9b2}
+.bk-lines{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.bk-lines li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04)}
+.bk-lines li span{flex:1;min-width:0;color:#e9e9ef;font-size:14px}.bk-lines li small{color:#a9a9b2}
+.bk-lines li b{color:#f3c55d;white-space:nowrap}
+.bk-lines li button{border:0;background:none;color:#8a8a94;cursor:pointer;font-size:14px;padding:2px 4px}.bk-lines li button:hover{color:#ff8a8a}
+.bk-form{display:grid;gap:10px}
+.bk-form h3{margin:6px 0 0;color:#fff;font:700 16px var(--sans)}
+.bk-form label{display:grid;gap:5px;color:#d6d6de;font-size:13.5px;font-weight:600}
+.bk-form label small{color:#8f8f99;font-weight:400}
+.bk-form input,.bk-form select,.bk-form textarea{width:100%;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);color:#fff;font:500 15px var(--sans)}
+.bk-form select option{color:#111}
+.bk-form input:focus,.bk-form select:focus,.bk-form textarea:focus{outline:none;border-color:#f3c55d;box-shadow:0 0 0 3px rgba(243,197,93,.15)}
+.bk-form select:disabled{opacity:.5}
+.bk-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:420px){.bk-two{grid-template-columns:1fr}}
+.bk-how{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bk-how label{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);cursor:pointer;font-size:13.5px}
+.bk-how label.on{border-color:#f3c55d;background:rgba(243,197,93,.1);color:#fff}
+.bk-how input{width:auto;accent-color:#f3c55d}
+.bk-trap{position:absolute!important;left:-9999px;width:1px;height:1px;opacity:0}
+.bk-total{display:grid;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(243,197,93,.08);border:1px solid rgba(243,197,93,.25)}
+.bk-total span{display:flex;justify-content:space-between;color:#c9c9d2;font-size:14px}.bk-total b{color:#fff}
+.bk-total .grand{margin-top:4px;padding-top:6px;border-top:1px solid rgba(243,197,93,.25);font-size:16px}.bk-total .grand b{color:#f3c55d;font-size:22px}
+.bk-cod{margin:0;color:#7ee2a8;font-size:13.5px}
+.bk-err{margin:0;color:#ff8a8a;font-weight:600;min-height:0}.bk-err:empty{display:none}
+.bk-go{width:100%;justify-content:center;font-size:16px;padding:14px}
+.bk-cart.done{text-align:center}.bk-cart.done p{margin:0;color:#c9c9d2}
+.bk-ok{display:grid;place-items:center;width:64px;height:64px;margin:0 auto;border-radius:50%;background:rgba(74,222,128,.15);color:#7ee2a8;font-size:32px;font-weight:800}
+.bk-no{color:#f3c55d;font-size:22px}
+
+/* অর্ডারের অবস্থা */
+.bk-track{margin-top:40px;padding:22px;border-radius:22px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09)}
+.bk-track h2{margin:0 0 12px;color:#fff;font:800 20px var(--sans)}
+.bk-tf{display:flex;flex-wrap:wrap;gap:10px}
+.bk-tf input{flex:1 1 200px;min-width:0;padding:11px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);color:#fff;font:500 15px var(--sans)}
+.bk-tr{margin-top:14px;padding:14px;border-radius:14px;background:#111115;border:1px solid rgba(243,197,93,.25);color:#e9e9ef}
+.bk-tr ul{list-style:none;margin:10px 0 0;padding:0}.bk-tr li{display:flex;justify-content:space-between;padding:3px 0;color:#c9c9d2}.bk-tr li.g{border-top:1px solid rgba(255,255,255,.1);margin-top:4px;padding-top:6px;color:#fff;font-weight:700}
+.bk-st{margin-left:8px;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(243,197,93,.15);color:#f3c55d}
+.bk-st.st-delivered{background:rgba(74,222,128,.15);color:#7ee2a8}.bk-st.st-cancelled{background:rgba(255,100,100,.15);color:#ff9a9a}
+.books-page .dl-foot{padding:26px 16px;text-align:center;color:#8a8a94;border-top:1px solid rgba(255,255,255,.07)}

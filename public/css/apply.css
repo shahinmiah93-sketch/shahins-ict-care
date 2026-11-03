@@ -1,0 +1,159 @@
+/* অনলাইন ভর্তি পেজ — site.css-এর রং ও বোতাম ব্যবহার করে */
+.apply-page .nav-bar{height:72px}
+.ap-links{display:flex;gap:4px;margin-left:auto}
+.ap-hero{padding:130px 0 80px;color:#fff;background:radial-gradient(800px 420px at 85% 10%,rgba(243,197,93,.18),transparent 60%),linear-gradient(160deg,var(--em) 0%,#05332e 45%,var(--navy) 100%)}
+.ap-hero h1{font-size:clamp(28px,4.4vw,46px);font-weight:900}
+.ap-hero .lead{color:#cfe3dc;max-width:720px;margin:10px 0 0}
+.ap-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.ap-meta span,.ap-blank{padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(243,197,93,.35);font:600 14px var(--sans);color:#fff}
+.ap-blank{cursor:pointer}.ap-blank:hover{background:rgba(243,197,93,.2)}
+.ap-wrap{display:grid;grid-template-columns:1.25fr .75fr;gap:24px;margin-top:-44px;padding-bottom:80px;align-items:start;position:relative}
+.ap-card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:28px;box-shadow:0 24px 50px rgba(22,48,43,.12);min-width:0}
+.ap-card h2{font-size:23px;color:var(--em2)}.ap-card .sub{color:var(--muted);margin:4px 0 18px}
+.ap-tabs{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:#f3ecdb;margin-bottom:20px}
+.ap-tabs button{border:0;background:none;border-radius:999px;padding:9px 18px;font:700 15px var(--sans);color:var(--muted);cursor:pointer}
+.ap-tabs button.on{background:var(--em2);color:#fff;box-shadow:0 4px 12px rgba(11,59,54,.25)}
+
+/* ধাপের দাগ */
+.steps-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 24px;padding:0;list-style:none;counter-reset:st}
+.steps-bar li{position:relative;display:grid;justify-items:center;gap:6px;text-align:center;font-size:13.5px;font-weight:600;color:var(--muted)}
+.steps-bar li::before{counter-increment:st;content:counter(st,bengali);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;color:var(--muted);font:800 16px var(--serif);position:relative;z-index:1;transition:.25s}
+.steps-bar li::after{content:"";position:absolute;top:19px;left:calc(50% + 22px);right:calc(-50% + 22px);height:3px;border-radius:3px;background:#efe6d1}
+.steps-bar li:last-child::after{display:none}
+.steps-bar li.done::before{content:"✓";background:var(--em2);color:var(--gold)}
+.steps-bar li.done::after{background:linear-gradient(90deg,var(--em2),var(--gold2))}
+.steps-bar li.on{color:var(--em2)}.steps-bar li.on::before{background:linear-gradient(180deg,#ffe6a8,var(--gold2));color:#2b1c00;box-shadow:0 0 0 6px rgba(243,197,93,.25)}
+
+.step h3{font-size:18px;color:var(--em2);margin:18px 0 10px}.step h3:first-child{margin-top:0}
+.step .form{box-shadow:none;border:0;padding:0;border-radius:0}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.opt{position:relative;display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:16px;border:1.5px solid #ddd3bd;background:#fffdf8;cursor:pointer;transition:border-color .2s,box-shadow .2s,background .2s}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt .dot{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #cbbf9f;margin-top:3px;display:grid;place-items:center}
+.opt b{display:block;color:var(--em2);font-size:15.5px;line-height:1.4}.opt small{display:block;color:var(--muted);font-size:13px;line-height:1.5}
+.opt .fee{color:var(--gold2);font-weight:700}
+.opt:hover{border-color:var(--gold2)}
+.opt:has(input:checked){border-color:var(--em2);background:#f2f8f5;box-shadow:0 0 0 4px rgba(11,59,54,.1)}
+.opt:has(input:checked) .dot{border-color:var(--em2)}.opt:has(input:checked) .dot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--em2)}
+.opt:has(input:focus-visible){outline:3px solid var(--gold)}
+.opt.full{opacity:.5;cursor:not-allowed}
+.opt .mno{display:block;font:700 11.5px Cinzel,serif;letter-spacing:.12em;color:var(--gold2)}
+.ch-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.opt .dot.sq{border-radius:6px}.opt.chk:has(input:checked) .dot::after{content:"✓";width:auto;height:auto;background:none;color:var(--em2);font-weight:900;font-size:13px;line-height:1}
+.bopts{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.addr-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form .addr-row .same-addr{display:flex;align-items:center;gap:8px;grid-column:2;margin-top:-6px;color:var(--em2);cursor:pointer}
+.addr-row .same-addr input{width:18px;height:18px;accent-color:var(--em2)}
+.form .addr-row textarea[readonly]{background:#eef6f2;color:var(--muted)}
+.form label.opt{display:flex;font-weight:400}.form label.btn{display:inline-flex;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips .opt{padding:9px 16px;border-radius:999px}.chips .opt .dot{width:16px;height:16px;margin-top:4px}.chips .opt:has(input:checked) .dot::after{width:8px;height:8px}
+.photo-box{display:flex;align-items:center;gap:16px;grid-column:1/-1;padding:14px;border-radius:16px;border:1.5px dashed #cbbf9f;background:#fffdf8}
+.photo-box .pv{width:84px;height:100px;border-radius:12px;background:#f3ecdb center/cover no-repeat;display:grid;place-items:center;color:var(--muted);font-size:28px;flex:none}
+.photo-box small{display:block;color:var(--muted)}
+.photo-box .btn{padding:8px 16px;font-size:14px}
+.req{color:#b4233c}
+.nav-btns{display:flex;justify-content:space-between;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.nav-btns .btn.ghost.dark{background:#fff}
+.err-box{margin:14px 0 0;padding:10px 14px;border-radius:12px;background:#fde2e6;color:#b4233c;font-weight:600}
+.review{width:100%;border-collapse:collapse;font-size:14.5px}
+.review th{width:34%;text-align:left;color:var(--muted);font-weight:600;padding:7px 10px;background:#fffaf0;border-bottom:1px solid #f0e8d6;vertical-align:top}
+.review td{padding:7px 10px;border-bottom:1px solid #f0e8d6;font-weight:600}
+.review .grp th{background:#f6efdf;color:var(--em2);font-family:var(--serif)}
+.review .edit{float:right;font-size:13px;font-weight:600;background:none;border:0;color:var(--gold2);cursor:pointer}
+.decl{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px 14px;border-radius:14px;background:#fff8e6;border:1px solid #f1d896;font-size:14.5px}
+.decl input{width:20px;height:20px;margin-top:3px;accent-color:var(--em2);flex:none}
+.draft-note{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+/* সফল স্লিপ */
+.done-head{text-align:center}.done-head .big{font-size:52px;line-height:1}
+.slip{border-radius:20px;overflow:hidden;border:1.5px solid var(--em2);margin-top:16px}
+.slip header{padding:14px 18px;background:linear-gradient(135deg,var(--em2),var(--navy));color:#fff}.slip header b{font-family:var(--serif);font-size:18px}.slip header small{display:block;color:var(--gold)}
+.slip .sb{padding:16px 18px}.slip .sb p{margin:4px 0}.slip .no{font:700 30px Consolas,'Hind Siliguri',monospace;color:var(--em2);letter-spacing:3px}
+.slip footer{padding:10px 18px;background:#fffaf0;font-size:13.5px;color:var(--muted);border-top:1px dashed var(--line)}
+.st{display:inline-block;padding:3px 14px;border-radius:999px;font-weight:800;background:#fff1cf;color:#8a5a00}.st.ok{background:#dcf3e8;color:#0b6b52}.st.bad{background:#fde2e6;color:#b4233c}.st.mid{background:#e3eefc;color:#1d4f91}
+.done-btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+
+/* পাশের কার্ড */
+.ap-side{position:sticky;top:100px}
+.ap-side h2{font-size:19px;margin-bottom:12px}
+.fee-boxes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.fee-boxes div{padding:12px;border-radius:14px;background:#f6efdf}.fee-boxes b{display:block;font:900 21px var(--serif);color:var(--em2)}.fee-boxes small{color:var(--muted)}
+.side-info p{margin:0 0 10px;display:grid}.side-info span{color:var(--muted);font-size:13.5px}.side-info b{font-size:15px}
+.side-help{margin-top:16px;padding:14px;border-radius:16px;background:linear-gradient(150deg,var(--em2),var(--navy));color:#fff}
+.side-help p{margin:0 0 8px;color:#cfe3dc;font-size:14px}.side-help a{color:var(--gold);font-weight:700;font-size:18px;text-decoration:none}
+.side-empty{color:var(--muted)}
+
+@media(max-width:980px){
+  .ap-links{display:none}.apply-page .nav-bar{height:60px}
+  .ap-wrap{grid-template-columns:1fr}.ap-side{position:static}
+  .ap-hero{padding:110px 0 70px}
+}
+@media(max-width:620px){
+  .ap-card{padding:20px 16px;border-radius:22px}
+  .steps-bar li{font-size:11.5px}.steps-bar li::before{width:32px;height:32px;font-size:14px}.steps-bar li::after{top:16px;left:calc(50% + 18px);right:calc(-50% + 18px)}
+  .review th{width:40%}
+  .opts{grid-template-columns:1fr}
+  .g3,.addr-row{grid-template-columns:1fr}.form .addr-row .same-addr{grid-column:1;grid-row:2}
+}
+/* অনলাইন ভর্তির পর পেমেন্ট — গেটওয়ে বোতাম, বিকাশ/নগদ/রকেট/ব্যাংক ট্যাব, TrxID ফর্ম */
+.pay-box{margin:22px 0 6px;padding:18px 18px 20px;border-radius:18px;border:1.5px solid #e6dcc4;background:#fffdf8}
+.pay-box h3{margin:0 0 12px;font-size:20px;color:var(--em2)}.pay-box h3 b{color:#c2410c}
+.pay-st{margin:0 0 12px;padding:9px 12px;border-radius:10px;font-weight:700;background:#eef6f2;color:var(--em2)}.pay-st.ok{background:#dff3ea;color:#0b5a4b}.pay-st.mid{background:#fff1cf;color:#8a5a00}.pay-st.bad{background:#fde2e6;color:#9b1c3c}
+.pay-go{display:grid;gap:2px;width:100%;padding:14px 16px;border:0;border-radius:14px;cursor:pointer;color:#fff;font:700 18px var(--sans);background:linear-gradient(135deg,#0b6b52,#14916f);box-shadow:0 10px 22px -10px #0b6b52}
+.pay-go small{font-weight:600;font-size:13px;opacity:.9}.pay-go:hover{filter:brightness(1.07)}.pay-go:disabled{opacity:.7;cursor:wait}
+.pay-or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13.5px}.pay-or::before,.pay-or::after{content:"";flex:1;height:1px;background:#e6dcc4}
+.pay-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.pay-tabs button{padding:8px 18px;border-radius:999px;border:2px solid var(--pc);background:#fff;color:var(--pc);font:700 15px var(--sans);cursor:pointer}
+.pay-tabs button.on{background:var(--pc);color:#fff}
+.pay-how{padding:12px 14px;border-radius:12px;border-left:5px solid var(--pc);background:#fff;margin-bottom:12px}.pay-how p{margin:0 0 6px}
+.pay-how pre{margin:0;white-space:pre-wrap;font:600 14.5px/1.6 var(--sans);color:#16302b}
+.pay-no{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pay-no b{font:800 22px/1.3 var(--sans);letter-spacing:.04em;color:var(--pc)}
+.pay-no button{padding:4px 12px;border-radius:8px;border:1px solid #cbbf9f;background:#fffaf0;cursor:pointer;font-weight:600}
+.pay-ref{font-size:13.5px;color:var(--muted)}
+#payForm{margin-bottom:6px}
+/* গেটওয়েতে পেমেন্টের পর শিক্ষার্থী আইডি + PIN */
+.acc-box{border-color:#9ad8bd;background:#f2fbf6}.acc-box p{margin:12px 0 14px;line-height:1.7}
+.acc-ids{display:grid;grid-template-columns:1fr 1fr;gap:10px}.acc-ids div{padding:12px 14px;border-radius:12px;background:#fff;border:1.5px dashed #17945f;text-align:center}
+.acc-ids small{display:block;color:var(--muted)}.acc-ids b{font:900 26px/1.3 var(--sans);letter-spacing:.08em;color:var(--em2)}
+/* ===== ভর্তির শুরু (/admission): অফলাইন / অনলাইন — দুটো বড়, চোখে পড়ার মতো কার্ড ===== */
+.adm-page{background:#07070a}
+.adm{min-height:100svh;padding:130px 0 70px;color:#fff;background:radial-gradient(900px 480px at 15% 10%,rgba(255,122,24,.16),transparent 60%),radial-gradient(900px 480px at 85% 15%,rgba(61,155,255,.18),transparent 60%),#07070a}
+.adm-head{text-align:center;max-width:720px;margin:0 auto 40px}
+.adm-head h1{font-size:clamp(28px,4.4vw,46px);font-weight:900;margin:6px 0 8px}
+.adm-head p{color:#c9c9d2;margin:0}
+.adm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;max-width:980px;margin:0 auto}
+.adm-card{position:relative;display:flex;flex-direction:column;gap:10px;padding:30px 28px 26px;border-radius:28px;text-decoration:none;color:#fff;overflow:hidden;isolation:isolate;
+  border:1.5px solid transparent;transition:transform .3s ease,box-shadow .3s ease}
+.adm-card.off{background:linear-gradient(160deg,#2a130a,#120a08) padding-box,linear-gradient(135deg,#ffc24b,#ff6a3d 45%,#f0306e) border-box;box-shadow:0 20px 50px rgba(255,106,61,.22)}
+.adm-card.on{background:linear-gradient(160deg,#0a1630,#080b16) padding-box,linear-gradient(135deg,#43e6ff,#3d9bff 45%,#7a2fd6) border-box;box-shadow:0 20px 50px rgba(61,155,255,.22)}
+.adm-card::before{content:"";position:absolute;inset:auto -30% -50% auto;width:340px;height:340px;border-radius:50%;z-index:-1;filter:blur(40px);opacity:.35}
+.adm-card.off::before{background:#ff6a3d}.adm-card.on::before{background:#3d9bff}
+.adm-card:hover,.adm-card:focus-visible{transform:translateY(-8px)}
+.adm-card.off:hover{box-shadow:0 30px 70px rgba(255,106,61,.38)}.adm-card.on:hover{box-shadow:0 30px 70px rgba(61,155,255,.38)}
+.adm-ic{width:64px;height:64px;border-radius:20px;display:grid;place-items:center}
+.adm-card.off .adm-ic{background:linear-gradient(135deg,#ffc24b,#ff6a3d 50%,#f0306e)}.adm-card.on .adm-ic{background:linear-gradient(135deg,#43e6ff,#3d9bff 50%,#7a2fd6)}
+.adm-ic svg{width:34px;height:34px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.adm-tag{align-self:flex-start;margin-top:6px;padding:4px 12px;border-radius:999px;font:700 12.5px/1.5 var(--sans);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+.adm-card h2{margin:0;font:900 clamp(24px,2.8vw,32px)/1.3 var(--serif)}
+.adm-count{font:700 14px/1.4 var(--sans)}.adm-card.off .adm-count{color:#ffb47a}.adm-card.on .adm-count{color:#8fd3ff}
+.adm-card p{margin:0;color:#d4d4dc;line-height:1.7}
+.adm-card ul{margin:4px 0 8px;padding:0;list-style:none;display:grid;gap:6px}
+.adm-card li{position:relative;padding-left:24px;color:#e6e6ec;font-size:15px}
+.adm-card li::before{content:"✓";position:absolute;left:0;top:0;font-weight:800}
+.adm-card.off li::before{color:#ffb47a}.adm-card.on li::before{color:#8fd3ff}
+.adm-go{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 18px;border-radius:999px;font:800 17px/1.2 var(--sans);color:#1a1206}
+.adm-card.off .adm-go{background:linear-gradient(135deg,#ffe3a3,#ffb347 45%,#ff6a3d)}.adm-card.on .adm-go{background:linear-gradient(135deg,#c9f2ff,#7fd3f5 45%,#3d9bff);color:#06142e}
+.adm-go i{font-style:normal;transition:transform .25s}.adm-card:hover .adm-go i{transform:translateX(5px)}
+.adm-help{text-align:center;margin:30px 0 0;color:#b9b9c2}.adm-help a{color:#f3c55d;font-weight:700}
+@media(max-width:760px){.adm{padding:110px 0 50px}.adm-grid{grid-template-columns:1fr;gap:18px}.adm-card{padding:24px 20px 20px;border-radius:22px}}
+/* অনলাইন ভর্তি: অধ্যায় বাছাই */
+.oa-chs{display:grid;gap:8px}
+.oa-ch{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1.5px solid #dfe7e4;background:#fff;cursor:pointer;transition:border-color .15s,background .15s}
+.oa-ch:has(input:checked){border-color:#0f766e;background:#ecfdf5}
+.oa-ch input{width:20px;height:20px;flex:none;accent-color:#0f766e}
+.oa-ch span{flex:1;min-width:0;display:grid;gap:1px;font-size:15px}.oa-ch span b{color:#0b3b36;font-size:13px}
+.oa-ch em{flex:none;font-style:normal;font-weight:800;color:#7a5200}
+.oa-total{margin:12px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:16px}.oa-total b{font-size:20px;color:#0b3b36}
+.oa-all{margin-left:auto;border:1px solid #cfe0d9;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;color:#0b3b36;cursor:pointer}

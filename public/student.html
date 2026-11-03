@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#062d29">
+<title>শিক্ষার্থী প্যানেল — Shahin's ICT Care</title>
+<link rel="icon" href="/images/logo.svg">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="login-screen" id="loginScreen" hidden>
+  <div class="login-box" id="loginBox">
+    <img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার">
+    <h1>শিক্ষার্থী প্যানেল</h1>
+    <p>ভর্তির সময় পাওয়া আইডি ও PIN দিয়ে প্রবেশ করুন</p>
+    <form id="loginForm">
+      <label>শিক্ষার্থী আইডি<input name="id" required placeholder="যেমন: 270001" autocomplete="username" autocapitalize="characters"></label>
+      <label>PIN<input name="pin" type="password" inputmode="numeric" required maxlength="10" autocomplete="current-password"></label>
+      <p class="err" id="loginErr"></p>
+      <button class="btn gold" type="submit">প্রবেশ করুন</button>
+    </form>
+    <a class="back" href="/">← ওয়েবসাইটে ফিরে যান</a>
+    <a class="back" href="/admin" style="margin-top:6px;opacity:.75">অফিসের জন্য: অ্যাডমিন প্যানেল →</a>
+  </div>
+</div>
+
+<div id="panel" hidden>
+  <header class="stu-top">
+    <div class="wrap">
+      <div class="bar"><a class="brand" href="/"><img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার"><span class="brand-t"><b id="siteName">শাহিন’স আইসিটি কেয়ার</b><small>শিক্ষার্থী প্যানেল</small></span></a><span style="display:flex;gap:8px"><button class="btn sm line" id="stuPrint">🖨 প্রিন্ট</button><button class="btn sm line" id="logout">লগআউট</button></span></div>
+      <div class="stu-hero"><div class="avatar" id="av"></div><div><h1 id="sName"></h1><p id="sMeta"></p></div></div>
+    </div>
+  </header>
+  <main class="wrap stu-body">
+    <nav class="tabs" id="tabs">
+      <button data-t="home" class="on">সারসংক্ষেপ</button><button data-t="results">ফলাফল</button><button data-t="routine">পরীক্ষার রুটিন</button><button data-t="quiz">অনলাইন কুইজ</button><button data-t="hw">বাড়ির কাজ</button><button data-t="att">হাজিরা</button><button data-t="fees">ফি</button><button data-t="notices">নোটিশ</button><button data-t="card">আইডি কার্ড</button>
+    </nav>
+    <div id="tabBody" style="display:grid;gap:20px"></div>
+  </main>
+</div>
+<script src="/js/common.js"></script>
+<script src="/js/examcalc.js"></script>
+<script src="/js/student.js"></script>
+</body>
+</html>

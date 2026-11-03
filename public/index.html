@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#062d29">
+<title>Shahin's ICT Care — HSC ICT কোর্স প্ল্যান</title>
+<meta name="description" content="Shahin's ICT Care — HSC ICT — রেগুলার ব্যাচ, অধ্যায়ভিত্তিক ব্যাচ, ফুল কোর্স, ক্র্যাশ কোর্স ও মডেল টেস্ট। মাস্টার কলোনি, মাদারীপুর।">
+<link rel="icon" href="/images/logo.svg">
+<!-- ইন্টারনেট থাকলে সুন্দর ফন্ট আসবে; না থাকলে কম্পিউটারের বাংলা ফন্ট ব্যবহার হবে -->
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;800;900&family=Noto+Sans+Bengali:wght@700;800;900&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="home">
+<a class="skip" href="#main">মূল অংশে যান</a>
+<header class="nav" id="top">
+  <div class="nav-bar">
+    <a class="brand brand-logo" href="#top"><img src="/images/logo-nav.png" alt="Shahin's ICT Care" width="420" height="285"></a>
+    <a class="nav-home" href="/" title="মূল পাতা" aria-label="মূল পাতা"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5V14h4v5.5"/></svg><span>হোম</span></a>
+
+    <!-- সার্চ বক্স লুকানো (CSS) — "ই-বুক" এখন মেনুর প্রথম লিংক -->
+    <div class="nav-search" id="navSearch" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchInput" type="search" placeholder="কোর্স সার্চ করুন" autocomplete="off" aria-label="কোর্স সার্চ করুন" aria-controls="searchResults">
+      <ul class="search-results" id="searchResults" role="listbox" hidden></ul>
+    </div>
+
+    <nav class="links" id="links" aria-label="প্রধান মেনু">
+      <div class="m-search"></div>
+      <!-- প্রধান মেনু: কোর্স ▾ · ব্যাচ ▾ · ফ্রি ক্লাস · অনলাইন কুইজ · নোটিশ (নতুনের সংখ্যা) · প্রশ্ন ও উত্তর -->
+      <div class="dd">
+        <button type="button" class="dd-btn" aria-expanded="false">কোর্স <i class="chev"></i></button>
+        <div class="dd-menu" id="ddCourses"></div>
+      </div>
+      <div class="dd">
+        <button type="button" class="dd-btn" aria-expanded="false">ব্যাচ <i class="chev"></i></button>
+        <div class="dd-menu" id="ddBatches"></div>
+      </div>
+      <a class="nav-link" href="#free-classes" id="navFree" hidden>ফ্রি ক্লাস</a>
+      <a class="nav-link" href="/quiz">অনলাইন কুইজ</a>
+      <button type="button" class="nav-link nav-notice" id="navNotice" hidden>নোটিশ<span class="nn-badge" id="nnBadge" hidden></span></button>
+      <a class="nav-link" href="#faq" id="navFaq">প্রশ্ন ও উত্তর</a>
+      <a class="nav-link" href="#ebooks" id="navEbook" hidden>ই-বুক</a>
+      <a class="nav-link" href="/books" id="navBooks" hidden>বই ও শিট</a>
+      <a class="nav-link" href="/daily">প্রতিদিন শিখি</a>
+    </nav>
+
+    <a class="nav-phone" id="navPhone" href="tel:"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span></span></a>
+    <a class="nav-login" href="/student"><span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg></span>লগইন</a>
+    <button class="burger" id="burger" aria-label="মেনু খুলুন" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <!-- স্পটলাইট সুইপ: কয়েক সেকেন্ড পরপর একটা নরম আলোর রেখা প্যানেলের উপর দিয়ে কোনাকুনি চলে যায় -->
+  <div class="hero-sweep" aria-hidden="true"></div>
+  <!-- নেটওয়ার্ক নোড: ভাসমান বিন্দু রেখায় জুড়ে যায় (js/hero-net.js) -->
+  <canvas class="hero-net" id="heroNet" aria-hidden="true"></canvas>
+  <div class="wrap hero-grid">
+    <div class="hero-text">
+      <p class="hero-badge"><i aria-hidden="true"></i><span data-s="location"></span></p>
+      <h1><span data-s="tagline"></span><br><span class="acc" data-s="taglineAccent"></span></h1>
+      <p class="lead" data-s="intro"></p>
+      <div class="hero-cta"><a class="btn ghost" href="/daily">প্রতিদিন শিখুন</a><a class="btn quiz" href="#free-classes">ফ্রি ক্লাস দেখুন</a><a class="btn gold" href="/admission">অনলাইনে ভর্তি হোন</a></div>
+      <dl class="stats" id="stats"></dl>
+    </div>
+    <div class="hero-art">
+      <div class="ring" aria-hidden="true"></div><div class="ring r2" aria-hidden="true"></div>
+      <!-- গোলের ভেতরে মেন্টরের ছবি -->
+      <div class="hero-photo"><img id="mentorImg" src="/images/teachers/shahin-hero.webp" alt="মো. শাহিন মিয়া — প্রতিষ্ঠাতা ও মেন্টর" width="1240" height="1269"></div>
+      <!-- ছবির নিচে মেন্টরের নাম আর পদবি -->
+      <p class="hero-name"><small>Mentor</small><b data-s="mentorName">Md Shahin Miah</b><span data-s="mentorRole">Founder &amp; CEO
+Shahin's ICT Care | Somvarun Shikkha Poribar</span></p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ব্যানার স্লাইডার: মাঝে বড় ছবি, দুই পাশে আগের/পরের ছবি উঁকি দেয়, নিজে থেকে লুপে ঘোরে (অ্যাডমিন → 🖼 ব্যানার) -->
+<section class="bnr" id="banners" hidden aria-label="চলমান প্রোগ্রাম">
+  <div class="bnr-stage" id="bnrStage"></div>
+</section>
+
+<!-- ফ্রি ক্লাস (অ্যাডমিন → 🎬 ফ্রি ক্লাস ও অনলাইন কোর্স) — প্রথম ৪টা, বাকিগুলো "সব ফ্রি ক্লাস" পাতায় -->
+<section class="sec alt" id="free-classes" hidden>
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">বিনামূল্যে শেখো</p><h2>ফ্রি ক্লাস</h2><p>যে কেউ দেখতে পারবে — চাপ দিলেই ক্লাস শুরু।</p></header>
+    <div class="fc-grid" id="fcGrid"></div>
+    <p class="lc-more" id="fcMore" hidden><a class="btn ghost dark" href="/free-classes">সব ফ্রি ক্লাস দেখুন →</a></p>
+  </div>
+</section>
+
+<section class="sec" id="programs">
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">ক্লাসরুমে শেখো</p><h2 class="grad-text">আইসিটি অফলাইন কোর্স প্ল্যান</h2><p><span id="progCount">৬</span>টি মডিউল — ক্লাসরুমে বসে প্রয়োজন অনুযায়ী ব্যাচ বেছে নাও।</p></header>
+    <div class="programs mt-grid" id="programList"></div>
+  </div>
+</section>
+
+<!-- অনলাইন কোর্স মডিউল (অ্যাডমিন → কোর্স মডিউল ও ব্যাচ → অনলাইন কোর্স মডিউল) — না থাকলে লুকানো -->
+<section class="sec" id="online-programs" hidden>
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">ঘরে বসে শেখো</p><h2 class="grad-text">আইসিটি অনলাইন কোর্স প্ল্যান</h2><p><span id="onlineCount">২</span>টি মডিউল — যেখানেই থাকো, অনলাইনে ক্লাস করে পুরো প্রস্তুতি নাও।</p></header>
+    <div class="programs mt-grid" id="onlineProgList"></div>
+  </div>
+</section>
+
+<!-- ই-বুক (অ্যাডমিন → ওয়েবসাইট → ই-বুক) — শ্রেণি / সেশন আর ফ্রি / প্রিমিয়াম / আমার ই-বুক দিয়ে ফিল্টার; ই-বুক না থাকলে লুকানো -->
+<section class="sec" id="ebooks" hidden>
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">পড়ো, শেখো, এগিয়ে যাও</p><h2 class="grad-text">আইসিটি ই-বুক</h2><p>শর্ট নোট, সাজেশন আর প্র্যাকটিস বুক — ফ্রি ই-বুক লগইন করেই পড়ুন, প্রিমিয়ামগুলো কিনে নিন।</p></header>
+    <div class="eb-cats" id="ebCats"></div>
+    <div class="eb-kinds" id="ebKinds"></div>
+    <div class="eb-slider"><button type="button" class="eb-nav prev" id="ebPrev" aria-label="আগের বই" hidden>‹</button><div class="eb-grid" id="ebGrid"></div><button type="button" class="eb-nav next" id="ebNext" aria-label="পরের বই" hidden>›</button></div>
+  </div>
+</section>
+
+<section class="sec alt" id="batches">
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">ছোট ব্যাচ, বেশি যত্ন</p><h2>অফলাইন ব্যাচের সময়সূচি</h2><p>প্রতিটি সেশনে আলাদা ক্লাস ব্যাচ, প্রতিটিতে সীমিত সিট — নিজের সেশনের ব্যাচ দেখে নিন।</p></header>
+    <div id="batchList"></div>
+  </div>
+</section>
+
+<!-- সফল শিক্ষার্থী: দুই ভাগ — University Achievers, তার নিচে Career Achievers; প্রতিটার নিচে ছবির কার্ড এক সারিতে চলতে থাকে (অ্যাডমিন → 🎓 সফল শিক্ষার্থী) -->
+<section class="sec" id="achievers" hidden>
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">Our Successful Students</p><h2>আমাদের সফল শিক্ষার্থীরা</h2><p>আমাদের শিক্ষার্থীদের অর্জনই আমাদের সবচেয়ে বড় অনুপ্রেরণা।</p></header>
+    <div class="ach-grid" id="achGrid"></div>
+  </div>
+</section>
+<!-- শিক্ষার্থীদের মতামত: শিক্ষার্থী প্যানেল থেকে দেওয়া রেটিং আর মন্তব্য (অ্যাডমিন → ⭐ শিক্ষার্থীদের মতামত থেকে লুকানো যায়) — দুই সারিতে চলতে থাকে -->
+<section class="sec rv-sec" id="reviews" hidden>
+  <div class="wrap">
+    <header class="rv-head reveal"><div><p class="eyebrow">শিক্ষার্থীদের মতামত</p><h2>যারা শিখছে, তারা যা বলে</h2><p class="rv-sum" id="rvSum"></p></div>
+      <button type="button" class="rv-all" id="rvAll">সব মতামত <span aria-hidden="true">→</span></button></header>
+    <div class="rv-rows" id="rvRows"></div>
+  </div>
+</section>
+
+<section class="sec alt" id="gallery" hidden>
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">Photo Gallery</p><h2>আমাদের দিনলিপি</h2><p>ক্লাসরুম, অনুষ্ঠান আর আমাদের শিক্ষার্থীদের নানা মুহূর্ত। ছবিতে চাপ দিলে বড় করে দেখুন।</p></header>
+    <div class="gal-chips" id="galChips"></div>
+    <div class="gal-grid" id="galGrid"></div>
+    <p class="gal-more-wrap"><button type="button" class="btn gold" id="galMore" hidden>আরও ছবি দেখুন</button></p>
+  </div>
+</section>
+<!-- নোটিশ বোর্ড: মেনুর "নোটিশ" চাপলে খোলে; না-দেখা নোটিশের সংখ্যা মেনুতে লাল ব্যাজে -->
+<div class="nt-pop" id="ntPop" hidden role="dialog" aria-modal="true" aria-labelledby="ntTitle">
+  <div class="nt-box"><div class="nt-head"><h2 id="ntTitle">নোটিশ বোর্ড</h2><button type="button" class="nt-x" data-nt-close aria-label="বন্ধ করুন">✕</button></div>
+    <div class="nt-list" id="ntList"></div></div>
+</div>
+<div class="gal-lb" id="galLb" hidden role="dialog" aria-modal="true" aria-label="ছবি বড় করে দেখা">
+  <button type="button" class="gal-x" data-lb="close" aria-label="বন্ধ করুন">✕</button>
+  <button type="button" class="gal-nav prev" data-lb="prev" aria-label="আগের ছবি">‹</button>
+  <figure><img id="galLbImg" alt=""><figcaption id="galLbCap"></figcaption></figure>
+  <button type="button" class="gal-nav next" data-lb="next" aria-label="পরের ছবি">›</button>
+</div>
+
+<section class="sec" id="why">
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">আমাদের পড়ানোর ধরন</p><h2>কেন Shahin's ICT Care</h2><p>শুধু ক্লাস না — প্রতিটি শিক্ষার্থীর অগ্রগতি মাপা, দুর্বলতা খুঁজে বের করা আর সময়মতো পাশে থাকা।</p></header>
+    <div class="features">
+      <article class="feat reveal"><i>⌨</i><h3>হাতে-কলমে প্র্যাকটিক্যাল</h3><p>HTML, C প্রোগ্রামিং, ডেটাবেজ — প্রতিটি জিনিস কম্পিউটারে নিজে করে শেখা।</p></article>
+      <article class="feat reveal"><i>✎</i><h3>সাপ্তাহিক পরীক্ষা</h3><p>প্রতি সপ্তাহে পরীক্ষা, ব্যাচে অবস্থান আর অধ্যায়ভিত্তিক নম্বর।</p></article>
+      <article class="feat reveal"><i>◉</i><h3>ব্যক্তিগত মূল্যায়ন</h3><p>কে কোথায় দুর্বল খুঁজে বের করে আলাদা করে দেখিয়ে দেওয়া।</p></article>
+      <article class="feat reveal"><i>☎</i><h3>অভিভাবকের সাথে যোগাযোগ</h3><p>অনুপস্থিতি বা খারাপ ফলাফলে অভিভাবককে সাথে সাথে জানানো।</p></article>
+      <article class="feat reveal"><i>▣</i><h3>অনলাইন শিক্ষার্থী প্যানেল</h3><p>নিজের ফলাফল, হাজিরা, ফি আর নোটিশ — মোবাইলেই, নিজের আইডি দিয়ে।</p></article>
+      <article class="feat reveal"><i>✓</i><h3>বোর্ড প্রশ্নের সমাধান</h3><p>বিগত বছরের সব বোর্ড প্রশ্ন সমাধান আর গুছানো নোট।</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="team">
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">যাঁদের হাতে দায়িত্ব</p><h2>আমাদের শিক্ষা পরিবার</h2></header>
+    <div class="people" id="teachers"></div>
+  </div>
+</section>
+
+<!-- প্রশ্ন ও উত্তর: উপরে প্রশ্নোত্তর বক্স (যে কেউ লেখা + ছবি + ভয়েস দিয়ে আইসিটির প্রশ্ন করে, শিক্ষক অ্যাডমিন → ওয়েবসাইট → প্রশ্নোত্তর বক্স থেকে উত্তর দেন),
+     তারপর উত্তর পাওয়া প্রশ্নগুলো, শেষে সাধারণ প্রশ্ন (অ্যাডমিন → ওয়েবসাইট → প্রশ্ন ও উত্তর) -->
+<section class="sec" id="faq">
+  <div class="wrap">
+    <header class="sec-head reveal"><p class="eyebrow">Q&amp;A</p><h2>প্রশ্ন ও উত্তর</h2><p>আইসিটি নিয়ে যেকোনো প্রশ্ন করুন — লিখে, ছবি দিয়ে বা ভয়েসে। আমাদের শিক্ষক উত্তর দেবেন।</p></header>
+    <form class="qa-ask reveal" id="qaForm" novalidate>
+      <div class="qa-ask-head"><span class="qa-av" aria-hidden="true">?</span><div><b>আপনার প্রশ্ন লিখুন</b><small>অধ্যায়, টপিক বা প্রোগ্রামিং — যা বুঝতে সমস্যা হচ্ছে</small></div></div>
+      <textarea name="text" rows="4" maxlength="3000" placeholder="যেমন: IPv4 আর IPv6 এর পার্থক্য কী? অথবা এই কোডটা কেন কাজ করছে না…"></textarea>
+      <div class="qa-att" id="qaAtt"></div>
+      <div class="qa-tools">
+        <label class="qa-tool"><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="qaImg" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>ছবি যোগ করুন</label>
+        <button type="button" class="qa-tool" id="qaRec"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>ভয়েস রেকর্ড</span></button>
+        <label class="qa-tool"><input type="file" accept="audio/*" id="qaAudFile" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>অডিও ফাইল</label>
+      </div>
+      <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <!-- লগইন না থাকলে: অতিথি লগইন / নতুন অ্যাকাউন্ট; লগইন থাকলে: কার নামে প্রশ্ন যাচ্ছে -->
+      <div class="qa-gate" id="qaGate"></div>
+      <p class="qa-msg" id="qaMsg" role="status"></p>
+      <button type="submit" class="btn gold qa-send" id="qaSend">প্রশ্ন পাঠান →</button>
+      <small class="qa-note">আপনার প্রশ্ন আর শিক্ষকের উত্তর শুধু আপনিই দেখতে পাবেন — লগইন করে নিচের "আমার প্রশ্ন"-তে।</small>
+    </form>
+    <div class="qa-list" id="qaList"></div>
+    <div class="faq-wrap" id="faqWrap" hidden><h3 class="faq-title">সাধারণ প্রশ্ন</h3><div class="faq-list" id="faqList"></div></div>
+  </div>
+</section>
+
+<section class="sec alt" id="enquiry">
+  <div class="wrap enquiry-grid" id="contact">
+    <div class="reveal">
+      <a class="th-cta" id="thCta" href="/talent-hunt" hidden></a>
+      <p class="eyebrow">ভর্তি</p><h2>ভর্তির আগ্রহ জানান</h2>
+      <p class="lead">ডান পাশের ফর্মটি পূরণ করে ভর্তির আগ্রহ জানান—আমরা বিস্তারিত জানাতে যোগাযোগ করব।</p>
+    </div>
+    <form class="form reveal" id="enquiryForm" novalidate>
+      <label>শিক্ষার্থীর নাম<input name="name" required autocomplete="name" placeholder="পুরো নাম"></label>
+      <label>মোবাইল নম্বর<input name="phone" required inputmode="tel" autocomplete="tel" placeholder="01XXXXXXXXX"></label>
+      <label>আগ্রহী প্রোগ্রাম<select name="course" id="courseSelect"><option value="">বেছে নিন</option></select></label>
+      <label>শ্রেণি<select name="klass"><option value="">বেছে নিন</option><option>নবম শ্রেণি</option><option>দশম শ্রেণি</option><option>একাদশ শ্রেণি</option><option>দ্বাদশ শ্রেণি</option><option>HSC পরীক্ষার্থী</option><option>অন্যান্য</option></select></label>
+      <label class="wide">প্রতিষ্ঠানের নাম<input name="college" placeholder="যেমন: আপনার কলেজের নাম"></label>
+      <label class="wide">কিছু জানতে চাইলে লিখুন<textarea name="message" rows="3" placeholder="ঐচ্ছিক"></textarea></label>
+      <label class="hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+      <button class="btn gold wide" type="submit">পাঠিয়ে দিন</button>
+      <p class="form-msg" id="formMsg" role="status"></p>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="foot-about"><a class="foot-brand" href="#top"><span class="fb-logo"><img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার" width="420" height="285"></span><span class="fb-name"><b>শাহিন'স আইসিটি কেয়ার</b><small>আইসিটি শেখার নির্ভরযোগ্য ঠিকানা</small></span></a><ul class="foot-contact"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="footAddrLine"></span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1l-2.2 2.2z"/></svg><span id="footPhones"></span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 7.2L4 7.3V17h16V7.3l-8 4.9zM4.6 7l7.4 4.5L19.4 7H4.6z"/></svg><a href="mailto:shahinictcare@gmail.com">shahinictcare@gmail.com</a></li></ul><div class="foot-social"><a class="fs-page" href="https://www.facebook.com/shahinsictcare" target="_blank" rel="noopener" title="ফেসবুক পেজ" aria-label="ফেসবুক পেজ"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 21v-7.5h2.5l.4-3h-2.9V8.6c0-.9.3-1.5 1.5-1.5h1.5V4.4c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8v2.4H8v3h2.6V21h2.9z"/></svg><span>ফেসবুক পেজ</span></a><a class="fs-group" href="https://www.facebook.com/groups/shahinictcare" target="_blank" rel="noopener" title="ফেসবুক গ্রুপ" aria-label="ফেসবুক গ্রুপ"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm7 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM9 13c-3.3 0-6 1.7-6 3.8V19h12v-2.2C15 14.7 12.3 13 9 13zm7 0c-.6 0-1.2.1-1.7.2 1.1.9 1.7 2.1 1.7 3.6V19h5v-2.2c0-2-2.2-3.8-5-3.8z"/></svg><span>ফেসবুক গ্রুপ</span></a><a class="fs-profile" href="https://www.facebook.com/shahin.miah1993" target="_blank" rel="noopener" title="শাহিন মিয়া — প্রোফাইল" aria-label="শাহিন মিয়া — প্রোফাইল"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5z"/></svg><span>প্রোফাইল</span></a><a class="fs-yt" href="https://www.youtube.com/@shahinsictcare" target="_blank" rel="noopener" title="ইউটিউব চ্যানেল" aria-label="ইউটিউব চ্যানেল"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 7.2a2.7 2.7 0 0 0-1.9-1.9C18 4.8 12 4.8 12 4.8s-6 0-7.7.5a2.7 2.7 0 0 0-1.9 1.9C2 8.9 2 12 2 12s0 3.1.4 4.8a2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9c.4-1.7.4-4.8.4-4.8s0-3.1-.4-4.8zM10 15.1V8.9l5.2 3.1-5.2 3.1z"/></svg><span>ইউটিউব</span></a></div></div>
+    <div><h4>প্রোগ্রাম</h4><ul id="footPrograms"></ul></div>
+    <div><h4>লিংক</h4><ul><li><a href="#why">কেন আমরা</a></li><li><a href="#batches">ব্যাচের সময়</a></li><li><a href="#team">শিক্ষক</a></li><li><a href="/student">শিক্ষার্থী লগইন</a></li><li><a href="/admin">অ্যাডমিন</a></li></ul></div>
+  </div>
+  <p class="credit">© <span id="year"></span> <span data-s="name"></span> · সর্বস্বত্ব সংরক্ষিত</p>
+</footer>
+
+<a class="fab-wa" id="fabWa" target="_blank" rel="noopener" aria-label="WhatsApp-এ যোগাযোগ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3 .78.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.25-.12-1.470-.72-1.7-.8s-.39-.12-.56.12-.64.8-.78.97-.29.18-.54.06a6.7 6.7 0 0 1-3.3-2.9c-.25-.43.25-.4.7-1.33a.44.44 0 0 0-.02-.42c-.06-.12-.56-1.34-.76-1.84s-.4-.42-.56-.43h-.48a.92.92 0 0 0-.67.31 2.8 2.8 0 0 0-.87 2.08 4.9 4.9 0 0 0 1 2.58 11.1 11.1 0 0 0 4.270 3.77c1.6.69 2.22.75 3.02.63a2.6 2.6 0 0 0 1.7-1.2 2.1 2.1 0 0 0 .15-1.2c-.06-.11-.23-.17-.48-.29z"/></svg></a>
+<script src="/js/common.js"></script>
+<script src="/js/site.js"></script>
+<script src="/js/qna.js"></script>
+<script src="/js/ebooks.js"></script>
+<script src="/js/hero-net.js" defer></script>
+</body>
+</html>

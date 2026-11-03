@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#062d29">
+<title>ভর্তি — Shahin's ICT Care</title>
+<meta name="description" content="আইসিটি অফলাইন কোর্স না অনলাইন কোর্স — কোনটায় ভর্তি হবেন বেছে নিন।">
+<link rel="icon" href="/images/logo.svg">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+<link rel="stylesheet" href="/css/apply.css">
+</head>
+<body class="apply-page adm-page">
+<header class="nav solid" id="top">
+  <div class="nav-bar">
+    <a class="brand brand-logo" href="/"><img src="/images/logo-nav.png" alt="Shahin's ICT Care" width="420" height="285"></a>
+    <nav class="ap-links"><a class="nav-link" href="/">মূল পাতা</a><a class="nav-link" href="/apply?tab=status">আবেদনের অবস্থা</a></nav>
+    <a class="nav-phone" id="navPhone" href="tel:"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"/></svg><span></span></a>
+  </div>
+</header>
+
+<!-- ভর্তির শুরু: মূল পাতার "অনলাইনে ভর্তি হোন" এখানে আনে — দুটো বড় কার্ড: অফলাইন কোর্স (/apply) আর অনলাইন কোর্স (/online-apply) -->
+<main class="adm">
+  <div class="wrap">
+    <header class="adm-head"><p class="eyebrow">ভর্তি</p><h1>কোন কোর্সে ভর্তি হতে চান?</h1><p>নিচের দুটো থেকে একটা বেছে নিন — ছোট একটা ফর্ম, সাথে সাথে আবেদন নম্বর।</p></header>
+    <div class="adm-grid">
+      <a class="adm-card off" href="/apply">
+        <span class="adm-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 5l9 5.5"/><path d="M5 9.7V19h14V9.7"/><path d="M10 19v-5h4v5"/></svg></span>
+        <span class="adm-tag">ক্লাসরুমে শেখো</span>
+        <h2>আইসিটি অফলাইন কোর্স</h2>
+        <p id="admOff">সরাসরি ক্লাসরুমে শিক্ষকের সাথে — ছোট ব্যাচ, নিয়মিত পরীক্ষা।</p>
+        <ul><li>সামনাসামনি ক্লাস আর প্র্যাকটিক্যাল</li><li>মাসিক পরীক্ষা ও মেধাতালিকা</li><li>অভিভাবকের সাথে নিয়মিত যোগাযোগ</li></ul>
+        <span class="adm-go">অফলাইন কোর্সে ভর্তি হোন <i aria-hidden="true">→</i></span>
+      </a>
+      <a class="adm-card on" href="/online-apply">
+        <span class="adm-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="m10 8 4 2-4 2z"/></svg></span>
+        <span class="adm-tag">ঘরে বসে শেখো</span>
+        <h2>আইসিটি অনলাইন কোর্স</h2>
+        <p id="admOn">যেখানেই থাকো — ভিডিও ক্লাস, নোট আর অনলাইন পরীক্ষা।</p>
+        <ul><li>যেকোনো সময়, যেকোনো জায়গা থেকে</li><li>রেকর্ড ক্লাস বারবার দেখা যায়</li><li>শিক্ষার্থী প্যানেলে নোট ও পরীক্ষা</li></ul>
+        <span class="adm-go">অনলাইন কোর্সে ভর্তি হোন <i aria-hidden="true">→</i></span>
+      </a>
+    </div>
+    <p class="adm-help">বুঝতে পারছেন না কোনটা নেবেন? <a id="admCall" href="tel:">ফোন করুন</a> — আমরা সাহায্য করবো।</p>
+  </div>
+</main>
+
+<footer class="foot"><p class="credit">© <span id="year"></span> <span data-s="name"></span></p></footer>
+<script src="/js/common.js"></script>
+<script>
+// মডিউলের সংখ্যা আর ফোন নম্বর সার্ভার থেকে
+(async () => {
+  const bn = U.bn; document.getElementById("year").textContent = bn(new Date().getFullYear());
+  let D; try { D = await U.api("/api/public"); } catch { return; }
+  const S = D.settings || {}, on = (D.courses || []).filter((c) => c.mode === "online").length, off = (D.courses || []).length - on;
+  document.querySelectorAll("[data-s=name]").forEach((el) => { el.textContent = S.name || "Shahin's ICT Care"; });
+  const ph = document.getElementById("navPhone"), call = document.getElementById("admCall");
+  if (S.phone) { ph.href = call.href = "tel:" + S.phone; call.textContent = "ফোন করুন: " + bn(S.phone); // কম্পিউটারে চাপলে ফোনের অ্যাপ চায়, তাই নম্বরটা চোখেও দেখা যায়
+    const sp = ph.querySelector("span"); if (sp) sp.textContent = S.phone; } else { ph.hidden = true; call.removeAttribute("href"); }
+  if (off) document.getElementById("admOff").insertAdjacentHTML("beforebegin", '<b class="adm-count">' + bn(off) + "টি মডিউল</b>");
+  if (on) document.getElementById("admOn").insertAdjacentHTML("beforebegin", '<b class="adm-count">' + bn(on) + "টি মডিউল</b>");
+})();
+</script>
+</body>
+</html>

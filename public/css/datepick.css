@@ -1,0 +1,67 @@
+/* বাংলা ক্যালেন্ডার (datepick.js) — এই সাইটের কালো-সোনালি ধাঁচে */
+.sdp-field{position:relative;display:inline-block;min-width:220px}
+.sdp-field>input[type=date],.sdp-field>input[type=month]{position:absolute!important;left:12px;bottom:0;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none;border:0!important;padding:0!important}
+.sdp-trigger{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.35);color:#fff;font:600 14.5px var(--sans);text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.sdp-trigger svg{width:18px;height:18px;flex:none;fill:none;stroke:#f3c55d;stroke-width:2;stroke-linecap:round}
+.sdp-trigger span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sdp-trigger:hover{border-color:#f3c55d;box-shadow:0 0 0 3px rgba(243,197,93,.15)}.sdp-trigger.empty span{color:#8c8c96;font-weight:500}
+dialog.sdp{width:min(360px,calc(100% - 24px));padding:0;border:0;border-radius:24px;overflow:hidden;background:#141418;color:#e9e9ef;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(243,197,93,.25);animation:sdpIn .22s cubic-bezier(.2,.9,.3,1.2)}
+dialog.sdp::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(3px);animation:sdpFade .2s}
+dialog.sdp.closing{animation:sdpOut .16s ease-in forwards}
+@keyframes sdpIn{from{opacity:0;transform:translateY(10px) scale(.95)}to{opacity:1;transform:none}}@keyframes sdpOut{to{opacity:0;transform:translateY(6px) scale(.97)}}@keyframes sdpFade{from{opacity:0}}
+.sdp-head{display:grid;gap:2px;padding:18px 22px 16px;color:#fff;background:radial-gradient(260px 140px at 100% 0,rgba(243,197,93,.35),transparent 60%),linear-gradient(135deg,#1f1a10,#0d0d10);border-bottom:3px solid #f3c55d}
+.sdp-head small{color:#f3c55d;font-weight:700;font-size:12.5px}.sdp-head b{font-size:28px;line-height:1.15}.sdp-head span{color:rgba(255,255,255,.75);font-size:13.5px}
+.sdp-body{padding:12px 14px 6px}.sdp-body.slide-l{animation:sdpL .22s ease-out}.sdp-body.slide-r{animation:sdpR .22s ease-out}.sdp-body.zoom{animation:sdpZ .2s ease-out}
+@keyframes sdpL{from{opacity:0;transform:translateX(18px)}}@keyframes sdpR{from{opacity:0;transform:translateX(-18px)}}@keyframes sdpZ{from{opacity:0;transform:scale(.94)}}
+.sdp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sdp-nav button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(243,197,93,.35);background:rgba(255,255,255,.04);color:#f3c55d;font-size:20px;line-height:1;cursor:pointer}.sdp-nav button:hover{background:rgba(243,197,93,.14)}
+.sdp-nav .sdp-title{width:auto;height:auto;padding:6px 14px;border-radius:999px;border:0;background:transparent;font:800 16.5px var(--sans);color:#fff}.sdp-nav .sdp-title i{font-style:normal;font-size:12px;color:#f3c55d}.sdp-nav .sdp-title:hover{background:rgba(255,255,255,.07)}
+.sdp-grid.d{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.sdp-wd{text-align:center;font-size:12px;font-weight:800;color:#cfcfd6;padding:6px 0;border-radius:8px;background:rgba(255,255,255,.06)}.sdp-wd:nth-child(6){color:#f3c55d;background:rgba(243,197,93,.12)}
+.sdp-d{display:grid;place-items:center;height:38px;border-radius:12px;border:0;background:transparent;font:600 14.5px var(--sans);color:#e9e9ef;cursor:pointer;transition:background .12s,transform .12s}
+.sdp-d:hover:not(:disabled):not(.on){background:rgba(243,197,93,.14);transform:scale(1.06)}.sdp-d.fri{color:#f3c55d}.sdp-d.out{color:#55555e;cursor:default}.sdp-d:disabled{color:#55555e;cursor:not-allowed}
+.sdp-d.today{box-shadow:inset 0 0 0 2px #f3c55d;font-weight:800}
+.sdp-d.on{background:linear-gradient(135deg,#ffe3a3,#f3c55d 55%,#d99a2b);color:#1a1206;font-weight:800;box-shadow:0 6px 14px rgba(243,197,93,.35)}
+.sdp-grid.m,.sdp-grid.y{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:6px 0 4px}.sdp-grid.y{grid-template-columns:repeat(4,1fr)}
+.sdp-m,.sdp-y{padding:12px 4px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);font:700 14px var(--sans);color:#e9e9ef;cursor:pointer}.sdp-m:hover,.sdp-y:hover{background:rgba(243,197,93,.14)}
+.sdp-m.now,.sdp-y.now{border-color:#f3c55d}.sdp-m.on,.sdp-y.on{background:linear-gradient(135deg,#ffe3a3,#f3c55d 55%,#d99a2b);color:#1a1206;border-color:transparent}
+.sdp-foot{display:flex;align-items:center;gap:6px;padding:10px 14px 14px}.sdp-foot span{flex:1}
+.sdp-foot button{border:0;border-radius:999px;padding:8px 16px;font:800 14px var(--sans);cursor:pointer}.sdp-today{background:linear-gradient(180deg,#ffe2a2,#f3c55d 55%,#d99a2b);color:#2b1c00}.sdp-clear{background:rgba(239,68,68,.15);color:#ff9a9a}.sdp-close{background:rgba(255,255,255,.08);color:#e9e9ef}
+@media(max-width:640px){.sdp-field{min-width:0;flex:1 1 180px}}
+/* অ্যাডমিনে ঘরটা সাদা, অন্য ঘরগুলোর মতো; ক্যালেন্ডার একই থাকে */
+body.dash-dark .sdp-field{display:block;min-width:170px}
+/* ক্যালেন্ডার ঘর যে লেবেলে থাকে, সেটা ঘরের চেয়ে সরু হবে না — নইলে zoom করলে পাশের ঘরের উপর উঠে যায় */
+body.dash-dark label:has(>.sdp-field){min-width:min-content}
+body.dash-dark .sdp-field:has(input[type=date]){min-width:215px}
+body.dash-dark td .sdp-field:has(input[type=date]){min-width:130px}
+body.dash-dark td .sdp-trigger{min-height:38px;padding:6px 8px;gap:6px;font-size:13px}
+body.dash-dark .sdp-trigger:disabled{background:#f1f4f3;color:#9aa8a4;cursor:not-allowed}
+body.dash-dark .sdp-trigger{background:#fff;color:#1d2b28;border-color:#d6dae1}
+body.dash-dark .sdp-trigger svg{stroke:#0f766e}
+body.dash-dark .sdp-trigger:hover{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+body.dash-dark .sdp-trigger.empty span{color:#6a7a76}
+/* অ্যাডমিনে ক্যালেন্ডারও একই ধাঁচে: সাদা, গাঢ় সবুজ (খোলা ট্যাবের রং) */
+body.dash-dark dialog.sdp{background:#fff;color:#1d2b28;box-shadow:0 30px 80px rgba(6,45,41,.45),0 0 0 1px #d6dae1}
+body.dash-dark dialog.sdp::backdrop{background:rgba(6,45,41,.45)}
+body.dash-dark .sdp-head{background:#0b3b36;border-bottom:0}
+body.dash-dark .sdp-head small{color:#a7e3d3}
+body.dash-dark .sdp-nav button{border-color:#d6dae1;background:#fff;color:#0f766e}
+body.dash-dark .sdp-nav button:hover{background:#eef2f0}
+body.dash-dark .sdp-nav .sdp-title{background:transparent;color:#0b3b36}
+body.dash-dark .sdp-nav .sdp-title i{color:#0f766e}
+body.dash-dark .sdp-nav .sdp-title:hover{background:#eef2f0}
+body.dash-dark .sdp-wd{background:#eef2f0;color:#55625f}
+body.dash-dark .sdp-wd:nth-child(6){background:#dff3ea;color:#0f766e}
+body.dash-dark .sdp-d{color:#1d2b28}
+body.dash-dark .sdp-d:hover:not(:disabled):not(.on){background:#dff3ea}
+body.dash-dark .sdp-d.fri{color:#0f766e}
+body.dash-dark .sdp-d.out,body.dash-dark .sdp-d:disabled{color:#b4bfbb}
+body.dash-dark .sdp-d.today{box-shadow:inset 0 0 0 2px #0f766e}
+body.dash-dark .sdp-d.on{background:#0b3b36;color:#fff;box-shadow:none}
+body.dash-dark .sdp-m,body.dash-dark .sdp-y{border-color:#d6dae1;background:#fff;color:#1d2b28}
+body.dash-dark .sdp-m:hover,body.dash-dark .sdp-y:hover{background:#dff3ea}
+body.dash-dark .sdp-m.now,body.dash-dark .sdp-y.now{border-color:#0f766e;color:#0f766e}
+body.dash-dark .sdp-m.on,body.dash-dark .sdp-y.on{background:#0b3b36;border-color:#0b3b36;color:#fff}
+body.dash-dark .sdp-today{background:#0b3b36;color:#fff}
+body.dash-dark .sdp-clear{background:#fee2e2;color:#b91c1c}
+body.dash-dark .sdp-close{background:#eef2f0;color:#1d2b28}
