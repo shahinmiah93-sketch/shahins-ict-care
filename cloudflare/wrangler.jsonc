@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shahins-ict-care",
+  "main": "dist/worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "shahinictcare.com/*", "zone_id": "49cdbde8c2014b9f3455bff2a235ab96" },
+    { "pattern": "www.shahinictcare.com/*", "zone_id": "49cdbde8c2014b9f3455bff2a235ab96" },
+    { "pattern": "preview.shahinictcare.com", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "dist/public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/__migration/*", "/", "/admin", "/student", "/login", "/apply", "/quiz", "/talent-hunt", "/courses", "/course", "/free-classes", "/module", "/online-apply", "/admission", "/daily", "/books"],
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "SCHOOL", "class_name": "School" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["School"] }],
+  "observability": { "enabled": false }
+}

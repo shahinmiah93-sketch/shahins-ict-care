@@ -1,0 +1,15 @@
+{
+  "status": "published-and-http-verified",
+  "verified_date": "2026-11-04",
+  "timezone": "Asia/Dhaka",
+  "worker": "shahins-ict-care",
+  "version_id": "5cdb7a0f-a6d9-40a6-8577-9b0eeeb0ce37",
+  "primary_url": "https://shahinictcare.com",
+  "additional_urls": ["https://www.shahinictcare.com", "https://preview.shahinictcare.com"],
+  "storage": "sqlite-backed-durable-object",
+  "imported_files": 37,
+  "imported_students": 5,
+  "migration_secret_removed": true,
+  "original_local_data_preserved": true,
+  "local_cloud_sync": false
+}
