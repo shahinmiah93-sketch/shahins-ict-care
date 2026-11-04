@@ -46,7 +46,7 @@
     const inp = input; sel = v; draw();
     setTimeout(() => { close(); inp.value = v; if (inp._dpSync) inp._dpSync(); inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); }, 140);
   }
-  function open(inp) { input = inp; sel = inp.value || ""; const p = parse(sel) || parse(todayIso()); vy = p.y; vm = p.m; view = isMonth() ? "months" : "days"; draw(); dlg.showModal(); }
+  function open(inp) { if (inp.disabled || inp.readOnly) return; input = inp; sel = inp.value || ""; const p = parse(sel) || parse(todayIso()); vy = p.y; vm = p.m; view = isMonth() ? "months" : "days"; draw(); dlg.showModal(); }
   dlg.addEventListener("click", (e) => {
     if (e.target === dlg) return close();
     const t = e.target.closest("button"); if (!t || t.disabled) return;
@@ -73,7 +73,7 @@
     const wrap = document.createElement("span"); wrap.className = "sdp-field"; inp.insertAdjacentElement("beforebegin", wrap); wrap.append(inp);
     const btn = document.createElement("button"); btn.type = "button"; btn.className = "sdp-trigger"; wrap.prepend(btn); inp._dpBtn = btn;
     const mo = inp.type === "month";
-    const sync = () => { btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>${inp.value ? (inp.closest("td") ? nice(inp.value, mo).split(",")[0] : nice(inp.value, mo)) : inp.dataset.dpEmpty || (mo ? "মাস বেছে নিন" : "তারিখ বেছে নিন")}</span>`; btn.classList.toggle("empty", !inp.value); btn.disabled = inp.disabled; };
+    const sync = () => { btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>${inp.value ? (inp.closest("td") ? nice(inp.value, mo).split(",")[0] : nice(inp.value, mo)) : inp.dataset.dpEmpty || (mo ? "মাস বেছে নিন" : "তারিখ বেছে নিন")}</span>`; btn.classList.toggle("empty", !inp.value); btn.disabled = inp.disabled || inp.readOnly; };
     sync(); inp._dpSync = sync; btn.title = inp.title || "";
     // কোড থেকে .value বদলালেও বোতামের লেখা বদলায়
     Object.defineProperty(inp, "value", { configurable: true, get() { return VALUE.get.call(this); }, set(v) { VALUE.set.call(this, v); sync(); } });
