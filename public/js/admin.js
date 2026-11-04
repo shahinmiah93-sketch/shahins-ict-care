@@ -132,6 +132,7 @@
     $("#modalBody").innerHTML = body;
     $("#modalErr").textContent = "";
     $("#modalSave").textContent = saveText;
+    $("#modalSave").disabled = false;
     $("#modalSave").hidden = !onSave;
     $("#modalCancel").textContent = onSave ? "বাতিল" : "বন্ধ করুন";
     $("#modalFoot").hidden = !!noFoot;
@@ -1415,15 +1416,15 @@ ${list.map(receiptHtml).join("")}
     $("#modalSave").disabled = true;
     $("#feeStartDate").oninput = () => { preview = null; $("#modalSave").disabled = true; $("#feeStartResult").textContent = ""; };
     $("#feeStartPreview").onclick = async () => {
-      const button = $("#feeStartPreview"); button.disabled = true; $("#modalErr").textContent = "";
+      const button = $("#feeStartPreview"), dateInput = $("#feeStartDate"); button.disabled = true; $("#modalErr").textContent = "";
       preview = null; $("#modalSave").disabled = true;
       try {
-        const result = await api("/api/admin/enrollment-start", { body: { id: e.id, startDate: $("#feeStartDate").value } });
-        if (result.proposed.startDate !== $("#feeStartDate").value) return;
+        const result = await api("/api/admin/enrollment-start", { body: { id: e.id, startDate: dateInput.value } });
+        if ($("#feeStartDate") !== dateInput || result.proposed.startDate !== dateInput.value) return;
         preview = result;
         $("#feeStartResult").innerHTML = `<dl class="kv"><dt>আগের মোট দেনা</dt><dd>${money(result.current.due)}</dd><dt>প্রথম মাসের ফি</dt><dd>${money(result.proposed.firstMonth)}</dd><dt>নতুন মোট দেনা (${bn(result.proposed.months)} মাস)</dt><dd><b>${money(result.proposed.due)}</b></dd><dt>সব জমা বাদে মোট বাকি</dt><dd><b>${money(result.proposed.balance)}</b></dd></dl><p class="muted">আগের পেমেন্ট অপরিবর্তিত থাকবে। সংরক্ষণের আগে ব্যাকআপ রাখা হবে।</p>`;
         $("#modalSave").disabled = false;
-      } catch (error) { $("#modalErr").textContent = error.message; }
+      } catch (error) { if ($("#feeStartDate") === dateInput) $("#modalErr").textContent = error.message; }
       finally { button.disabled = false; }
     };
   }
