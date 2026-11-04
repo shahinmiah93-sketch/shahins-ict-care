@@ -1600,6 +1600,7 @@ function studentProfileCompletion(student) {
 }
 async function updateStudentProfile(req, res, student) {
   const body = await readBody(req, 64 * 1024);
+  if (!["M", "F", "O"].includes(body.gender ?? student.gender)) return send(res, 400, { error: "লিঙ্গ বেছে নিন" });
   const clean = STUDENT_KEYS({ ...student, ...body });
   const completion = studentProfileCompletion(clean);
   if (!completion.complete) return send(res, 400, { error: "এই তথ্যগুলো পূরণ করুন: " + completion.missing.map(x => x.label).join(", ") });
