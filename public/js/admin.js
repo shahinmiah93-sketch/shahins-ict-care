@@ -9,8 +9,8 @@
   const batchById = (id) => DB.batches.find((b) => b.id === id);
   const courseById = (id) => DB.courses.find((c) => c.id === id);
   const studentById = (id) => DB.students.find((s) => s.id === id);
-  const batchName = (id) => { const b = batchById(id); return b ? `${b.name}` : "—"; };
-  const batchFull = (b) => (b ? `${b.name} (${b.session}) — ${b.days || "দিন ঠিক হয়নি"}${b.time ? ", " + b.time : ""}` : "");
+  const batchName = (id) => { const b = batchById(id); return b ? U.batchLabel(b) : "—"; };
+  const batchFull = (b) => U.batchLabel(b);
   const studentName = (id) => (studentById(id) || {}).name || id;
   const activeStudents = () => DB.students.filter((s) => s.status !== "inactive");
   const pauseOf = (s) => (s.pauses || []).find((p) => !p.to); // এখন চলমান "পড়া বন্ধ"
@@ -39,7 +39,7 @@
   const waLink = (phone, text) => `https://wa.me/88${String(phone || "").replace(/\D/g, "").replace(/^88/, "")}?text=${encodeURIComponent(text)}`;
   const balanceChip = (f) => (f.balance > 0 ? `<span class="chip bad">বকেয়া ${money(f.balance)}</span>` : f.balance < 0 ? `<span class="chip ok">অগ্রিম ${money(-f.balance)}</span>` : `<span class="chip ok">পরিশোধিত</span>`);
 
-  async function load() { DB = await api("/api/admin/db"); U.extraLists = DB.lists || {}; updateChrome(); }
+  async function load() { DB = await api("/api/admin/db"); DB.batches.sort(U.compareBatchSchedule); U.extraLists = DB.lists || {}; updateChrome(); }
   async function save(col, body, id) { return api(`/api/admin/c/${col}${id ? "/" + id : ""}`, { body }); }
   async function remove(col, id, what) {
     if (!confirm(`${what || "এটি"} মুছে ফেলবেন? এটা আর ফেরানো যাবে না।`)) return false;
@@ -1775,7 +1775,7 @@ ${list.map(receiptHtml).join("")}
       </div>
       <div class="tbl-wrap"><table class="bb-tbl"><thead><tr><th class="c">নং</th><th>শিক্ষার্থী</th><th class="c">রক্তের গ্রুপ</th><th>শিক্ষার্থীর নম্বর</th><th>অভিভাবকের নম্বর</th><th>বাবার নম্বর</th><th>মায়ের নম্বর</th></tr></thead><tbody id="bbRows"></tbody></table></div>
     </div>`;
-    const batchOpts = () => { const L = DB.batches.filter((b) => !bb.sess || b.session === bb.sess); if (!L.some((b) => b.id === bb.batch)) bb.batch = ""; return opt([["", "সব ব্যাচ"], ...L.map((b) => [b.id, (bb.sess ? "" : b.session + " · ") + b.name])], bb.batch); };
+    const batchOpts = () => { const L = DB.batches.filter((b) => !bb.sess || b.session === bb.sess); if (!L.some((b) => b.id === bb.batch)) bb.batch = ""; return opt([["", "সব ব্যাচ"], ...L.map((b) => [b.id, U.batchLabel(b)])], bb.batch); };
     const list = () => {
       const q = bb.q.trim().toLowerCase();
       return pool().filter((s) => (!bb.sess || s.session === bb.sess) && (!bb.batch || s.batchId === bb.batch)
