@@ -692,9 +692,10 @@ window.U = {
       e.preventDefault(); err.textContent = ""; go.disabled = true;
       try {
         if (!isAdmin) {
-          const id = en(f.id.value).trim(), pin = en(f.pin.value).trim();
-          if (!id || !pin) throw new Error("Please enter both ID and PIN");
-          await post("/api/student/login", { id, pin });
+          const id = en(f.elements.namedItem("id").value).trim(), pin = en(f.elements.namedItem("pin").value).trim();
+          if (!id || !pin) throw new Error("শিক্ষার্থী আইডি ও PIN দুটোই দিন");
+          try { await post("/api/student/login", { id, pin }); }
+          catch (error) { if (error.message === "Wrong ID or PIN") throw new Error("আইডি বা PIN মেলেনি। ভর্তি ফর্মের সঠিক আইডি ও PIN দিন।"); throw error; }
           location.href = "/student"; return;
         }
         if (!ticket) {

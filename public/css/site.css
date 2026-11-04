@@ -710,16 +710,16 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 /* লগইন পপআপ — শিক্ষার্থী: আইডি + PIN একসাথে; অ্যাডমিন: ধাপ ১ PIN → ধাপ ২ ইমেইল + পাসওয়ার্ড */
 .lg-dlg{border:0;padding:0;background:transparent;width:min(400px,calc(100vw - 24px));max-height:calc(100svh - 24px);overflow:visible}
 .lg-dlg::backdrop{background:rgba(3,14,18,.62);backdrop-filter:blur(4px)}
-.lg-dlg form{position:relative;display:grid;gap:12px;padding:28px 24px 22px;border-radius:22px;background:linear-gradient(170deg,#0e3a40,#0a2328);border:1px solid rgba(243,197,93,.45);box-shadow:0 30px 70px rgba(0,0,0,.5);color:#eaf4f0;text-align:center}
+.lg-dlg form{position:relative;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;width:100%;box-sizing:border-box;gap:12px;padding:28px 24px 22px;border-radius:22px;background:linear-gradient(170deg,#0e3a40,#0a2328);border:1px solid rgba(243,197,93,.45);box-shadow:0 30px 70px rgba(0,0,0,.5);color:#eaf4f0;text-align:center}
 .lg-dlg .lg-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:10px;background:transparent;color:#cfe3dc;font-size:24px;line-height:1;cursor:pointer}
 .lg-dlg .lg-x:hover{background:rgba(255,255,255,.1);color:#fff}
 .lg-dlg .lg-logo{display:block;width:128px;height:auto;margin:0 auto 6px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.3))}
 .lg-dlg .lg-ic{display:grid;place-items:center;width:56px;height:56px;margin:0 auto;border-radius:16px;background:rgba(243,197,93,.14);font-style:normal;font-size:28px}
 .lg-dlg h2{margin:0;color:#fff;font-size:22px}
 .lg-dlg .lg-hint{margin:-4px 0 4px;color:#b9cdc7;font-size:14px}
-.lg-dlg label{display:grid;gap:5px;text-align:left;font-size:14px;font-weight:600;color:#e2efea}
+.lg-dlg label{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:5px;text-align:left;font-size:14px;font-weight:600;color:#e2efea}
 .lg-dlg label[hidden]{display:none}
-.lg-dlg input{padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;font:inherit;font-weight:500;outline:none}
+.lg-dlg input{width:100%;min-width:0;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;font:inherit;font-weight:500;outline:none}
 .lg-dlg input:focus{border-color:#f3c55d;box-shadow:0 0 0 3px rgba(243,197,93,.22)}
 .lg-dlg input::placeholder{color:#8fa9a2}
 .lg-dlg .lg-pin{letter-spacing:.45em;text-align:center;font:700 20px Consolas,'Hind Siliguri',monospace}
