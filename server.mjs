@@ -1363,6 +1363,13 @@ function createEnrollment(studentId, v, startDate, planEnd) {
   db.enrollments.push(enr);
   return enr;
 }
+// The first module starts on the student's joining date. Later modules retain
+// their separately selected start dates through createEnrollment.
+function createAdmissionEnrollment(student, v, planEnd) {
+  const enrollment = createEnrollment(student.id, v, student.admissionDate, planEnd);
+  enrollment.admissionLinked = true;
+  return enrollment;
+}
 // মাসিক কোর্সে ভর্তির মাসের ক্লাস গুনে রাখে (পরে ব্যাচ বদলালেও আগের হিসাব একই থাকে)
 function setFirstMonth(enr) {
   delete enr.firstClasses; delete enr.firstTotal; delete enr.firstGrace;
@@ -1482,7 +1489,7 @@ async function admissionImportAction(req, res) {
       const student = { ...row.student, id: nextStudentId(row.student.session), serial: nextSerial(), pin: newPin(), status: "active", photo: false, createdAt: new Date().toISOString() };
       db.students.push(student); ids.push(student.id); rememberLists(student);
       const course = db.courses.find(c => c.id === row.courseId);
-      const enrollment = createEnrollment(student.id, { course, chapters: row.enrollment.chapters, fee: row.enrollment.fee, discount: row.enrollment.discount }, student.admissionDate, row.enrollment.planEnd);
+      const enrollment = createAdmissionEnrollment(student, { course, chapters: row.enrollment.chapters, fee: row.enrollment.fee, discount: row.enrollment.discount }, row.enrollment.planEnd);
       if (row.paid > 0) db.payments.push({ id: uid("pay"), studentId: student.id, enrollmentId: enrollment.id, amount: row.paid, month: row.paymentDate.slice(0, 7), date: row.paymentDate, method: row.method, note: "Excel থেকে ভর্তি: আগের জমা; Payment Date খালি হলে ভর্তির তারিখ ব্যবহৃত", receiptNo: nextReceiptNo(), createdAt: new Date().toISOString() });
     }
     const result = { token: plan.token, sourceHash, at: new Date().toISOString(), ids, ...plan.summary };
@@ -1490,6 +1497,35 @@ async function admissionImportAction(req, res) {
     saveDb();
     return send(res, 200, { ok: true, ...result });
   } catch (e) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw e; }
+}
+
+// Review a correction to a saved module's fee start date before committing it.
+async function enrollmentStartAction(req, res) {
+  const input = await readBody(req);
+  const e = db.enrollments.find(x => x.id === str(input?.id, 60));
+  const s = e && db.students.find(x => x.id === e.studentId);
+  const start = str(input?.startDate, 10);
+  if (!s) return send(res, 404, { error: "মডিউলে ভর্তির রেকর্ড পাওয়া যায়নি" });
+  if (!importValidDate(start) || start > today() || (s.admissionDate && start < s.admissionDate)) return send(res, 400, { error: "শুরুর তারিখ ভর্তির তারিখ থেকে আজকের মধ্যে দিন" });
+  if (e.status === "ended" && e.endDate && start > e.endDate) return send(res, 400, { error: "শুরুর তারিখ কোর্স শেষ হওয়ার পরে হতে পারে না" });
+  const proposed = { ...e, startDate: start };
+  delete proposed.firstClasses; delete proposed.firstTotal; delete proposed.firstGrace;
+  const batch = db.batches.find(b => b.id === s.batchId), course = db.courses.find(c => c.id === e.courseId);
+  if (course?.feeType === "monthly") Object.assign(proposed, firstMonthClasses(batch?.days, start) || {});
+  const before = enrollmentDue(e), after = enrollmentDue(proposed), fees = feeSummary(s);
+  const result = { current: { startDate: e.startDate, due: before.due }, proposed: { startDate: start, due: after.due, firstMonth: after.monthly ? after.firstNet : after.net, months: after.months, balance: fees.balance - before.due + after.due } };
+  const token = crypto.createHash("sha256").update(JSON.stringify({ enrollment: e, student: { admissionDate: s.admissionDate, batchId: s.batchId }, result })).digest("hex");
+  if (input.commit !== true) return send(res, 200, { ...result, token });
+  if (input.token !== token) return send(res, 409, { error: "হিসাব বদলেছে। আবার প্রিভিউ দেখে সংরক্ষণ করুন" });
+  const original = JSON.stringify(db);
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-fee-date-${Date.now()}.json`));
+  try {
+    const first = db.enrollments.find(x => x.studentId === s.id);
+    e.startDateHistory = [...(e.startDateHistory || []), { from: e.startDate, to: start, at: new Date().toISOString() }].slice(-50);
+    e.startDate = start; e.admissionLinked = first?.id === e.id && start === s.admissionDate;
+    e.updatedAt = new Date().toISOString(); setFirstMonth(e); saveDb();
+    return send(res, 200, { ok: true, ...result, fees: feeSummary(s) });
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
 
 // Gallery bulk deletion keeps private copies before removing the public records.
@@ -2513,6 +2549,7 @@ async function api(req, res, url) {
 
   if (p === "/api/admin/admission-import" && m === "POST") return admissionImportAction(req, res);
   if (p === "/api/admin/gallery-delete" && m === "POST") return galleryDeleteAction(req, res);
+  if (p === "/api/admin/enrollment-start" && m === "POST") return enrollmentStartAction(req, res);
 
   // ভর্তি (নতুন শিক্ষার্থী বা অনলাইন আবেদন থেকে): শিক্ষার্থী + মডিউলে ভর্তি + জমা
   if (p === "/api/admin/admit" && m === "POST") {
@@ -2522,6 +2559,7 @@ async function api(req, res, url) {
     if (a && a.status === "approved" && db.students.some((s) => s.id === a.studentId)) return send(res, 400, { error: "এই আবেদন থেকে আগেই ভর্তি করা হয়েছে" });
     const st = CLEAN.students(b.student || {});
     if (!st.name) return send(res, 400, { error: "শিক্ষার্থীর নাম দিন" });
+    if (!importValidDate(st.admissionDate) || st.admissionDate > today()) return send(res, 400, { error: "সঠিক ভর্তির তারিখ দিন" });
     const batch = db.batches.find((x) => x.id === st.batchId);
     if (!batch) return send(res, 400, { error: "ক্লাস ব্যাচ বেছে নিন" });
     if (batch.active === false) return send(res, 400, { error: `${batch.name} ব্যাচ নিষ্ক্রিয় — অন্য ব্যাচ বেছে নিন` });
@@ -2535,7 +2573,7 @@ async function api(req, res, url) {
     }
     db.students.push(s);
     rememberLists(s);
-    const enr = createEnrollment(s.id, v, str(b.enrollment.startDate, 10) || s.admissionDate, b.enrollment.planEnd);
+    const enr = createAdmissionEnrollment(s, v, b.enrollment.planEnd);
     const pay = createPayment(s.id, enr.id, b.payment);
     if (a) Object.assign(a, { status: "approved", studentId: s.id, batchId: s.batchId, updatedAt: new Date().toISOString() });
     if (b.enquiryId) { const en = db.enquiries.find((x) => x.id === str(b.enquiryId, 60)); if (en) en.status = "admitted"; }
@@ -3023,6 +3061,7 @@ async function api(req, res, url) {
       const clean = CLEAN[col](b);
       if (col === "students") {
         if (!clean.name) return send(res, 400, { error: "শিক্ষার্থীর নাম দিন" });
+        if (!importValidDate(clean.admissionDate) || clean.admissionDate > today()) return send(res, 400, { error: "সঠিক ভর্তির তারিখ দিন" });
         const bt = db.batches.find((x) => x.id === clean.batchId);
         if (!bt) return send(res, 400, { error: "ক্লাস ব্যাচ বেছে নিন" });
         clean.session = bt.session; // ব্যাচ বদলালে সেশনও সেই অনুযায়ী
@@ -3128,8 +3167,10 @@ async function api(req, res, url) {
         if (!item) return send(res, 404, { error: "পাওয়া যায়নি" });
         if (col === "enrollments") { clean.discount = Math.min(Math.max(0, clean.discount), num(item.fee)); if (!clean.startDate) delete clean.startDate; }
         const startChanged = col === "enrollments" && clean.startDate && clean.startDate !== item.startDate;
+        const admissionChanged = col === "students" && clean.admissionDate !== item.admissionDate;
         Object.assign(item, clean, { updatedAt: new Date().toISOString() });
         if (startChanged) setFirstMonth(item); // শুরুর তারিখ বদলালে প্রথম মাসের ক্লাস আবার গোনা
+        if (admissionChanged) for (const enrollment of db.enrollments.filter(e => e.studentId === item.id && e.admissionLinked)) { enrollment.startDate = item.admissionDate; setFirstMonth(enrollment); }
         if (col === "onlineApps" && item.status === "approved") { const had = item.studentId, st = admitOnline(item); if (st && !had) await smsStudentLogin(st); } // অনলাইন মডিউলে ভর্তি নিশ্চিত → আইডি + PIN, SMS-এ
         if (col === "quizzes") syncQuizNotice(item);
         if (col === "exams" && Object.keys(item.published || {}).length) syncResultNotice(item);
