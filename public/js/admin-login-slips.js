@@ -28,12 +28,12 @@
     const pages=[], W=1654,H=2339, margin=66,gap=22, top=108;
     const cw=(W-margin*2-gap)/2,ch=416;
     const settings=options.settings || {};
-    function label(ctx,text,x,y,size=28,color='#253b46',align='left') { ctx.font=`${size}px SICSlip`; ctx.fillStyle=color; ctx.textAlign=align; ctx.fillText(String(text || ''),x,y); }
+    function label(ctx,text,x,y,size=28,color='#253b46',align='left') { ctx.font=`${size}px SICSlip`; ctx.fillStyle='#000'; ctx.textAlign=align; ctx.fillText(String(text || ''),x,y); }
     function fit(ctx,text,x,y,max,size=30,color='#153b3d') { while(size>19){ctx.font=`${size}px SICSlip`;if(ctx.measureText(String(text)).width<=max)break;size--;} label(ctx,text,x,y,size,color); }
     function nameLines(ctx,text,x,y,max) {
       const words=String(text).split(/\s+/); let lines=['']; ctx.font='36px SICSlip';
       for(const word of words) { const i=lines.length-1, next=(lines[i]+' '+word).trim(); if(ctx.measureText(next).width>max&&lines[i])lines.push(word);else lines[i]=next; }
-      if(lines.length<=2) lines.forEach((line,i)=>fit(ctx,line,x,y+i*40,max,36));
+      if(lines.length<=2) lines.forEach((line,i)=>fit(ctx,line,x,y+i*34,max,34));
       else fit(ctx,text,x,y,max,28);
     }
     for(let start=0;start<students.length;start+=10) {
@@ -43,21 +43,23 @@
       label(ctx,`A4 · ${Math.floor(start/10)+1}/${Math.ceil(students.length/10)} · কাটার দাগ বরাবর কাটুন`,W-margin,65,25,'#586970','right');
       students.slice(start,start+10).forEach((s,i)=>{
         const x=margin+(i%2)*(cw+gap),y=top+Math.floor(i/2)*(ch+gap),pad=24;
-        ctx.strokeStyle='#81949b';ctx.lineWidth=1.5;ctx.setLineDash([8,6]);ctx.strokeRect(x,y,cw,ch);ctx.setLineDash([]);
-        label(ctx,settings.nameBn || 'শাহিন’স আইসিটি কেয়ার',x+pad,y+39,29,'#103f3c');
-        label(ctx,'লগইন তথ্য',x+cw-pad,y+39,24,'#53676d','right');
-        nameLines(ctx,s.name || s.nameEn || 'শিক্ষার্থী',x+pad,y+86,cw-pad*2);
+        ctx.strokeStyle='#000';ctx.lineWidth=1.5;ctx.setLineDash([8,6]);ctx.strokeRect(x,y,cw,ch);ctx.setLineDash([]);
+        ctx.fillStyle='#000';ctx.textAlign='center';ctx.font='bold 46px Arial, sans-serif';
+        ctx.fillText(settings.nameEn || "Shahin's ICT Care",x+cw/2,y+53,cw-pad*2);
+        ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+pad,y+67);ctx.lineTo(x+cw-pad,y+67);ctx.stroke();
+        label(ctx,'শিক্ষার্থী লগইন স্লিপ',x+cw/2,y+95,25,'#000','center');
+        nameLines(ctx,s.name || s.nameEn || 'শিক্ষার্থী',x+pad,y+133,cw-pad*2);
         const batch=options.batchName ? options.batchName(s.batchId) : s.batchId || '';
-        fit(ctx,[s.session,batch].filter(Boolean).join(' · '),x+pad,y+159,cw-pad*2,26,'#445c65');
-        const bw=(cw-pad*2-18)/2,by=y+180;
-        for(let k=0;k<2;k++){ctx.fillStyle='#f0f5f5';ctx.fillRect(x+pad+k*(bw+18),by,bw,104);}
-        label(ctx,'শিক্ষার্থী রোল / আইডি',x+pad+16,by+30,24);
-        label(ctx,'লগইন PIN',x+pad+bw+34,by+30,24);
-        ctx.font='bold 48px monospace';ctx.fillStyle='#103f3c';ctx.textAlign='left';ctx.fillText(String(s.id),x+pad+16,by+85);
-        ctx.fillText(String(s.pin),x+pad+bw+34,by+85);
-        label(ctx,'shahinictcare.com',x+pad,y+326,30,'#143f64');
-        label(ctx,'লগইন → শিক্ষার্থী → রোল ও PIN দিন',x+pad,y+360,26);
-        label(ctx,'PIN গোপন রাখুন। সমস্যা হলে অফিসে যোগাযোগ করুন।',x+pad,y+394,22,'#607178');
+        fit(ctx,[s.session,batch].filter(Boolean).join(' · '),x+pad,y+193,cw-pad*2,25,'#000');
+        const bw=(cw-pad*2-18)/2,by=y+211;
+        for(let k=0;k<2;k++){ctx.lineWidth=1.5;ctx.strokeRect(x+pad+k*(bw+18),by,bw,94);}
+        label(ctx,'শিক্ষার্থী রোল / আইডি',x+pad+16,by+28,24);
+        label(ctx,'লগইন PIN',x+pad+bw+34,by+28,24);
+        ctx.font='bold 48px monospace';ctx.fillStyle='#000';ctx.textAlign='left';ctx.fillText(String(s.id),x+pad+16,by+78);
+        ctx.fillText(String(s.pin),x+pad+bw+34,by+78);
+        label(ctx,'shahinictcare.com',x+pad,y+340,29,'#000');
+        label(ctx,'লগইন → শিক্ষার্থী → রোল ও PIN দিন',x+pad,y+369,25);
+        label(ctx,'PIN গোপন রাখুন। সমস্যা হলে অফিসে যোগাযোগ করুন।',x+pad,y+399,22,'#000');
       });
       const image=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.94));
       if(!image)throw Error('PDF তৈরি করা যায়নি');
