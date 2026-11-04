@@ -1108,7 +1108,7 @@ ${list.map(receiptHtml).join("")}
     c.innerHTML = `
       <div class="card adm-head">
         <div><span class="eyebrow-s">${esc(head[0])}</span><h2>${esc(head[1])}</h2><p>${esc(head[2])}</p></div>
-        <div class="toolbar" style="margin:0">${mode === "new" ? '<button type="button" class="btn line" id="admClean">✕ Clean</button>' : `<a class="btn line" href="#${mode === "edit" && editBack ? editBack : mode === "app" ? "applications" : "students"}">← ফিরে যান</a>`}${s ? '<button type="button" class="btn gold" id="admPrintNow">ভর্তি ফর্ম প্রিন্ট</button>' : ""}<button type="button" class="btn line" id="admBlank">খালি ফর্ম</button></div>
+        <div class="toolbar" style="margin:0">${mode === "new" ? '<button type="button" class="btn gold" id="admExcelImport">Excel থেকে ভর্তি</button><button type="button" class="btn line" id="admClean">✕ Clean</button>' : `<a class="btn line" href="#${mode === "edit" && editBack ? editBack : mode === "app" ? "applications" : "students"}">← ফিরে যান</a>`}${s ? '<button type="button" class="btn gold" id="admPrintNow">ভর্তি ফর্ম প্রিন্ট</button>' : ""}<button type="button" class="btn line" id="admBlank">খালি ফর্ম</button></div>
       </div>
       <form class="card adm-form" id="admForm" novalidate>
         ${showPerson ? `<div class="adm-top">
@@ -1283,6 +1283,7 @@ ${list.map(receiptHtml).join("")}
       $("#admPhotoDel").onclick = () => { photoData = ""; photoGone = true; showIcon(); $("#admPhotoDel").hidden = true; };
       if (q("gender")) q("gender").addEventListener("change", showIcon);
     }
+    const excelImport = $("#admExcelImport"); if (excelImport) excelImport.onclick = () => window.SICAdmissionImport({ DB, opt, openModal, closeModal, load, route });
     const clean = $("#admClean"); if (clean) clean.onclick = () => { if (confirm("ফর্মের সব লেখা মুছে নতুন করে শুরু করবেন?")) route(); };
     const pn = $("#admPrintNow"); if (pn) pn.onclick = () => printStudentForm(s);
     $("#admBlank").onclick = () => U.printHtml("খালি ভর্তি ফর্ম", U.admissionFormHtml({}, { settings: DB.settings }));

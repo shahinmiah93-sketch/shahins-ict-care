@@ -1398,7 +1398,7 @@ function admissionImportPlan(input) {
       if (raw.session && normal(raw.session) !== normal(batch.session)) throw new Error("সেশন ও ব্যাচ মেলেনি");
       let course;
       if (raw.course) {
-        const matches = db.courses.filter(c => [c.id, c.code, c.name].some(v => v && normal(v) === normal(raw.course)));
+        const matches = db.courses.filter(c => [c.id, c.code, c.name].some(v => v && (normal(v) === normal(raw.course) || (/^\d+$/.test(String(v)) && /^\d+$/.test(String(raw.course)) && Number(v) === Number(raw.course)))));
         if (matches.length !== 1) throw new Error("Module পাওয়া যায়নি বা একাধিক মিলেছে; মডিউলের নাম বা কোড দিন");
         course = matches[0];
       } else course = db.courses.find(c => c.id === defaults.courseId);
@@ -1437,6 +1437,7 @@ function admissionImportPlan(input) {
 }
 async function admissionImportAction(req, res) {
   const input = await readBody(req, 3 * 1024 * 1024);
+  if (!input || typeof input !== "object" || Array.isArray(input)) return send(res, 400, { error: "সঠিক আমদানির তথ্য দিন" });
   // Source identity is separate from the changing duplicate/fee preview.
   const sourceHash = crypto.createHash("sha256").update(JSON.stringify({ defaults: input.defaults, rows: input.rows })).digest("hex");
   const receipt = (db.meta?.admissionImports || []).find(r => r.token === input.previewToken && r.sourceHash === sourceHash);
