@@ -584,8 +584,11 @@ ${inner}
     $("#studentPhotoStatus").textContent = p.pendingPhoto ? "নতুন ছবি অ্যাডমিনের অনুমোদনের অপেক্ষায়।" : p.photoReview?.status === "rejected" ? "আগের ছবিটি অনুমোদিত হয়নি। পরিষ্কার ছবি আবার পাঠান।" : "";
     const completion = D.profileCompletion;
     const prompt = $("#studentProfilePrompt");
-    prompt.hidden = !!AS || !completion || completion.complete;
-    $("#profileMissingCount").textContent = `${bn(completion?.missing.length || 0)}টি প্রয়োজনীয় তথ্য বাকি আছে`;
+    prompt.hidden = !!AS || !completion;
+    const pendingCount = Object.keys(p.pendingProfile?.changes || {}).length;
+    $(".spp-eyebrow", prompt).textContent = pendingCount ? "সংশোধন অনুমোদনের অপেক্ষায়" : completion?.complete ? "ভর্তির তথ্য সম্পূর্ণ" : "ভর্তির তথ্য অসম্পূর্ণ";
+    $("#profileMissingCount").textContent = pendingCount ? `${bn(pendingCount)}টি তথ্য সংশোধনের অনুরোধ পাঠানো হয়েছে` : p.profileReview?.status === "rejected" ? "আগের সংশোধন অনুমোদিত হয়নি। আবার পাঠাতে পারেন।" : p.profileReview?.status === "approved" ? "আপনার তথ্য সংশোধন অনুমোদিত হয়েছে" : completion?.complete ? "ভুল তথ্য থাকলে সংশোধন পাঠাতে পারেন" : `${bn(completion?.missing.length || 0)}টি প্রয়োজনীয় তথ্য বাকি আছে`;
+    $("#completeStudentProfile>span:nth-child(2)").textContent = pendingCount ? "পাঠানো তথ্য দেখুন" : completion?.complete ? "তথ্য সংশোধন করুন" : "ভর্তি ফর্ম সম্পূর্ণ করুন";
     $("#completeStudentProfile").onclick = () => window.SICStudentProfile({ profile: D.profile, onSaved: async () => { await openPanel(); } });
     $("#sName").textContent = p.name;
     $("#sMeta").innerHTML = `<span class="student-info-item student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-info-item student-batch"><small>সেশন · ${esc(p.session || "—")}</small><strong>ব্যাচ ${esc(D.batch?.name || "—")}</strong></span><span class="student-info-item student-schedule"><small>ক্লাসের সময়</small><strong>${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</strong><span>${esc(D.batch?.days || "")}</span></span>`;
