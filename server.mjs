@@ -3100,7 +3100,8 @@ async function api(req, res, url) {
       if (["applications", "enrollments", "onlineApps", "ratings"].includes(col) && !id) return send(res, 400, { error: "এটা ভর্তি ফর্ম থেকে তৈরি হয়" });
       if (col === "students" && !id) return send(res, 400, { error: "নতুন শিক্ষার্থী ভর্তি ফর্ম থেকে যোগ করুন" });
       const b = await readBody(req);
-      const clean = CLEAN[col](b);
+      let clean;
+      try { clean = CLEAN[col](b); } catch (error) { return send(res, 400, { error: error.message }); }
       if (col === "students") {
         if (!clean.name) return send(res, 400, { error: "শিক্ষার্থীর নাম দিন" });
         if (!importValidDate(clean.admissionDate) || clean.admissionDate > today()) return send(res, 400, { error: "সঠিক ভর্তির তারিখ দিন" });

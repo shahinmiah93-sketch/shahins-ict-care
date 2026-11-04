@@ -71,7 +71,7 @@
 
   // কোন মাসে কেন ফি কম ধরা হয়েছে (দেরিতে ভর্তি / ব্যাচ বন্ধ)
   const monthName = (mk) => new Date(mk + "-01T00:00:00").toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
-  const feeAdjustHtml = (it) => (it.adjust || []).map((a) => a.paused ? `<small>${monthName(a.month)}: ❚❚ পড়া বন্ধ → ${money(0)}</small>` : `<small>${monthName(a.month)}: ${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` · ${bn(a.shut)}টি বন্ধ${a.reasons.length ? ` (${esc(a.reasons.join(", "))})` : ""}` : ""}${a.late ? " · দেরিতে ভর্তি" : ""} → ${money(a.fee)}</small>`).join("");
+  const feeAdjustHtml = (it) => (it.adjust || []).map((a) => a.paused ? `<small>${monthName(a.month)}: ❚❚ পড়া বন্ধ → ${money(0)}</small>` : `<small>${monthName(a.month)}: ${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` · ${bn(a.shut)}টি বন্ধ${a.reasons.length ? ` (${esc(a.reasons.join(", "))})` : ""}` : ""}${a.scheduled ? ` · মাসভিত্তিক ফি ${money(a.monthlyRate)}` : ""}${a.late ? " · দেরিতে ভর্তি" : ""} → ${money(a.fee)}</small>`).join("");
   // মাসিক কোর্সে ভর্তির মাসের ফি (সার্ভারের হিসাবের মতোই: ১–৬ তারিখে পুরো মাস, পরে হলে শুরুর দিন থেকে, "টাকা কমবে" এমন বন্ধ বাদ)
   function firstMonthDue(enr, net) {
     const s = studentById(enr.studentId), b = s && batchById(s.batchId);
@@ -1166,13 +1166,13 @@ ${list.map(receiptHtml).join("")}
       const fee = !m ? 0 : m.feeType === "chapter" ? (m.chapters || []).filter((x) => pick.chapters.includes(x.id)).reduce((t, x) => t + x.fee, 0) : m.fee;
       const discount = Math.min(Math.max(0, Number(q("discount").value || 0)), fee);
       const paid = Math.max(0, Number(q("paid").value || 0));
-      const net = fee - discount;
+      let net = fee - discount;
       // রেগুলার (মাসিক) ব্যাচ: ভর্তির মাসে যত ক্লাস পাবে সেই হিসাবে ফি (১–৬ তারিখে ভর্তি হলে পুরো মাস; "টাকা কমবে" এমন বন্ধের ক্লাস বাদ)
       let first = net, fm = null, grace = false;
       if (m && m.feeType === "monthly") {
         const b = curBatch(), sd = (mode === "enroll" ? q("startDate")?.value : q("admissionDate")?.value) || U.today(), st = new Date(sd + "T00:00:00");
         grace = st.getDate() <= U.FULL_FEE_UNTIL_DAY;
-        const monthNet = U.monthlyFeeFor(m, { fee, discount }, sd.slice(0, 7));
+        const monthNet = U.monthlyFeeFor(m, { fee, discount }, sd.slice(0, 7)); net = monthNet;
         fm = b ? U.monthFee(monthNet, b.days, st.getFullYear(), st.getMonth(), grace ? 1 : st.getDate(), U.feeClosedDates(DB.closures, b.id)) : null;
         first = fm ? fm.fee : monthNet;
       }
@@ -1202,7 +1202,7 @@ ${list.map(receiptHtml).join("")}
               return `ভর্তির মাসে এই ব্যাচের মোট <b>${bn(k.fm.total)}টি</b> ক্লাস, ${k.grace ? "" : "শুরুর তারিখ থেকে "}পাবে <b>${bn(k.fm.got)}টি</b>${k.fm.shut ? ` (${bn(k.fm.shut)}টি ব্যাচ বন্ধের জন্য বাদ)` : ""}। `
                 + `ক্লাস প্রতি ৳${fmt(k.fm.perClass)}${k.fm.total > U.STD_CLASSES ? ` (এ মাসে ${bn(U.STD_CLASSES)}টির বেশি ক্লাস, তাই ${money(k.net)} ÷ ${bn(k.fm.total)})` : ""} → `
                 + `${bn(k.fm.got)} × ${fmt(k.fm.perClass)} = ৳${fmt(Math.round(k.fm.raw * 100) / 100)} → রাউন্ড করে এ মাসে <b>${money(k.first)}</b>${k.fm.raw > k.net ? " (মাসিক ফি-র বেশি ধরা হয় না)" : ""}।`;
-            })()} পরের মাস থেকে প্রতি মাসে ${money(k.net)}${(DB.closures || []).some((c) => c.reduceFee) ? " (\"টাকা কমবে\" এমন ব্যাচ বন্ধ থাকলে সেই মাসে কম)" : ""}।</p>` : ""}` : '<p class="muted" style="grid-column:1/-1;margin:0">উপরে একটি মডিউল বেছে নিন।</p>';
+            })()} অন্য মাসে মাসভিত্তিক তালিকা অনুযায়ী ফি; তালিকার বাইরে মূল ফি ${money(Math.max(0, k.fee - k.discount))}${(DB.closures || []).some((c) => c.reduceFee) ? " (\"টাকা কমবে\" এমন ব্যাচ বন্ধ থাকলে সেই মাসে কম)" : ""}।</p>` : ""}` : '<p class="muted" style="grid-column:1/-1;margin:0">উপরে একটি মডিউল বেছে নিন।</p>';
     };
     info(); drawFee();
     const sessionSel = q("session");
