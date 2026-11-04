@@ -3451,6 +3451,7 @@ function installRegularMonthlyFees() {
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
 repairConfirmedAdmissionStart();
+renumberStudentsByAdmission();
 installRegularMonthlyFees();
 
 // ---------- ফাইল পরিবেশন ----------

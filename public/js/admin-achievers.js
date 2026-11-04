@@ -34,7 +34,7 @@ window.SICAchievers = function (X) {
     const list = document.createElement("div"); list.className = "ac-suggestions"; list.setAttribute("role","listbox"); list.setAttribute("aria-label","আগের লেখা");
     list.innerHTML = matches.map(v => `<button type="button" role="option">${esc(v)}</button>`).join("");
     el.parentElement.style.position = "relative"; el.parentElement.append(list);
-    list.querySelectorAll("button").forEach(b => b.onmousedown = e => { e.preventDefault(); el.value = b.textContent; rememberField(el); list.remove(); el.focus(); });
+    list.querySelectorAll("button").forEach(b => { const choose = () => { el.value = b.textContent; rememberField(el); list.remove(); el.focus(); }; b.onmousedown = e => { e.preventDefault(); choose(); }; b.onclick = choose; });
     el.onkeydown = e => { if (e.key === "Escape") list.remove(); };
   }
 
