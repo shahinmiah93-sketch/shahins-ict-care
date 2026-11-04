@@ -767,7 +767,7 @@ async function sendSms(phone, message, logText, filter = "OTP") {
       const error = new Error("SMS গেটওয়ের উত্তর নিশ্চিত পাওয়া যায়নি। ফোনে না এলে আবার পাঠান");
       error.smsStatus = "unknown"; throw error;
     }
-    const code = Number(j?.response_code);
+    const code = j?.response_code != null && String(j.response_code).trim() !== "" ? Number(j.response_code) : NaN;
     log.code = Number.isFinite(code) ? code : null;
     log.ok = r.ok && code === 202;
     log.status = log.ok ? "submitted" : Number.isFinite(code) && code !== 202 ? "rejected" : "unknown";
