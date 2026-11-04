@@ -1346,11 +1346,17 @@ ${list.map(receiptHtml).join("")}
   // আইডি আর PIN SMS-এ গেল কি না
   function loginSmsNote(s) {
     const r = s.loginSms;
-    return !r ? "এখনো SMS পাঠানো হয়নি" : r.ok ? `✓ আইডি আর PIN ${r.phone} নম্বরে SMS-এ গেছে` : `SMS যায়নি: ${r.error}`;
+    return !r ? "এখনো SMS পাঠানো হয়নি" : r.ok ? `আইডি আর PIN-এর SMS ${r.phone} নম্বরে পাঠানোর জন্য গেটওয়ে গ্রহণ করেছে। ফোনে পৌঁছাতে কিছু সময় লাগতে পারে` : r.status === "unknown" ? `SMS পাঠানোর ফল নিশ্চিত নয়: ${r.error}` : `SMS পাঠানো যায়নি: ${r.error}`;
   }
+  const loginSmsSending = new Set();
   async function resendLogin(s, note) { // note না থাকলে শুধু টোস্ট
-    try { const r = await api("/api/admin/login-sms", { body: { id: s.id } }); s.loginSms = r.loginSms; toast("SMS পাঠানো হয়েছে"); }
+    if (loginSmsSending.has(s.id)) return;
+    loginSmsSending.add(s.id);
+    const buttons = $$("#dnSms,#pinSms"), labels = buttons.map(b => b.textContent);
+    buttons.forEach(b => { b.disabled = true; b.textContent = "SMS পাঠানো হচ্ছে…"; });
+    try { const r = await api("/api/admin/login-sms", { body: { id: s.id } }); s.loginSms = r.loginSms; toast("SMS গেটওয়ে গ্রহণ করেছে; ফোনে পৌঁছানোর অপেক্ষা করুন"); }
     catch (e) { s.loginSms = { ok: false, error: e.message }; toast(e.message, true); }
+    finally { loginSmsSending.delete(s.id); buttons.forEach((b, i) => { b.disabled = false; b.textContent = labels[i]; }); }
     if (note) note.textContent = loginSmsNote(s);
   }
   const formExtra = (s, enr, pay) => ({ studentId: s.id, pin: s.pin, appNo: s.appNo, photoUrl: s.photo ? photoUrl("s", s.id) : "", ...(pay ? { receiptNo: pay.receiptNo } : {}) });

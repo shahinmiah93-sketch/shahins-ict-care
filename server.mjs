@@ -755,23 +755,49 @@ const SMS_CODES = { 1001: "নম্বর ঠিক নেই", 1002: "Sender I
 async function sendSms(phone, message, logText, filter = "OTP") {
   if (!smsOn()) throw new Error("SMS সার্ভিস চালু নেই");
   const q = new URLSearchParams({ api_key: smsCfg.apiKey, type: "text", number: "88" + phone, senderid: smsCfg.senderId, message });
-  let j = {};
-  try { const r = await fetch(`${SMS_BASE}/smsapi?${q}`, { signal: AbortSignal.timeout(15000) }); j = await r.json().catch(() => ({})); }
-  catch { throw new Error("SMS সার্ভারে পৌঁছানো যায়নি — ইন্টারনেট দেখুন"); }
-  const code = Number(j.response_code);
-  db.smsLog.push({ id: uid("sms"), date: today(), at: new Date().toISOString(), text: logText || message.replace(/\d{6}/, "••••••"), filter, leadIds: [], count: 1, ok: code === 202, code });
-  if (code !== 202) throw new Error("SMS যায়নি: " + (SMS_CODES[code] || j.error_message || j.success_message || "অজানা সমস্যা (" + (j.response_code || "?") + ")"));
+  // POST avoids cached GET acknowledgements; never put API keys or login PINs in URLs.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const log = { id: uid("sms"), date: today(), at: new Date().toISOString(), text: logText || message.replace(/\d{6}/, "••••••"), filter, leadIds: [], count: 1, phone, attempt, ok: false, status: "unknown", code: null };
+    let r, j;
+    try {
+      r = await fetch(`${SMS_BASE}/smsapi`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", "Cache-Control": "no-store" }, body: q.toString(), cache: "no-store", signal: AbortSignal.timeout(15000) });
+      j = await r.json();
+    } catch {
+      db.smsLog.push(log);
+      const error = new Error("SMS গেটওয়ের উত্তর নিশ্চিত পাওয়া যায়নি। ফোনে না এলে আবার পাঠান");
+      error.smsStatus = "unknown"; throw error;
+    }
+    const code = Number(j?.response_code);
+    log.code = Number.isFinite(code) ? code : null;
+    log.ok = r.ok && code === 202;
+    log.status = log.ok ? "submitted" : Number.isFinite(code) && code !== 202 ? "rejected" : "unknown";
+    const reference = j?.message_id ?? j?.sms_id ?? j?.request_id;
+    if ((typeof reference === "string" || typeof reference === "number") && String(reference).length <= 160) log.messageId = String(reference);
+    db.smsLog.push(log);
+    if (log.ok) return { status: "submitted", attempts: attempt, ...(log.messageId ? { messageId: log.messageId } : {}) };
+    // Retry only an explicit Internal Error rejection, never an accepted SMS or an
+    // ambiguous timeout: those could otherwise create duplicate, chargeable messages.
+    if (code === 1005 && attempt === 1) { await new Promise(resolve => setTimeout(resolve, 1000)); continue; }
+    const error = new Error("SMS গেটওয়ে গ্রহণ করেনি: " + (SMS_CODES[code] || (log.status === "unknown" ? "পাঠানোর ফল নিশ্চিত নয়" : `ত্রুটি কোড ${code}`)));
+    error.smsStatus = log.status; throw error;
+  }
 }
 // OTP: ৬ সংখ্যা, ৫ মিনিট, ৫ বার ভুল পর্যন্ত; একই নম্বরে ১ মিনিটে একবার, ঘণ্টায় ৫ বার; একই জায়গা থেকে ঘণ্টায় ১০ বার
 const otps = new Map(), otpSent = new Map();
 // SMS ইংরেজিতে (বাংলা অক্ষর থাকলে এক SMS-এ কম অক্ষর ধরে, খরচ বাড়ে) — প্রতিষ্ঠানের নাম ইংরেজি না হলে ডিফল্ট নাম
 const smsBrand = () => [db.settings.name, db.settings.shortName].map((x) => str(x, 40)).find((x) => x && /^[ -~]+$/.test(x)) || "Shahin's ICT Care";
 // ভর্তি হলেই লগইনের তথ্য SMS-এ (লগে PIN থাকে না); না গেলে কারণ রেখে দেওয়া হয়, অ্যাডমিন থেকে আবার পাঠানো যায়
+const loginSmsInFlight = new WeakMap();
 async function smsLogin(x, message, log, phones) {
+  if (loginSmsInFlight.has(x)) return loginSmsInFlight.get(x);
   const phone = phones.map(phoneOf).find((n) => /^01\d{9}$/.test(n)), at = new Date().toISOString();
   if (!phone) return (x.loginSms = { ok: false, at, error: "সঠিক মোবাইল নম্বর নেই" });
-  try { await sendSms(phone, message, log, "ID/PIN"); return (x.loginSms = { ok: true, at, phone }); }
-  catch (e) { return (x.loginSms = { ok: false, at, phone, error: e.message }); }
+  const task = (async () => {
+    try { const result = await sendSms(phone, message, log, "ID/PIN"); return (x.loginSms = { ok: true, at: new Date().toISOString(), phone, ...result }); }
+    catch (e) { return (x.loginSms = { ok: false, at, phone, status: e.smsStatus || "failed", error: e.message }); }
+  })();
+  loginSmsInFlight.set(x, task);
+  try { return await task; } finally { loginSmsInFlight.delete(x); }
 }
 const smsStudentLogin = (s) => smsLogin(s, `${smsBrand()}: Admission complete. Student ID: ${s.id}, PIN: ${s.pin}. Use these to log in to the Student Panel. Do not share.`, `ভর্তি — আইডি ${s.id}, PIN ••••`, [s.phone, s.guardianPhone]);
 const smsLearnerLogin = (l) => smsLogin(l, `${smsBrand()}: Online course login - Mobile: ${l.phone}, PIN: ${l.pin}. Do not share.`, `অনলাইন কোর্স — ${l.phone}, PIN ••••`, [l.phone]);
