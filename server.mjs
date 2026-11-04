@@ -870,6 +870,15 @@ const BOOK_METHODS = ["নগদ (Cash)", "বিকাশ", "নগদ (Nagad)"
 const bookById = (id) => db.books.find((b) => b.id === id);
 const salePaid = (s) => (s.payments || []).reduce((a, p) => a + num(p.amount), 0);
 const saleDue = (s) => Math.max(0, num(s.total) - salePaid(s));
+function studentBookAccount(studentId) {
+  const items = db.bookSales.filter(s => s.studentId === studentId).map(s => ({
+    id: s.id, saleNo: s.saleNo, date: s.date, free: !!s.free,
+    lines: (s.lines || []).map(l => ({ title: l.title, kind: l.kind, qty: num(l.qty), price: num(l.price) })),
+    subtotal: num(s.subtotal), discount: num(s.discount), delivery: num(s.delivery), total: num(s.total), paid: salePaid(s), due: saleDue(s),
+    payments: (s.payments || []).map(p => ({ date: p.date, amount: num(p.amount), method: p.method })),
+  })).sort((a,b) => String(b.date).localeCompare(String(a.date)) || num(b.saleNo)-num(a.saleNo));
+  return { items, total: items.reduce((sum,s)=>sum+s.total,0), paid: items.reduce((sum,s)=>sum+s.paid,0), balance: items.reduce((sum,s)=>sum+s.due,0) };
+}
 const nextNo = (list, key, start) => list.reduce((m, x) => Math.max(m, x[key] || 0), start) + 1;
 // ডেলিভারি চার্জ: নিজের জেলায় একটা, বাইরে আরেকটা; অফিস থেকে নিজে নিলে ০
 const bookShip = () => { const s = db.settings.bookShip || {}; return { home: BD_GEO[s.homeDiv] && BD_GEO[s.homeDiv].includes(s.home) ? s.home : "ঢাকা", homeDiv: BD_GEO[s.homeDiv] ? s.homeDiv : "ঢাকা", inside: s.inside ?? 70, outside: s.outside ?? 130, pickup: s.pickup !== false, note: s.note || "" }; };
@@ -2328,7 +2337,7 @@ async function api(req, res, url) {
       attendance: attendanceFor(s.id), results: resultsFor(s), schedule: scheduleFor(s),
       examRoutines: db.examRoutines.filter((r) => routineForStudent(r, s)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ id, title, type, pdf, createdAt }) => ({ id, title, type, pdf, createdAt })),
       payments: db.payments.filter((x) => x.studentId === s.id).sort((a, b) => b.date.localeCompare(a.date)),
-      fees, notices: activeNotices(false).filter((n) => (n.studentIds ? n.studentIds.includes(s.id) : !(n.batchIds || []).length || n.batchIds.includes(s.batchId))),
+      fees, books: studentBookAccount(s.id), notices: activeNotices(false).filter((n) => (n.studentIds ? n.studentIds.includes(s.id) : !(n.batchIds || []).length || n.batchIds.includes(s.batchId))),
       quizzes: quizzesFor(s),
       // নিজের ব্যাচের বাড়ির কাজ / পড়া (পুরো সেশনের জন্য দেওয়া হলেও) আর নিজের অবস্থা
       homework: db.homework.filter((h) => h.session === s.session && (!(h.batchIds || []).length || h.batchIds.includes(s.batchId)))

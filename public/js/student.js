@@ -282,6 +282,7 @@ ${inner}
           <div class="tile dark"><small>শেষ পরীক্ষা</small><b>${last ? last.marks + "/" + bn(last.fullMarks) : "—"}</b><small>${last ? esc(last.title) + (last.rank ? " · অবস্থান " + bn(last.rank) + "/" + bn(last.of) : " · ফেল") : "এখনো পরীক্ষা হয়নি"}</small></div>
           <div class="tile"><small>ফি</small><b>${f.balance > 0 ? money(f.balance) : "✓"}</b><small>${f.balance > 0 ? "বকেয়া আছে" : "সব পরিশোধিত"}</small></div>
         </div>
+        ${(D.books?.balance || 0) > 0 ? `<section class="student-book-alert"><div><small>বই ও শিটের বকেয়া</small><strong>${money(D.books.balance)}</strong><span>বই ও শিটের হিসাব আলাদা করে দেখুন।</span></div><button type="button" class="btn line" data-go-books>হিসাব দেখুন →</button></section>` : ""}
         ${AS ? contactCard() : ""}
         ${nextExamsCard()}
         <div class="grid2">
@@ -357,6 +358,10 @@ ${inner}
           ${"<div></div>".repeat(first)}
           ${Array.from({ length: days }, (_, i) => { const d = i + 1, ds = `${m}-${String(d).padStart(2, "0")}`; return `<div class="d ${map[d] || ""}${ds === todayStr ? " today" : ""}" title="${map[d] ? STATUS[map[d]] : ""}">${bn(d)}</div>`; }).join("")}
         </div></div>`;
+    },
+    books() {
+      const account = D.books || { total:0, paid:0, balance:0, items:[] };
+      return `<div class="student-book-heading"><h2>আমার বই ও শিটের হিসাব</h2><p>আপনার নামে কেনা বই ও শিটের মূল্য, জমা ও বকেয়া।</p></div><div class="tiles"><div class="tile"><small>মোট মূল্য</small><b>${money(account.total)}</b></div><div class="tile"><small>জমা দিয়েছেন</small><b>${money(account.paid)}</b></div><div class="tile dark"><small>বই ও শিটের বকেয়া</small><b>${money(account.balance)}</b></div></div><div class="student-book-sales">${account.items.map(s=>`<article class="sf-module"><header><div><h3>রসিদ S${bn(s.saleNo)}</h3><p>${U.date(s.date)}</p></div><span class="sf-status${s.due ? ' book-unpaid' : ''}">${s.due ? 'বকেয়া আছে' : s.free ? 'বিনামূল্যে' : 'পরিশোধিত'}</span></header><div class="book-line-list">${s.lines.map(l=>`<div class="book-account-line"><div><b>${esc(l.title)}</b><small>${bn(l.qty)}টি × ${money(l.price)}</small></div><strong>${money(l.qty*l.price)}</strong></div>`).join('')}</div><div class="book-account-totals"><span>পণ্যের মূল্য <b>${money(s.subtotal)}</b></span>${s.discount ? `<span>ছাড় <b>− ${money(s.discount)}</b></span>` : ''}${s.delivery ? `<span>ডেলিভারি <b>${money(s.delivery)}</b></span>` : ''}<span>মোট <b>${money(s.total)}</b></span><span>জমা <b>${money(s.paid)}</b></span></div><footer><span>এই রসিদে বাকি</span><strong>${money(s.due)}</strong></footer>${s.payments.length ? `<details class="book-payment-history"><summary>জমার ইতিহাস (${bn(s.payments.length)})</summary>${s.payments.map(p=>`<div><span>${U.date(p.date)} · ${esc(p.method || '')}</span><b>${money(p.amount)}</b></div>`).join('')}</details>` : ''}</article>`).join('') || '<div class="card empty">আপনার নামে বই বা শিটের কোনো হিসাব নেই।</div>'}</div>`;
     },
     fees() {
       const f = D.fees;
@@ -455,6 +460,7 @@ ${inner}
   };
   // রুটিন ট্যাব: ধরন বাছাই, প্রিন্ট; সারসংক্ষেপের "পুরো রুটিন"
   $("#tabBody").addEventListener("click", (e) => {
+    if (e.target.closest("[data-go-books]")) return show("books");
     if (e.target.closest("[data-go-routine]")) return show("routine");
     if ($("#tabBody").dataset.tab !== "routine") return;
     const c = e.target.closest("[data-rt]"); if (c) { TABS._rt = c.dataset.rt; return show("routine"); }
