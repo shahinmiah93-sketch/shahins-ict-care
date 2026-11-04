@@ -1549,6 +1549,28 @@ async function galleryDeleteAction(req, res) {
   return send(res, 200, { ok: true, deleted: targets.length, skipped: ids.size - targets.length });
 }
 
+// One-time repair of the initial enrollment confirmed by the owner on 2026-11-04.
+// Exact guards keep later modules and all other student records untouched.
+function repairConfirmedAdmissionStart() {
+  const key = "admission-start-280001-20261104";
+  if (db.meta?.repairs?.[key]) return false;
+  const s = db.students.find(x => x.id === "280001" && x.admissionDate === "2026-10-12");
+  const e = s && db.enrollments.find(x => x.studentId === s.id);
+  const c = e && db.courses.find(x => x.id === e.courseId);
+  if (!e || e.startDate !== "2026-11-04" || c?.feeType !== "monthly" || Number(c.fee) !== 1000) return false;
+  const original = JSON.stringify(db);
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-confirmed-admission-start-${Date.now()}.json`));
+  try {
+    const at = new Date().toISOString();
+    e.startDateHistory = [...(e.startDateHistory || []), { from: e.startDate, to: s.admissionDate, at }].slice(-50);
+    e.startDate = s.admissionDate; e.admissionLinked = true; e.updatedAt = at;
+    setFirstMonth(e);
+    db.meta ||= {}; db.meta.repairs ||= {};
+    db.meta.repairs[key] = { at, enrollmentId: e.id, startDate: e.startDate };
+    saveDb(); return true;
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
+}
+
 // ---------- রাউটার ----------
 async function api(req, res, url) {
   const p = url.pathname;
@@ -3189,6 +3211,8 @@ async function api(req, res, url) {
   }
   return send(res, 404, { error: "পাওয়া যায়নি" });
 }
+
+repairConfirmedAdmissionStart();
 
 // ---------- ফাইল পরিবেশন ----------
 const TYPES = {
