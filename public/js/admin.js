@@ -599,14 +599,13 @@ ${list.map(receiptHtml).join("")}
   const SEC_NAME = { admission: "ভর্তি", students: "শিক্ষার্থী", exams: "পরীক্ষা ও ফলাফল", website: "ওয়েবসাইট", teachers: "সেটআপ" };
   const SECTIONS = [
     ["admission", [["admission", "ভর্তি ফর্ম"], ["applications", "অনলাইন আবেদন", "appBadge"], ["onlineApps", "অনলাইন কোর্সে ভর্তি", "oaBadge"], ["leads", "সম্ভাব্য শিক্ষার্থী", "enqBadge"]]],
-    ["students", [["students", "শিক্ষার্থী তালিকা"], ["batchmove", "ব্যাচ পরিবর্তন"], ["homework", "বাড়ির কাজ / পড়া"]]],
     ["exams", [["exams", "পরীক্ষা"], ["results", "ফলাফল ও মূল্যায়ন"]]],
     ["website", [["banners", "বিজ্ঞাপন"], ["notices", "নোটিশ"], ["ebooks", "ই-বুক"], ["daily", "প্রতিদিন শিখি"], ["qna", "প্রশ্নোত্তর বক্স", "qnaBadge"], ["faqs", "সাধারণ প্রশ্ন (FAQ)"], ["gallery", "আমাদের দিনলিপি"], ["achievers", "সফল শিক্ষার্থী"], ["ratings", "শিক্ষার্থীদের মতামত"], ["learn", "ফ্রি ক্লাস", "learnBadge"]]],
     ["teachers", [["teachers", "শিক্ষক"], ["settings", "সেটিংস"]]],
   ];
   const SEC_ALIAS = { website: "banners", talent: "exams", quiz: "exams" }; // #website = ব্যানার; ট্যালেন্ট হান্ট ও অনলাইন কুইজ পরীক্ষার ভেতরে
   // কোন মেনু আইটেম জ্বলবে
-  const NAV_OF = { student: "students", enquiries: "admission", ...Object.fromEntries(SECTIONS.flatMap(([nav, tabs]) => tabs.map(([k]) => [k, nav]))) };
+  const NAV_OF = { student: "students", batchmove: "students", enquiries: "admission", ...Object.fromEntries(SECTIONS.flatMap(([nav, tabs]) => tabs.map(([k]) => [k, nav]))) };
   NAV_OF.talent = NAV_OF.quiz = "exams";
   const badgeText = (id) => { const b = id && $("#" + id); return b && !b.hidden ? b.textContent : ""; };
   // পাতার উপরে ভাগের বোতাম, নিচে পাতা নিজে
@@ -1534,7 +1533,7 @@ ${list.map(receiptHtml).join("")}
     const scopedFees = s => { const items = (s.fees?.items || []).filter(i => modeOf(courseById(i.courseId)) === mode), enrollmentIds = new Set(items.map(i => i.enrollmentId)); const totalDue=items.reduce((n,i)=>n+i.due,0), paid=DB.payments.filter(p=>p.studentId===s.id&&(enrollmentIds.has(p.enrollmentId)||(!p.enrollmentId&&mode==="offline"))).reduce((n,p)=>n+Number(p.amount||0),0); return {items,totalDue,paid,balance:totalDue-paid}; };
     const preBatch = arg.startsWith("batch/") ? arg.slice(6) : "";
     const preSession = preBatch ? (batchById(preBatch) || {}).session || "" : "";
-    c.innerHTML = `<div class="card"><div class="sd-list-title"><h2>${mode === "online" ? "অনলাইন" : "অফলাইন"} শিক্ষার্থীর তালিকা</h2><p>এই তালিকায় শুধু ${mode === "online" ? "অনলাইন" : "অফলাইন"} মডিউলের ভর্তি ও হিসাব দেখানো হচ্ছে।</p></div>
+    c.innerHTML = `<div class="card"><div class="sd-list-title"><div><h2>${mode === "online" ? "অনলাইন" : "অফলাইন"} শিক্ষার্থীর তালিকা</h2><p>এই তালিকায় শুধু ${mode === "online" ? "অনলাইন" : "অফলাইন"} মডিউলের ভর্তি ও হিসাব দেখানো হচ্ছে।</p></div>${mode === "offline" ? '<a class="sd-batch-move" href="#batchmove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg><span>ব্যাচ পরিবর্তন</span><span aria-hidden="true">→</span></a>' : ""}</div>
       <div class="toolbar">
         <input class="grow" id="q" placeholder="নাম, আইডি বা মোবাইল">
         <select id="fse">${opt(sessionOptions("সব সেশন"), preSession)}</select>
