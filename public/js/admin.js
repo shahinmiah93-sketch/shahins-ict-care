@@ -77,6 +77,7 @@
     const s = studentById(enr.studentId), b = s && batchById(s.batchId);
     if (!b || !enr.startDate) return net;
     const st = new Date(enr.startDate + "T00:00:00");
+    net = U.monthlyFeeFor(courseById(enr.courseId) || {}, enr, enr.startDate.slice(0, 7));
     const fromDay = enr.firstTotal && !enr.firstGrace ? st.getDate() : 1;
     return U.monthFee(net, b.days, st.getFullYear(), st.getMonth(), fromDay, U.feeClosedDates(DB.closures, b.id)).fee;
   }
@@ -1171,8 +1172,9 @@ ${list.map(receiptHtml).join("")}
       if (m && m.feeType === "monthly") {
         const b = curBatch(), sd = (mode === "enroll" ? q("startDate")?.value : q("admissionDate")?.value) || U.today(), st = new Date(sd + "T00:00:00");
         grace = st.getDate() <= U.FULL_FEE_UNTIL_DAY;
-        fm = b ? U.monthFee(net, b.days, st.getFullYear(), st.getMonth(), grace ? 1 : st.getDate(), U.feeClosedDates(DB.closures, b.id)) : null;
-        first = fm ? fm.fee : net;
+        const monthNet = U.monthlyFeeFor(m, { fee, discount }, sd.slice(0, 7));
+        fm = b ? U.monthFee(monthNet, b.days, st.getFullYear(), st.getMonth(), grace ? 1 : st.getDate(), U.feeClosedDates(DB.closures, b.id)) : null;
+        first = fm ? fm.fee : monthNet;
       }
       return { m, fee, discount, paid, net, first, fm, grace, due: Math.max(0, first - paid), extra: Math.max(0, paid - first) };
     };
@@ -2446,6 +2448,13 @@ ${list.map(receiptHtml).join("")}
   }
   function courseForm(co, mode = "offline") {
     let crop;
+    const readMonthlyFeeRows = () => $$("#monthlyFeeRows .monthly-fee-row").map(row => ({ from: row.querySelector('[data-month="from"]').value, to: row.querySelector('[data-month="to"]').value, fee: row.querySelector('[data-month="fee"]').value === "" ? NaN : Number(row.querySelector('[data-month="fee"]').value) }));
+    const addMonthlyFeeRow = (r = {}) => {
+      const row = document.createElement("div"); row.className = "monthly-fee-row fgrid";
+      row.innerHTML = `<label>শুরুর মাস<input type="month" data-month="from" value="${esc(r.from || "")}" required></label><label>শেষের মাস<input type="month" data-month="to" value="${esc(r.to || "")}" required></label><label>মাসিক ফি (৳)<input type="number" min="0" step="any" data-month="fee" value="${esc(r.fee ?? "")}" required></label><button type="button" class="btn sm line" data-remove-month>সরান</button>`;
+      row.querySelector('[data-remove-month]').onclick = () => row.remove();
+      $("#monthlyFeeRows").append(row);
+    };
     setTimeout(() => {
       crop = photoCropper($("#cCrop"), { fw: 280, fh: 280, ow: 800, oh: 800, pw: 200, ph: 200, fit: true, face: false,
         hint: "ছবি টেনে ঠিক জায়গায় আনুন। জুম কমালে পুরো ছবি (কিছু না কেটে) বসবে, ফাঁকা অংশ সাদা থাকবে।" });
@@ -2466,6 +2475,7 @@ ${list.map(receiptHtml).join("")}
         { name: "desc", label: "বিস্তারিত", type: "textarea", wide: true },
         { name: "feeType", label: "ফি-এর ধরন", type: "select", options: FEE_TYPES },
         { name: "fee", label: "ফি (টাকা)", type: "number", min: 0, hint: "অধ্যায়ভিত্তিক হলে নিচে প্রতি অধ্যায়ের ফি" },
+        { type: "html", html: `<section id="monthlyFeeEditor"><h3>মাসভিত্তিক ফি</h3><p class="muted">নির্ধারিত মাসে এই ফি, অন্য মাসে মূল ফি। পুরোনো ভর্তির বকেয়াও পুনর্গণনা হবে; জমা টাকা বদলাবে না।</p><div id="monthlyFeeRows"></div><button type="button" class="btn sm line" id="addMonthlyFee">+ মাসভিত্তিক ফি</button></section>` },
         { type: "html", html: chapterBox(co) },
         { name: "features", label: "কী কী থাকবে (প্রতি লাইনে একটি)", type: "textarea", wide: true, rows: 3 },
         { name: "duration", label: "মেয়াদ (ওয়েবসাইটে লেখা হিসেবে দেখায়)", placeholder: "যেমন: ৬ মাস / ১৫টি পরীক্ষা" },
@@ -2484,6 +2494,10 @@ ${list.map(receiptHtml).join("")}
       ],
       values: co ? { ...co, ...validityVals(co.validityDays), mode: modeOf(co), features: (co.features || []).join("\n"), chapters: (co.chapters || []).map((x) => `${x.id} | ${x.name} | ${x.fee}`).join("\n") } : { ...validityVals(0), active: true, feeType: "once", mode },
       onSave: async (d) => {
+        d.monthlyFees = readMonthlyFeeRows();
+        for (const r of d.monthlyFees) if (!r.from || !r.to || r.from > r.to || !Number.isFinite(r.fee) || r.fee < 0) throw new Error("মাসভিত্তিক ফির মাস ও টাকা সঠিকভাবে দিন");
+        const sorted = [...d.monthlyFees].sort((a,b) => a.from.localeCompare(b.from));
+        for (let i=1;i<sorted.length;i++) if (sorted[i].from <= sorted[i-1].to) throw new Error("একই মাস একাধিক সারিতে রাখা যাবে না");
         const pdf = $("#cPdf").files[0], delPdf = $("#cPdfDel") && $("#cPdfDel").checked;
         const img = crop && crop.ready ? await crop.blob() : null; // ফ্রেম থেকে ৮০০×৮০০ ধারালো JPG
         if (pdf && !/\.pdf$/i.test(pdf.name)) throw new Error("রুটিন হিসেবে শুধু PDF দিন");
@@ -2508,6 +2522,11 @@ ${list.map(receiptHtml).join("")}
     });
     attachValidityList();
     bindFeeForm(co ? modeOf(co) : mode); // ফি-এর ধরন অনুযায়ী অধ্যায়ের ঘর দেখানো / লুকানো
+    (co?.monthlyFees || []).forEach(addMonthlyFeeRow);
+    $("#addMonthlyFee").onclick = () => addMonthlyFeeRow();
+    const feeTypeInput = $('#modalBody [name="feeType"]');
+    const showMonthlyFees = () => { const active = feeTypeInput.value === "monthly"; $("#monthlyFeeEditor").hidden = !active; $$("#monthlyFeeEditor input").forEach(el => el.disabled = !active); };
+    feeTypeInput.addEventListener("change", showMonthlyFees); showMonthlyFees();
   }
   function batchForm(b, session) {
     const clock = U.parseBatchTime(b?.time);
