@@ -487,3 +487,9 @@ body.dash-dark .side a.nav-item[href="#bloodbank"] i{color:#ff7a7a}
 .students-table .student-name-line>:first-child{flex-shrink:0}
 .students-table .student-name-line a{white-space:nowrap}
 .students-table .student-name-cell>small{margin-left:40px}
+.monthly-fee-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(85px,.65fr) auto;gap:12px;align-items:end;padding:14px 0;border-bottom:1px solid #e6ebe9;margin-bottom:12px}
+.monthly-fee-row label{min-width:0}
+.monthly-fee-remove{display:inline-flex;align-items:center;justify-content:center;gap:5px;align-self:end;height:36px;padding:0 10px;margin-bottom:5px;border:1px solid #f1d8d8;border-radius:8px;background:#fff6f6;color:#a73e3e;cursor:pointer;font:inherit;font-size:13px;white-space:nowrap}
+.monthly-fee-remove:hover{background:#ffe8e8;border-color:#d99a9a}
+.monthly-fee-remove:focus-visible{outline:2px solid #a73e3e;outline-offset:2px}
+@media(max-width:600px){.monthly-fee-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.monthly-fee-remove{justify-self:end}}

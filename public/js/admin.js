@@ -2450,8 +2450,8 @@ ${list.map(receiptHtml).join("")}
     let crop;
     const readMonthlyFeeRows = () => $$("#monthlyFeeRows .monthly-fee-row").map(row => ({ from: row.querySelector('[data-month="from"]').value, to: row.querySelector('[data-month="to"]').value, fee: row.querySelector('[data-month="fee"]').value === "" ? NaN : Number(row.querySelector('[data-month="fee"]').value) }));
     const addMonthlyFeeRow = (r = {}) => {
-      const row = document.createElement("div"); row.className = "monthly-fee-row fgrid";
-      row.innerHTML = `<label>শুরুর মাস<input type="month" data-month="from" value="${esc(r.from || "")}" required></label><label>শেষের মাস <small>(খালি রাখলে চলবে)</small><input type="month" data-month="to" data-dp-empty="চলবে" value="${esc(r.to || "")}"></label><label>মাসিক ফি (৳)<input type="number" min="0" step="any" data-month="fee" value="${esc(r.fee ?? "")}" required></label><button type="button" class="btn sm line" data-remove-month>সরান</button>`;
+      const row = document.createElement("div"); row.className = "monthly-fee-row";
+      row.innerHTML = `<label>শুরুর মাস<input type="month" data-month="from" value="${esc(r.from || "")}" required></label><label>শেষের মাস <small>(খালি রাখলে চলবে)</small><input type="month" data-month="to" data-dp-empty="চলবে" value="${esc(r.to || "")}"></label><label>মাসিক ফি (৳)<input type="number" min="0" step="any" data-month="fee" value="${esc(r.fee ?? "")}" required></label><button type="button" class="monthly-fee-remove" data-remove-month title="এই ফি সারি সরান" aria-label="এই ফি সারি সরান"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg><span>সরান</span></button>`;
       row.querySelector('[data-remove-month]').onclick = () => row.remove();
       $("#monthlyFeeRows").append(row);
     };
