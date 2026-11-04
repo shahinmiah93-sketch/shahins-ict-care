@@ -70,7 +70,6 @@ window.SICAchievers = function (X) {
     const l = all(), live = l.filter((a) => a.active && a.image), secs = Number(DB().settings.achieverSeconds) || 3.5;
     C.onfocusin = e => { if (e.target.matches("input[data-k]")) suggest(e.target); };
     C.oninput = e => { if (e.target.matches("input[data-k]")) suggest(e.target); };
-    C.onchange = e => { if (e.target.matches("input[data-k]")) rememberField(e.target); };
     C.onfocusout = e => { if (!e.relatedTarget?.closest(".ac-suggestions")) C.querySelectorAll(".ac-suggestions").forEach(n => n.remove()); };
     C.innerHTML = `<div class="ex-page">
       <section class="ln-banner"><div><span class="eyebrow">ওয়েবসাইটের মূল পাতা</span><h2>সফল শিক্ষার্থী</h2>
@@ -131,6 +130,7 @@ window.SICAchievers = function (X) {
   }
   function onChange(e) {
     const el = e.target;
+    if (el.matches("input[data-k]")) rememberField(el);
     if (el.matches("[data-ac-file]")) {
       const f = el.files[0]; if (!f) return;
       if (!/^image\/(jpeg|png|webp|gif)$/.test(f.type)) return toast("ছবি দিন — JPG, PNG, WEBP বা GIF", true);
