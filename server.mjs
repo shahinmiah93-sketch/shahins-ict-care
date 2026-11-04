@@ -1082,8 +1082,15 @@ function parseBatchTime(value) {
   }
   return { period, hour: String(hour % 12 || 12), minute: String(minute).padStart(2, "0"), minutes: h24 * 60 + minute };
 }
+function batchDayGroup(value) {
+  const text = String(value || "").trim();
+  const days = [/শনি|sat/i, /রবি|sun/i, /সোম|mon/i, /মঙ্গল|tue/i, /বুধ|wed/i, /বৃহস্পতি|thu/i, /শুক্র|fri/i];
+  const key = days.map((pattern, i) => pattern.test(text) ? String(i) : "").join("");
+  return key || "9" + text;
+}
 function compareBatchSchedule(a, b) {
   return String(a.session || "").localeCompare(String(b.session || ""), "en", { numeric: true }) ||
+    batchDayGroup(a.days).localeCompare(batchDayGroup(b.days), "en") ||
     ((parseBatchTime(a.time)?.minutes ?? 9999) - (parseBatchTime(b.time)?.minutes ?? 9999)) ||
     String(a.name || "").localeCompare(String(b.name || ""), "en", { numeric: true }) || String(a.id || "").localeCompare(String(b.id || ""));
 }

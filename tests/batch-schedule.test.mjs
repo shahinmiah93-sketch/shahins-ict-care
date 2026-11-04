@@ -9,14 +9,14 @@ for (const file of ['server.mjs', 'public/js/common.js']) {
   const end = source.indexOf('\n}', source.indexOf('function compareBatchSchedule(', begin)) + 2;
   const context = vm.createContext({});
   vm.runInContext(source.slice(begin, end), context);
-  test(`${file}: Bengali times sort chronologically across day groups and preserve batch identities`, () => {
+  test(`${file}: Day groups sort Saturday first and times sort within each group and preserve batch identities`, () => {
     const entries = [
       ['27-J','শনি, সোম, বুধ','দুপুর ১:০০'], ['27-D','','বিকাল ৪:০০'],
       ['27-F','','দুপুর ১২:০০'], ['27-C','','সকাল ১১:০০'],
       ['27-B','','সকাল ৯:০০'], ['27-A','','সকাল ৭:০০'],
       ['27-E','','সকাল ৮:০০'], ['27-G','','দুপুর ১:০০'], ['27-H','','দুপুর ২:০০'],
       ['27-X','',''], ['27-N','','রাত ৯:৩০']
-    ].map(([name,days,time]) => ({id:name,session:'HSC-27',name,days,time}));
+    ].map(([name,days,time]) => ({id:name,session:'HSC-27',name,days:days || "শনি, সোম, বুধ",time}));
     const sorted = [...entries].sort(context.compareBatchSchedule);
     assert.deepEqual(sorted.map(b=>b.name), ['27-A','27-E','27-B','27-C','27-F','27-G','27-J','27-H','27-D','27-N','27-X']);
     assert.equal(context.parseBatchTime('সকাল ৭:৩০').minutes,450);
@@ -27,6 +27,16 @@ for (const file of ['server.mjs', 'public/js/common.js']) {
     assert.equal(context.parseBatchTime('সময় পরে জানানো হবে'),null);
     assert.equal(context.parseBatchTime('সকাল ৭:৯৯'),null);
     assert.equal(entries[0].name,'27-J');
+    const grouped = [
+      {name:'27-E',session:'HSC-27',days:'রবি, মঙ্গল, বৃহস্পতি',time:'সকাল ৮:০০'},
+      {name:'27-J',session:'HSC-27',days:'শনি, সোম, বুধ',time:'দুপুর ১:০০'},
+      {name:'27-A',session:'HSC-27',days:'শনি, সোম, বুধ',time:'সকাল ৭:০০'},
+      {name:'27-D',session:'HSC-27',days:'শনি, সোম, বুধ',time:'বিকাল ৪:০০'},
+      {name:'27-G',session:'HSC-27',days:'রবি, মঙ্গল, বৃহস্পতি',time:'দুপুর ১:০০'},
+      {name:'27-X',session:'HSC-27',days:'',time:'সকাল ৬:০০'}
+    ].sort(context.compareBatchSchedule);
+    assert.deepEqual(grouped.map(b=>b.name), ['27-A','27-J','27-D','27-E','27-G','27-X']);
+    assert.equal(context.batchDayGroup('বুধ, শনি, সোম'),context.batchDayGroup('শনি, সোম, বুধ'));
   });
 }
 test('Batch form preselects old time, saves chosen time and retains legacy schedules', async () => {
