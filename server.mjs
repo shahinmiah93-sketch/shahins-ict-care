@@ -1553,7 +1553,11 @@ async function galleryDeleteAction(req, res) {
 // Exact guards keep later modules and all other student records untouched.
 function repairConfirmedAdmissionStart() {
   const key = "admission-start-280001-20261104";
-  if (db.meta?.repairs?.[key]) return false;
+  if (db.meta?.repairs?.[key]) {
+    const repaired = db.enrollments.find(x => x.id === db.meta.repairs[key].enrollmentId);
+    console.info("Confirmed admission date repair verified", JSON.stringify({ startDate: repaired?.startDate, due: repaired && enrollmentDue(repaired).due }));
+    return false;
+  }
   const s = db.students.find(x => x.id === "280001" && x.admissionDate === "2026-10-12");
   const e = s && db.enrollments.find(x => x.studentId === s.id);
   const c = e && db.courses.find(x => x.id === e.courseId);
