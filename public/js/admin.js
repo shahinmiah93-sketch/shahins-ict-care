@@ -1632,6 +1632,7 @@ ${list.map(receiptHtml).join("")}
   // হাজিরা: উপরে শিরোনাম + সেভ, ফিল্টার প্যানেল, সারাংশের ঘর (রিং + উপস্থিত / অনুপস্থিত / ছুটি / বাকি), নিচে খোঁজা + সবাইকে একসাথে, প্রতি শিক্ষার্থীর সারি
   // ব্যাচ পরিবর্তন: তালিকা ছেঁকে যার যার "নতুন ব্যাচ" বেছে একসাথে সেভ (একই সেশনের ব্যাচগুলোর মধ্যে)
   function batchMove(c) {
+    const offlineIds = SICStudentDirectory.ids(DB, "offline");
     const moves = new Map(); // আইডি → নতুন ব্যাচ; ছাঁকনি বদলালেও বাছাই থাকে
     const label = (id) => { const b = batchById(id); return b ? U.batchLabel(b) : "—"; };
     c.innerHTML = `<div class="card">
@@ -1639,7 +1640,7 @@ ${list.map(receiptHtml).join("")}
         <input class="grow" id="q" placeholder="নাম, আইডি বা মোবাইল">
         <select id="fse">${opt(sessionOptions("সব সেশন"), "")}</select>
         <span id="fbWrap"></span>
-        <select id="fm">${opt([["", "সব মডিউল"], ...DB.courses.map((m) => [m.id, `${m.code} — ${m.name}`])])}</select>
+        <select id="fm">${opt([["", "সব মডিউল"], ...DB.courses.filter(m => modeOf(m) === "offline").map((m) => [m.id, `${m.code} — ${m.name}`])])}</select>
         <select id="fs">${opt([["", "সবাই"], ["active", "শুধু সক্রিয় (পড়ছে)"], ["inactive", "শুধু পড়া বন্ধ"]], "")}</select>
       </div>
       <div class="toolbar">
@@ -1651,7 +1652,7 @@ ${list.map(receiptHtml).join("")}
     const drawBatchSel = () => { $("#fbWrap").innerHTML = batchSelectHtml("fb", "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
     const list = () => {
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
-      return DB.students.filter((s) => (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
+      return DB.students.filter((s) => offlineIds.has(s.id) && (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
         && (!fm || enrollmentsOf(s.id).some((e) => e.courseId === fm && e.status === "active"))
         && (!qv || [s.id, s.name, s.phone, s.guardianPhone].join(" ").toLowerCase().includes(qv)));
     };
