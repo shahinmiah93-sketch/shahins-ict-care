@@ -1658,7 +1658,7 @@ async function reviewStudentProfile(req, res) {
   if (body.version !== pending.version) return send(res,409,{error:"অনুরোধ বদলেছে। আবার খুলে দেখুন"});
   const current = STUDENT_KEYS(student), allowed = new Set(Object.keys(current));
   if (!student.gender) current.gender = "";
-  if (Object.entries(pending.changes).some(([key,change])=>!allowed.has(key) || current[key] !== change.from)) return send(res,409,{error:"মূল তথ্য বদলেছে। শিক্ষার্থীকে নতুন করে সংশোধন পাঠাতে বলুন"});
+  if (Object.entries(pending.changes).some(([key,change])=>!allowed.has(key) || (body.action === "approve" && current[key] !== change.from))) return send(res,409,{error:"মূল তথ্য বদলেছে। শিক্ষার্থীকে নতুন করে সংশোধন পাঠাতে বলুন"});
   const original = JSON.stringify(student), at = new Date().toISOString();
   fs.copyFileSync(DB_FILE,path.join(BACKUPS,`before-profile-review-${student.id}-${Date.now()}.json`));
   try {

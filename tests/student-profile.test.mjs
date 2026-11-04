@@ -22,3 +22,26 @@ test('Invalid completion does not mutate records; failed saves restore all field
   for(const bad of [{name:''},{phone:'abc'},{dob:'2027-01-01'},{gender:''},{sscGpa:'8'},{email:'bad'}]){const a=app(),student={id:'fixture',...complete},before=JSON.stringify(student);assert.equal((await a.c.updateStudentProfile({body:{...complete,...bad}},{},student)).status,400);assert.equal(JSON.stringify(student),before);assert.equal(a.stats().writes,0);}
   const a=app(),student={id:'fixture',...complete},before=JSON.stringify(student);a.fail();await assert.rejects(a.c.updateStudentProfile({body:{...complete,college:'New college'}},{},student),/save failed/);assert.equal(JSON.stringify(student),before);
 });
+test('Blank fields save immediately, existing phone needs review, approval and rejection preserve originals correctly',async()=>{
+  const a=app(),student={id:'fixture',...complete};a.c.db.students.push(student);
+  let result=await a.c.updateStudentProfile({body:{...complete,phone:'01900000001',fatherName:'New parent'}},{},student);
+  assert.equal(result.status,200);assert.equal(student.phone,complete.phone);assert.equal(student.fatherName,'New parent');assert.equal(student.pendingProfile.changes.phone.to,'01900000001');assert.equal(student.pendingProfile.changes.fatherName,undefined);
+  let version=student.pendingProfile.version;
+  assert.equal((await a.c.reviewStudentProfile({body:{id:student.id,action:'approve',version}},{})).status,200);assert.equal(student.phone,'01900000001');assert.equal(student.profileReview.status,'approved');assert.equal(student.pendingProfile,undefined);
+  await a.c.updateStudentProfile({body:{phone:'01600000001'}},{},student);version=student.pendingProfile.version;
+  assert.equal((await a.c.reviewStudentProfile({body:{id:student.id,action:'reject',version}},{})).status,200);assert.equal(student.phone,'01900000001');assert.equal(student.profileReview.status,'rejected');assert.equal(student.profileChangeHistory.length,2);
+});
+test('Stale forms and approvals cannot overwrite newer admin edits; rejection can clear a stale request',async()=>{
+  const a=app(),student={id:'fixture',...complete};a.c.db.students.push(student);const baseline=JSON.parse(JSON.stringify(student));student.college='Admin college';
+  await a.c.updateStudentProfile({body:{...complete,phone:'01900000001',profileBase:baseline}},{},student);assert.equal(student.college,'Admin college');assert.equal(student.pendingProfile.changes.college,undefined);
+  const old=student.pendingProfile.version;
+  assert.equal((await a.c.updateStudentProfile({body:{...complete,phone:'01600000001',profileBase:baseline}},{},student)).status,409);
+  student.phone='01500000001';assert.equal((await a.c.reviewStudentProfile({body:{id:student.id,action:'approve',version:old}},{})).status,409);assert.equal(student.phone,'01500000001');
+  assert.equal((await a.c.reviewStudentProfile({body:{id:student.id,action:'reject',version:old}},{})).status,200);
+});
+test('Address linking is reviewed atomically; failed review restores pending request',async()=>{
+  const a=app(),student={id:'fixture',...complete,sameAddress:false};a.c.db.students.push(student);
+  await a.c.updateStudentProfile({body:{address:'New address',sameAddress:true}},{},student);assert.equal(student.address,complete.address);assert.equal(student.permanentAddress,complete.permanentAddress);assert.equal(student.sameAddress,false);assert(student.pendingProfile.changes.sameAddress);
+  const version=student.pendingProfile.version;await a.c.reviewStudentProfile({body:{id:student.id,version,action:'approve'}},{});assert.equal(student.sameAddress,true);assert.equal(student.address,'New address');assert.equal(student.permanentAddress,'New address');
+  await a.c.updateStudentProfile({body:{phone:'01900000001'}},{},student);const before=JSON.stringify(student);a.fail();await assert.rejects(a.c.reviewStudentProfile({body:{id:student.id,version:student.pendingProfile.version,action:'approve'}},{}),/save failed/);assert.equal(JSON.stringify(student),before);
+});
