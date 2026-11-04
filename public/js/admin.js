@@ -1130,7 +1130,7 @@ ${list.map(receiptHtml).join("")}
           <div class="mod-cards">${moduleCards}</div>
           <div id="chapterBox" class="chapter-box" hidden></div>
           <div class="fgrid adm-grid" style="margin-top:14px">
-            <label>কোর্স শুরুর তারিখ<input type="date" name="startDate" value="${U.today()}"></label>
+            <label>কোর্স শুরুর তারিখ${mode !== "enroll" ? ' <small>(ভর্তির তারিখ অনুযায়ী)</small>' : ""}<input type="date" name="startDate" value="${esc(mode === "enroll" ? U.today() : vals.admissionDate || U.today())}"${mode !== "enroll" ? " readonly" : ""}></label>
             <label>কোর্স শেষ হওয়ার তারিখ <small style="color:var(--muted);font-weight:400">(ঐচ্ছিক)</small><input type="date" name="planEnd"></label>
             <label>ডিসকাউন্ট (৳)<input type="number" name="discount" min="0" value="0"></label>
             <label>এখন জমা (৳)<input type="number" name="paid" min="0" value="0"></label>
@@ -1168,7 +1168,7 @@ ${list.map(receiptHtml).join("")}
       // রেগুলার (মাসিক) ব্যাচ: ভর্তির মাসে যত ক্লাস পাবে সেই হিসাবে ফি (১–৬ তারিখে ভর্তি হলে পুরো মাস; "টাকা কমবে" এমন বন্ধের ক্লাস বাদ)
       let first = net, fm = null, grace = false;
       if (m && m.feeType === "monthly") {
-        const b = curBatch(), sd = (q("startDate") && q("startDate").value) || U.today(), st = new Date(sd + "T00:00:00");
+        const b = curBatch(), sd = (mode === "enroll" ? q("startDate")?.value : q("admissionDate")?.value) || U.today(), st = new Date(sd + "T00:00:00");
         grace = st.getDate() <= U.FULL_FEE_UNTIL_DAY;
         fm = b ? U.monthFee(net, b.days, st.getFullYear(), st.getMonth(), grace ? 1 : st.getDate(), U.feeClosedDates(DB.closures, b.id)) : null;
         first = fm ? fm.fee : net;
@@ -1209,9 +1209,10 @@ ${list.map(receiptHtml).join("")}
     });
     if (q("batchId")) q("batchId").addEventListener("change", info);
     form.addEventListener("change", (e) => {
+      if (e.target.name === "admissionDate" && q("startDate") && mode !== "enroll") q("startDate").value = e.target.value;
       if (e.target.name === "courseId") { pick.courseId = e.target.value; pick.chapters = []; drawFee(); }
       if (e.target.closest && e.target.closest("#chapterBox")) { pick.chapters = $$("#chapterBox input:checked").map((x) => x.value); drawFee(); }
-      if (["batchId", "session", "startDate"].includes(e.target.name)) drawFee(); // ব্যাচের দিন / শুরুর তারিখ বদলালে প্রথম মাসের ফি আবার হিসাব
+      if (["batchId", "session", "startDate", "admissionDate"].includes(e.target.name)) drawFee(); // ব্যাচের দিন / শুরুর তারিখ বদলালে প্রথম মাসের ফি আবার হিসাব
     });
     form.addEventListener("input", (e) => { $("#admErr").textContent = ""; if (["discount", "paid"].includes(e.target.name)) drawFee(); });
     // সম্পর্ক "বাবা" বা "মা" হলে অভিভাবকের নাম ও নাম্বার নিজে থেকে বসে যায়
@@ -1393,6 +1394,39 @@ ${list.map(receiptHtml).join("")}
   }
 
   // ---------- শিক্ষার্থী ----------
+  function correctEnrollmentStart(student, enrollmentId) {
+    const e = DB.enrollments.find(x => x.id === enrollmentId);
+    if (!e) return;
+    const first = DB.enrollments.find(x => x.studentId === student.id);
+    let preview = null;
+    openModal({
+      title: "বেতন শুরুর তারিখ সংশোধন",
+      body: `<p><b>${esc(student.name)}</b> · ${esc(courseById(e.courseId)?.name || "")}</p>
+        <p>ভর্তির তারিখ: <b>${U.date(student.admissionDate)}</b><br>বর্তমানে মডিউল শুরু: <b>${U.date(e.startDate)}</b></p>
+        <label>সঠিক শুরুর তারিখ<input id="feeStartDate" type="date" min="${esc(student.admissionDate || "")}" max="${U.today()}" value="${esc(first?.id === e.id ? student.admissionDate : e.startDate)}"></label>
+        <div class="toolbar"><button type="button" class="btn gold" id="feeStartPreview">নতুন হিসাব দেখুন</button></div><div id="feeStartResult" aria-live="polite"></div>`,
+      saveText: "তারিখ ও হিসাব সংরক্ষণ",
+      onSave: async () => {
+        if (!preview || preview.proposed.startDate !== $("#feeStartDate").value) throw new Error("আগে নতুন হিসাব দেখুন");
+        await api("/api/admin/enrollment-start", { body: { id: e.id, startDate: preview.proposed.startDate, token: preview.token, commit: true } });
+        await load(); viewStudent(student.id); toast("শুরুর তারিখ ও বেতন সংশোধন হয়েছে"); return true;
+      },
+    });
+    $("#modalSave").disabled = true;
+    $("#feeStartDate").oninput = () => { preview = null; $("#modalSave").disabled = true; $("#feeStartResult").textContent = ""; };
+    $("#feeStartPreview").onclick = async () => {
+      const button = $("#feeStartPreview"); button.disabled = true; $("#modalErr").textContent = "";
+      preview = null; $("#modalSave").disabled = true;
+      try {
+        const result = await api("/api/admin/enrollment-start", { body: { id: e.id, startDate: $("#feeStartDate").value } });
+        if (result.proposed.startDate !== $("#feeStartDate").value) return;
+        preview = result;
+        $("#feeStartResult").innerHTML = `<dl class="kv"><dt>আগের মোট দেনা</dt><dd>${money(result.current.due)}</dd><dt>প্রথম মাসের ফি</dt><dd>${money(result.proposed.firstMonth)}</dd><dt>নতুন মোট দেনা (${bn(result.proposed.months)} মাস)</dt><dd><b>${money(result.proposed.due)}</b></dd><dt>সব জমা বাদে মোট বাকি</dt><dd><b>${money(result.proposed.balance)}</b></dd></dl><p class="muted">আগের পেমেন্ট অপরিবর্তিত থাকবে। সংরক্ষণের আগে ব্যাকআপ রাখা হবে।</p>`;
+        $("#modalSave").disabled = false;
+      } catch (error) { $("#modalErr").textContent = error.message; }
+      finally { button.disabled = false; }
+    };
+  }
   function viewStudent(id) {
     const s = studentById(id);
     if (!s) return;
@@ -1423,7 +1457,7 @@ ${list.map(receiptHtml).join("")}
         <div class="tbl-wrap"><table><thead><tr><th>মডিউল</th><th>শুরু</th><th class="num">ফি</th><th class="num">ছাড়</th><th class="num">মোট দেনা</th><th></th></tr></thead><tbody>
           ${f.items.map((it) => { const m = courseById(it.courseId) || {}; return `<tr><td><b>${esc(it.course)}</b> ${it.status === "ended" ? '<span class="chip">শেষ</span>' : ""}${it.chapters.length ? `<small>${esc(chapterNames(m, it.chapters).join(", "))}</small>` : ""}</td><td>${U.date(it.startDate)}</td>
             <td class="num">${money(it.fee)}${it.monthly ? "/মাস" : ""}</td><td class="num">${it.discount ? money(it.discount) : "—"}</td><td class="num">${money(it.due)}${it.monthly ? `<small>${bn(it.months)} মাস</small>${feeAdjustHtml(it)}` : ""}</td>
-            <td class="num">${it.monthly && it.status === "active" ? `<button type="button" class="btn sm line" data-end="${it.enrollmentId}">শেষ করুন</button>` : ""}</td></tr>`; }).join("") || '<tr><td colspan="6" class="empty">কোনো মডিউলে ভর্তি নেই</td></tr>'}
+            <td class="num">${it.monthly ? `<button type="button" class="btn sm line" data-start="${it.enrollmentId}">শুরুর তারিখ সংশোধন</button> ` : ""}${it.monthly && it.status === "active" ? `<button type="button" class="btn sm line" data-end="${it.enrollmentId}">শেষ করুন</button>` : ""}</td></tr>`; }).join("") || '<tr><td colspan="6" class="empty">কোনো মডিউলে ভর্তি নেই</td></tr>'}
           <tr><td colspan="4"><b>মোট</b> · পরিশোধ ${money(f.paid)}</td><td class="num" colspan="2">${balanceChip(f)}</td></tr>
         </tbody></table></div>
         <div class="pin-box">লগইন PIN: <b id="pinVal">${esc(s.pin)}</b><button type="button" class="btn sm line" id="pinReset">নতুন PIN</button><button type="button" class="btn sm line" id="pinSms">SMS পাঠান</button><small id="pinSmsNote">${esc(loginSmsNote(s))}</small></div>
@@ -1437,6 +1471,7 @@ ${list.map(receiptHtml).join("")}
         </div>`,
     });
     $("#pinSms").onclick = () => { if (confirm(`${s.name}-কে আইডি আর PIN SMS-এ পাঠাবেন?`)) resendLogin(s, $("#pinSmsNote")); };
+    $$("#modalBody [data-start]").forEach(button => { button.onclick = () => correctEnrollmentStart(s, button.dataset.start); });
     $("#pinReset").onclick = async () => {
       if (!confirm("নতুন PIN তৈরি করবেন? আগের PIN আর কাজ করবে না।")) return;
       try { const r = await api("/api/admin/student-pin", { body: { id: s.id } }); $("#pinVal").textContent = r.pin; s.pin = r.pin; delete s.loginSms; $("#pinSmsNote").textContent = loginSmsNote(s); toast("নতুন PIN তৈরি হয়েছে"); } catch (e) { toast(e.message, true); }
