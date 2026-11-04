@@ -570,7 +570,7 @@ window.SICExams = function (X) {
   function drawPicker() {
     const session = F().session.value, studs = activeIn(session), batches = DB().batches.filter((b) => !session || b.session === session);
     const cnt = (list) => `${bn(list.filter((s) => B.sel.has(s.id)).length)}/${bn(list.length)}`;
-    $(".exam-student-course-filter", dlg).innerHTML = [["", "সব ব্যাচ", studs], ...batches.map((b) => [b.id, b.name, studs.filter((s) => s.batchId === b.id)])].filter(([k, , l]) => !k || l.length)
+    $(".exam-student-course-filter", dlg).innerHTML = [["", "সব ব্যাচ", studs], ...batches.map((b) => [b.id, U.batchLabel(b), studs.filter((s) => s.batchId === b.id)])].filter(([k, , l]) => !k || l.length)
       .map(([k, t, l]) => `<button type="button" data-pbatch="${k}" class="${B.view === k ? "active" : ""}">${esc(t)} <b>${cnt(l)}</b></button>`).join("");
     const list = pickerList();
     $(".exam-student-picker", dlg).innerHTML = list.map((s) => `<label class="exam-student-choice"><input type="checkbox" value="${esc(s.id)}"${B.sel.has(s.id) ? " checked" : ""}><span><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small></span></label>`).join("") || '<p class="ex-sub" style="grid-column:1/-1">এই সেশনে / ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই।</p>';

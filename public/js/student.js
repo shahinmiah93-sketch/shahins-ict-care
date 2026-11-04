@@ -243,7 +243,7 @@ ${inner}
         ${AS ? contactCard() : ""}
         ${nextExamsCard()}
         <div class="grid2">
-          <div class="card"><h2>ক্লাসের সময়</h2>${D.batch ? `<dl class="kv" style="margin-top:12px"><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সেশন</dt><dd>${esc(D.batch.session)}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(D.batch.name)}</dd><dt>দিন</dt><dd>${esc(D.batch.days)}</dd><dt>সময়</dt><dd>${esc(D.batch.time)}</dd></dl>` : "<p>ব্যাচ ঠিক করা হয়নি</p>"}
+          <div class="card"><h2>ক্লাসের সময়</h2>${D.batch ? `<dl class="kv" style="margin-top:12px"><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সেশন</dt><dd>${esc(D.batch.session)}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch))}</dd><dt>দিন</dt><dd>${esc(D.batch.days)}</dd><dt>সময়</dt><dd>${esc(D.batch.time)}</dd></dl>` : "<p>ব্যাচ ঠিক করা হয়নি</p>"}
             ${(D.closures || []).map((c) => `<p class="chip ${c.from <= U.today() ? "bad" : "warn"}" style="margin-top:10px;white-space:normal">⏸ ${c.from <= U.today() ? "এখন বন্ধ" : "বন্ধ থাকবে"}: ${U.date(c.from)} – ${U.date(c.to)}${c.reason ? ` (${esc(c.reason)})` : ""}</p>`).join("")}</div>
           <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${esc(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
         </div>
@@ -379,7 +379,7 @@ ${inner}
       return `<div class="card"><div class="idcard">
         <div class="top"><img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার"><b>শাহিন’স আইসিটি কেয়ার</b><span class="ct">০১৭৪৯-১০৫৯০২</span><span class="ct">${esc(D.site.address || "মাস্টার কলোনি, মাদারীপুর")}</span><small>শিক্ষার্থী আইডি কার্ড</small></div>
         <div style="padding-top:18px"><div class="ph" style="background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover"></div><h3 style="white-space:nowrap;font-size:${Math.max(11, Math.min(19, Math.floor(264 / (String(p.name).length * 0.6))))}px">${esc(p.name)}</h3><div class="id">${esc(p.id)}</div></div>
-        <dl><dt>সেশন</dt><dd>${esc(p.session || "—")}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(D.batch?.name || "—")}</dd><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সময়</dt><dd>${esc(D.batch?.time || "—")}</dd><dt>ভর্তি</dt><dd>${U.date(p.admissionDate)}</dd></dl>
+        <dl><dt>সেশন</dt><dd>${esc(p.session || "—")}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch) || "—")}</dd><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সময়</dt><dd>${esc(D.batch?.time || "—")}</dd><dt>ভর্তি</dt><dd>${U.date(p.admissionDate)}</dd></dl>
       </div><p style="text-align:center"><button class="btn line no-print" onclick="print()">🖨 প্রিন্ট করুন</button></p></div>`;
     },
   };
@@ -533,7 +533,7 @@ ${inner}
     $("#av").textContent = "";
     $("#av").style.cssText = `background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover`; // ছবি না থাকলে ছেলে/মেয়ের আইকন
     $("#sName").textContent = p.name;
-    $("#sMeta").textContent = [p.id, p.session, D.batch && `ব্যাচ ${D.batch.name}`].filter(Boolean).join(" · ");
+    $("#sMeta").textContent = [p.id, p.session, D.batch && `ব্যাচ ${U.batchLabel(D.batch)}`].filter(Boolean).join(" · ");
     // অনলাইন মডিউলের রেকর্ড ক্লাস থাকলে "ক্লাস ভিডিও" ট্যাব (সারসংক্ষেপের পরেই)
     const vt = $("#tabs [data-t=\"videos\"]");
     if ((D.videos || []).length && !vt) $("#tabs [data-t=\"home\"]").insertAdjacentHTML("afterend", '<button data-t="videos" class="tab-vid">🎬 ক্লাস ভিডিও</button>');

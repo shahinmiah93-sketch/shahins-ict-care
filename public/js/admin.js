@@ -1826,7 +1826,7 @@ ${list.map(receiptHtml).join("")}
     // শুরুতে যে ব্যাচে শিক্ষার্থী আছে সেটা
     const firstBatch = () => { const L = sessBatches(); return (L.find((b) => activeStudents().some((s) => s.batchId === b.id)) || L[0] || {}).id || ""; };
     if (bpBatch !== "*" && !sessBatches().some((b) => b.id === bpBatch)) bpBatch = firstBatch();
-    const batchOpts = () => opt([...sessBatches().map((b) => [b.id, b.name]), ["*", "সব ব্যাচ"]], bpBatch);
+    const batchOpts = () => opt([...sessBatches().map((b) => [b.id, U.batchLabel(b)]), ["*", "সব ব্যাচ"]], bpBatch);
     body.innerHTML = `<div class="toolbar bp-bar">
         <label>সেশন<select id="bpS">${opt(sessions.map((se) => [se, se]), bpSess)}</select></label>
         <label>ব্যাচসমূহ<select id="bpB">${batchOpts()}</select></label>
@@ -2600,7 +2600,7 @@ ${list.map(receiptHtml).join("")}
               <div><button class="btn sm gold" data-addb="${esc(se.name)}">+ ব্যাচ যোগ</button> <button class="btn sm line" data-es="${esc(se.id)}">✎ সেশন</button> <button class="icon-btn" title="সেশন মুছুন" data-ds="${esc(se.id)}">✕</button></div></div>
             <div class="tbl-wrap"><table><thead><tr><th>ব্যাচ</th><th>দিন</th><th>সময়</th><th class="num">শিক্ষার্থী / সিট</th><th>অবস্থা</th><th></th></tr></thead><tbody>
             ${list.map((b) => { const n = act.filter((s) => s.batchId === b.id).length; const cl = U.closureOn(DB.closures, b.id, U.today()); const next = !cl && (DB.closures || []).filter((x) => x.batchIds.includes(b.id) && x.from > U.today()).sort((x, y) => x.from.localeCompare(y.from))[0];
-              return `<tr><td><b>${esc(b.name)}</b>${cl ? `<small><span class="chip bad">❚❚ বন্ধ: ${U.date(cl.to)} পর্যন্ত</span></small>` : next ? `<small><span class="chip gold">${U.date(next.from)} থেকে বন্ধ</span></small>` : ""}</td><td>${esc(b.days || "—")}</td><td>${esc(b.time || "—")}</td><td class="num">${n >= b.capacity ? '<span class="chip bad">পূর্ণ</span> ' : ""}${bn(n)} / ${bn(b.capacity)}</td>
+              return `<tr><td><b>${esc(U.batchLabel(b))}</b>${cl ? `<small><span class="chip bad">❚❚ বন্ধ: ${U.date(cl.to)} পর্যন্ত</span></small>` : next ? `<small><span class="chip gold">${U.date(next.from)} থেকে বন্ধ</span></small>` : ""}</td><td>${esc(b.days || "—")}</td><td>${esc(b.time || "—")}</td><td class="num">${n >= b.capacity ? '<span class="chip bad">পূর্ণ</span> ' : ""}${bn(n)} / ${bn(b.capacity)}</td>
               <td><button type="button" class="st-toggle ${b.active === false ? "off" : "on"}" data-btoggle="${b.id}" title="${b.active === false ? "চাপ দিয়ে সক্রিয় করুন" : "চাপ দিয়ে নিষ্ক্রিয় করুন — নতুন ভর্তি ও ওয়েবসাইটে আর দেখাবে না"}"><i></i>${b.active === false ? "নিষ্ক্রিয়" : "সক্রিয়"}</button></td>
               <td class="num"><button class="icon-btn" data-eb="${b.id}">✎</button><button class="icon-btn" data-db="${b.id}">✕</button></td></tr>`; }).join("") || '<tr><td colspan="6" class="empty">কোনো ব্যাচ নেই — "+ ব্যাচ যোগ" চাপুন</td></tr>'}
             </tbody></table></div></div>`;

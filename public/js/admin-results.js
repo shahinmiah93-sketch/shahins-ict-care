@@ -585,7 +585,7 @@ h1{margin:3mm 0 0;font:900 46px 'Noto Serif Bengali','Nirmala UI',serif;color:#0
     return `<section class="card"><div class="rs-bar" style="justify-content:center">${filtersHtml()}<label>পাতা<select data-land>${X.opt([["0", "A4 Portrait (খাড়া)"], ["1", "A4 Landscape (আড়াআড়ি)"]], S.land ? "1" : "0")}</select></label><span class="ex-sub" style="margin:0;flex-basis:100%;text-align:center">প্রিন্ট উইন্ডোতে "Save as PDF" বেছে নিলে PDF হয়। প্রতিটা রিপোর্টে লোগো, প্রতিষ্ঠানের নাম আর স্বাক্ষরের জায়গা থাকে।</span></div>
       <div class="rs-reps">
         ${card("Individual Exam Result", "একটি পরীক্ষার পূর্ণ রেজাল্ট", `<select data-rep-exam>${[...list].sort(EC.byTitle).map((e) => `<option value="${e.id}"${e.id === S.sheetExam ? " selected" : ""}>${esc(U.examLabel(e))}</option>`).join("")}</select>`, "exam")}
-        ${card("Batch Result Sheet", "একটি ব্যাচের সম্মিলিত রেজাল্ট", `<select data-rep-batch>${X.opt(batches.map((b) => [b.id, b.name]), S.f.batch || (batches[0] || {}).id)}</select>`, "batch")}
+        ${card("Batch Result Sheet", "একটি ব্যাচের সম্মিলিত রেজাল্ট", `<select data-rep-batch>${X.opt(batches.map((b) => [b.id, U.batchLabel(b)]), S.f.batch || (batches[0] || {}).id)}</select>`, "batch")}
         ${card("Session Result Sheet", "পুরো সেশনের সম্মিলিত রেজাল্ট", `<div class="rs-rep-fix">${esc(session())} — সব ব্যাচ</div>`, "session")}
         ${card("Merit List Report", "মেধাক্রমসহ মেধাতালিকা", '<div class="rs-rep-fix">Merit Lists ট্যাবের ফিল্টার অনুযায়ী</div>', "merit")}
         ${card("Student's Progress Report", "একজন শিক্ষার্থীর পুরো অগ্রগতি — ফল, হাজিরা, বাড়ির কাজ, পরামর্শ", `<input data-rep-sid placeholder="আইডি, যেমন 270001" value="${esc(S.pid)}">`, "student")}
