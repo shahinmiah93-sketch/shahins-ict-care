@@ -1606,6 +1606,65 @@ function repairConfirmedAdmissionStart() {
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
 
+// Owner-authorized one-time renumbering: keep every linked record with its student.
+function renumberStudentsByAdmission() {
+  const key = "student-ids-admission-order-20261104";
+  if (db.meta?.repairs?.[key]) return false;
+  const ordered = [...db.students].sort((a,b) => String(a.admissionDate || "9999").localeCompare(String(b.admissionDate || "9999")) || String(a.createdAt || "").localeCompare(String(b.createdAt || "")) || String(a.id).localeCompare(String(b.id)));
+  const counters = {}, mapping = {};
+  for (const s of ordered) { const yy = sessionYY(s.session); mapping[s.id] = yy + String(counters[yy] = (counters[yy] || 0) + 1).padStart(4,"0"); }
+  if (new Set(Object.values(mapping)).size !== ordered.length || Object.keys(mapping).length !== ordered.length) throw new Error("Cannot renumber duplicate student IDs");
+  const original = JSON.stringify(db), oldLogins = [...logins], at = new Date().toISOString(), tag = `before-admission-id-order-${Date.now()}`;
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `${tag}.json`));
+  const to = id => mapping[id] || id;
+  const files = new Map();
+  for (const s of ordered) for (const kind of ["s","p"]) for (const id of [s.id,to(s.id)]) {
+    const file = photoFile(kind,id);
+    if (!files.has(file)) files.set(file,fs.existsSync(file) ? fs.readFileSync(file) : null);
+  }
+  for (const [file,data] of files) if (data) fs.writeFileSync(path.join(BACKUPS,`${tag}-${path.basename(file)}`),data);
+  const rekey = value => Object.fromEntries(Object.entries(value || {}).map(([id,v]) => [to(id),v]));
+  function references(value) {
+    if (!value || typeof value !== "object") return;
+    if (Array.isArray(value)) { value.forEach(references); return; }
+    for (const [field,v] of Object.entries(value)) {
+      if (["studentId","sid"].includes(field) && typeof v === "string") value[field] = to(v);
+      else if (field === "studentIds" && Array.isArray(v)) value[field] = v.map(to);
+      else references(v);
+    }
+  }
+  try {
+    for (const [collection,records] of Object.entries(db)) if (collection !== "meta" && collection !== "students") references(records);
+    for (const ex of db.exams) ex.marks = rekey(ex.marks);
+    for (const quiz of db.quizzes) quiz.attempts = rekey(quiz.attempts);
+    for (const hw of db.homework) hw.checks = rekey(hw.checks);
+    for (const day of Object.keys(db.attendance)) db.attendance[day] = rekey(db.attendance[day]);
+    for (const field of ["absentSent","monthlySent","feeSent"]) for (const day of Object.keys(db[field] || {})) db[field][day] = db[field][day].map(to);
+    for (const lead of db.leads) for (const src of lead.sources || []) if (src.type === "qna" && mapping[src.ref]) src.ref = to(src.ref);
+    for (const receipt of db.meta?.admissionImports || []) if (Array.isArray(receipt.ids)) receipt.ids = receipt.ids.map(to);
+    for (const s of ordered) {
+      const old = s.id;
+      for (const kind of ["s","p"]) { const data = files.get(photoFile(kind,old)); if (data) fs.writeFileSync(photoFile(kind,to(old)),data); }
+      s.id = to(old);
+    }
+    const targetFiles = new Set(ordered.flatMap(s => [photoFile("s",s.id),photoFile("p",s.id)]));
+    for (const [file,data] of files) if (data && !targetFiles.has(file)) fs.unlinkSync(file);
+    db.students = ordered;
+    // Retire old student sessions so a reused numeric ID can never open another profile.
+    for (const [token,session] of logins) if (session.role === "student") logins.delete(token);
+    saveLogins();
+    db.meta ||= {}; db.meta.repairs ||= {};
+    db.meta.repairs[key] = { at, mapping, backup:`${tag}.json`, count:ordered.length, changed:ordered.filter(s => Object.entries(mapping).some(([from,to]) => to === s.id && from !== to)).length };
+    saveDb();
+    console.info("Admission ID order migration completed", JSON.stringify({count:ordered.length,changed:db.meta.repairs[key].changed,mapping}));
+    return true;
+  } catch (error) {
+    db = JSON.parse(original); logins.clear(); for (const [token,session] of oldLogins) logins.set(token,session);
+    for (const [file,data] of files) { if (data) fs.writeFileSync(file,data); else if (fs.existsSync(file)) fs.unlinkSync(file); }
+    writeJsonAtomic(DB_FILE,db); saveLogins(); throw error;
+  }
+}
+
 // ---------- রাউটার ----------
 const PROFILE_REQUIRED = { name: "নাম (বাংলা)", nameEn: "নাম (ইংরেজি)", dob: "জন্ম তারিখ", gender: "লিঙ্গ", phone: "শিক্ষার্থীর মোবাইল", guardianName: "অভিভাবকের নাম", guardianPhone: "অভিভাবকের মোবাইল", address: "বর্তমান ঠিকানা", permanentAddress: "স্থায়ী ঠিকানা", college: "কলেজ", klass: "শ্রেণি", group: "বিভাগ" };
 function studentProfileCompletion(student) {
