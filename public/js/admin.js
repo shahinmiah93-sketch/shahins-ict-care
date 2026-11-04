@@ -322,7 +322,8 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
       .sign{display:flex;justify-content:space-between;gap:12mm;margin-top:16mm}.sign span{flex:0 0 52mm;border-top:1.2px solid #1d2b28;padding-top:1.5mm;text-align:center;font-weight:600}
       .card{width:54mm;height:85.6mm;border:1px solid #ccc;border-radius:10px;overflow:hidden;text-align:center;display:inline-block;vertical-align:top;margin:6px;font-size:11px}
       .card .t{background:linear-gradient(150deg,#0b3b36,#071f3a);color:#fff;padding:8px 4px}.card .t img{display:block;width:56px;margin:0 auto 2px}.card .t b{display:block;font-size:12px}.card .t .ct{display:block;font-size:10px;line-height:1.3;color:#f3c55d}.card .t .lb{display:block;margin-top:5px}
-      .card .ph{width:60px;height:60px;border-radius:14px;background:#f3c55d;margin:8px auto 4px;display:grid;place-items:center;font-size:26px;font-weight:900;overflow:hidden}
+      .card .ph{width:48px;height:48px;border-radius:14px;background:#f3c55d;margin:8px auto 4px;display:grid;place-items:center;font-size:26px;font-weight:900;overflow:hidden}
+      .card .card-sign{display:flex;flex-direction:column;align-items:center;margin:0 8px 4px}.card-sign img{height:18px;width:auto;max-width:85px;object-fit:contain}.card-sign span{border-top:1px solid #7b9390;min-width:90px;font-size:9px;padding-top:2px}
       .card h3{margin:2px;font-size:13px}.card .id{font-family:Consolas,Hind Siliguri,monospace;font-weight:700;color:#b07d1c}.card dl{display:grid;grid-template-columns:auto 1fr;gap:1px 6px;text-align:left;padding:6px 8px;margin:0}.card dt{color:#5d7570}.card dd{margin:0;font-weight:600}
       @media print{body{background:#fff}.pg{margin:0;padding:0;box-shadow:none;max-width:none}button{display:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}${U.PRINT_BAR_CSS}</style></head><body>${U.PRINT_BAR}
       <main class="pg">${U.docHead(title, DB.settings)}${html}${U.docFoot(DB.settings)}</main></body></html>`);
@@ -501,7 +502,7 @@ ${list.map(receiptHtml).join("")}
   function idCardHtml(s) {
     return `<div class="card"><div class="t"><img src="${location.origin}/images/logo-nav.png" alt=""><b>শাহিন’স আইসিটি কেয়ার</b><span class="ct">০১৭৪৯-১০৫৯০২</span><span class="ct">${esc(DB.settings.address || "মাস্টার কলোনি, মাদারীপুর")}</span><span class="lb">শিক্ষার্থী আইডি কার্ড</span></div>
       <div class="ph">${s.photo ? `<img src="${location.origin}${photoUrl("s", s.id)}" style="width:100%;height:100%;object-fit:cover">` : `<img src="${U.avatarSrc(s.gender)}" style="width:100%;height:100%;object-fit:cover">`}</div><h3 style="white-space:nowrap;font-size:${Math.max(8, Math.min(13, Math.floor(186 / (String(s.name).length * 0.6))))}px">${esc(s.name)}</h3><div class="id">${esc(s.id)}</div>
-      <dl><dt>সেশন</dt><dd>${esc(s.session || "")}</dd><dt>ব্যাচ</dt><dd>${esc(batchName(s.batchId))}</dd><dt>সময়</dt><dd>${esc((batchById(s.batchId) || {}).time || "")}</dd><dt>মোবাইল</dt><dd>${esc(s.phone || s.guardianPhone)}</dd></dl></div>`;
+      <dl><dt>সেশন</dt><dd>${esc(s.session || "")}</dd><dt>ব্যাচ</dt><dd>${esc(batchName(s.batchId))}</dd><dt>সময়</dt><dd>${esc((batchById(s.batchId) || {}).time || "")}</dd><dt>মোবাইল</dt><dd>${esc(s.phone || s.guardianPhone)}</dd></dl><div class="card-sign"><img src="${location.origin}/images/signature.png" alt="কর্তৃপক্ষের স্বাক্ষর"><span>কর্তৃপক্ষের স্বাক্ষর</span></div></div>`;
   }
 
   // পরীক্ষার পেজ (admin-exams.js) — এখানকার সাধারণ জিনিসগুলো সেখানে দেওয়া হয়

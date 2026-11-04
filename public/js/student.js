@@ -385,7 +385,7 @@ ${inner}
       return `<div class="card"><div class="idcard">
         <div class="top"><img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার"><b>শাহিন’স আইসিটি কেয়ার</b><span class="ct">০১৭৪৯-১০৫৯০২</span><span class="ct">${esc(D.site.address || "মাস্টার কলোনি, মাদারীপুর")}</span><small>শিক্ষার্থী আইডি কার্ড</small></div>
         <div style="padding-top:18px"><div class="ph" style="background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover"></div><h3 style="white-space:nowrap;font-size:${Math.max(11, Math.min(19, Math.floor(264 / (String(p.name).length * 0.6))))}px">${esc(p.name)}</h3><div class="id">${esc(p.id)}</div></div>
-        <dl><dt>সেশন</dt><dd>${esc(p.session || "—")}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch) || "—")}</dd><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সময়</dt><dd>${esc(D.batch?.time || "—")}</dd><dt>ভর্তি</dt><dd>${U.date(p.admissionDate)}</dd></dl>
+        <dl><dt>সেশন</dt><dd>${esc(p.session || "—")}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch) || "—")}</dd><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সময়</dt><dd>${esc(D.batch?.time || "—")}</dd><dt>ভর্তি</dt><dd>${U.date(p.admissionDate)}</dd></dl><div class="id-authority"><img src="/images/signature.png" alt="কর্তৃপক্ষের স্বাক্ষর"><span>কর্তৃপক্ষের স্বাক্ষর</span></div>
       </div><p style="text-align:center"><button class="btn line no-print" onclick="print()">🖨 প্রিন্ট করুন</button></p></div>`;
     },
   };
@@ -539,7 +539,7 @@ ${inner}
     $("#av").textContent = "";
     $("#av").style.cssText = `background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover`; // ছবি না থাকলে ছেলে/মেয়ের আইকন
     $("#sName").textContent = p.name;
-    $("#sMeta").textContent = [p.id, p.session, D.batch && `ব্যাচ ${U.batchLabel(D.batch)}`].filter(Boolean).join(" · ");
+    $("#sMeta").innerHTML = `<span class="student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-batch-meta"><span class="student-session">${esc(p.session || "")}</span><b>ব্যাচ ${esc(D.batch?.name || "—")}</b><span class="student-class-time">${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</span><small>${esc(D.batch?.days || "")}</small></span>`;
     // অনলাইন মডিউলের রেকর্ড ক্লাস থাকলে "ক্লাস ভিডিও" ট্যাব (সারসংক্ষেপের পরেই)
     const vt = $("#tabs [data-t=\"videos\"]");
     if ((D.videos || []).length && !vt) $("#tabs [data-t=\"home\"]").insertAdjacentHTML("afterend", '<button data-t="videos" class="tab-vid">🎬 ক্লাস ভিডিও</button>');

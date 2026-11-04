@@ -91,6 +91,7 @@ test('Monthly fee ranges apply to historical months, partial admission, discount
   const c=a.ctx.db.courses[0];c.monthlyFees=a.ctx.cleanMonthlyFees([{from:'2026-08',to:'2026-11',fee:800}]);
   const e=a.ctx.createEnrollment(s.id,{course:c,chapters:[],fee:1000,discount:0},s.admissionDate,'');
   let due=a.ctx.enrollmentDue(e);assert.equal(due.firstNet,50);assert.equal(due.due,1650);
+  assert.equal(due.breakdown.length,3);assert.equal(due.breakdown.reduce((sum,row)=>sum+row.fee,0),due.due);assert.equal(due.breakdown[0].fromDay,30);assert.equal(due.breakdown[0].monthlyRate,800);assert.equal(due.breakdown[1].late,false);
   a.ctx.today=()=> '2026-12-04';assert.equal(a.ctx.enrollmentDue(e).due,2650);
   assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-07'),1000);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-08'),800);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-12'),1000);
   c.monthlyFees=a.ctx.cleanMonthlyFees([{from:'2026-08',to:'2026-11',fee:800},{from:'2026-12',to:'',fee:1000}]);
