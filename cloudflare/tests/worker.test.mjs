@@ -39,6 +39,7 @@ test("Real Cloudflare runtime: import, static assets, auth, file upload, records
   assert.equal((await call("/api/public")).status, 200);
   assert.equal((await call("/api/admin/db")).status, 401);
   assert.equal((await call("/api/admin/admission-import", { rows: [] })).status, 401);
+  assert.equal((await call("/api/admin/gallery-delete", { ids: ["not-a-real-photo"] })).status, 401);
   assert.equal((await call("/api/admin/setup", {})).status, 400);
   assert.equal((await fetch(base + "/__migration/commit", { method: "POST", headers: { authorization: "Bearer " + token }, body: "{}" })).status, 409);
   for (const route of ["/", "/admin", "/student", "/books", "/quiz", "/courses", "/daily", "/online-apply", "/js/admin-books.js", "/css/site.css"]) {
@@ -92,6 +93,18 @@ test("Real Cloudflare runtime: import, static assets, auth, file upload, records
   const download = await fetch(`${base}/api/tphoto/${teacher.id}/image`);
   assert.equal(download.status, 200);
   assert.deepEqual(Buffer.from(await download.arrayBuffer()), image);
+  const galleryIds = [];
+  for (let i = 0; i < 2; i++) {
+    const photo = await call("/api/admin/c/gallery", { title: "Bulk deletion fixture " + i, album: "Test only", active: true });
+    assert.equal(photo.status, 200); galleryIds.push(photo.data.item.id);
+    assert.equal((await call(`/api/admin/gallery/${photo.data.item.id}/image?ext=.png`, undefined, { method: "POST", headers: { "content-type": "image/png" }, body: image })).status, 200);
+  }
+  const removed = await call("/api/admin/gallery-delete", { ids: galleryIds });
+  assert.equal(removed.status, 200); assert.equal(removed.data.deleted, 2);
+  assert.equal((await call("/api/admin/gallery-delete", { ids: galleryIds })).data.deleted, 0);
+  const afterGallery = await call("/api/admin/db");
+  assert.equal(afterGallery.data.gallery.length, updated.data.gallery.length);
+  assert.equal((await fetch(`${base}/api/gphoto/${galleryIds[0]}/image`)).status, 404);
   assert.equal((await call("/api/student/login", { id: student.id, pin: student.pin })).status, 200);
   assert.equal((await call("/api/student/me")).status, 200);
   const quizStart = await call("/api/student/quiz/start", { id: "test_quiz" });
