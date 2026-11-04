@@ -419,7 +419,7 @@ ${inner}
       return `<div class="card"><div class="idcard">
         <div class="top"><img src="/images/logo-nav.png" alt="শাহিন'স আইসিটি কেয়ার"><span class="ct">০১৭৪৯-১০৫৯০২</span><span class="ct">${esc(D.site.address || "মাস্টার কলোনি, মাদারীপুর")}</span><small>শিক্ষার্থী আইডি কার্ড</small></div>
         <div class="id-person"><div class="ph" style="background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover"></div><h3 style="white-space:nowrap;font-size:${Math.max(11, Math.min(19, Math.floor(264 / (String(p.name).length * 0.6))))}px">${esc(p.name)}</h3><div class="id">${esc(p.id)}</div></div>
-        <dl><dt>সেশন</dt><dd>${esc(p.session || "—")}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(D.batch?.name || "—")}</dd><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সময়</dt><dd>${esc(D.batch?.time || "—")}</dd><dt>ভর্তি</dt><dd>${U.date(p.admissionDate)}</dd></dl><div class="id-authority"><img src="/images/signature.png" alt="কর্তৃপক্ষের স্বাক্ষর"><span>কর্তৃপক্ষের স্বাক্ষর</span></div>
+        <dl><dt>সেশন</dt><dd>${esc(p.session || "—")}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(D.batch?.name || "—")}</dd><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সময়</dt><dd>${esc([D.batch?.days, D.batch?.time].filter(Boolean).join(" · ") || "—")}</dd><dt>ভর্তি</dt><dd>${U.date(p.admissionDate)}</dd></dl><div class="id-authority"><img src="/images/signature.png" alt="কর্তৃপক্ষের স্বাক্ষর"><span>কর্তৃপক্ষের স্বাক্ষর</span></div>
       </div><p style="text-align:center"><button class="btn line no-print" onclick="print()">🖨 প্রিন্ট করুন</button></p></div>`;
     },
   };

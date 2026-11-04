@@ -502,7 +502,7 @@ ${list.map(receiptHtml).join("")}
   function idCardHtml(s) {
     return `<div class="card"><div class="t"><img src="${location.origin}/images/logo-nav.png" alt=""><span class="ct">০১৭৪৯-১০৫৯০২</span><span class="ct">${esc(DB.settings.address || "মাস্টার কলোনি, মাদারীপুর")}</span><span class="lb">শিক্ষার্থী আইডি কার্ড</span></div>
       <div class="ph">${s.photo ? `<img src="${location.origin}${photoUrl("s", s.id)}" style="width:100%;height:100%;object-fit:cover">` : `<img src="${U.avatarSrc(s.gender)}" style="width:100%;height:100%;object-fit:cover">`}</div><h3 style="white-space:nowrap;font-size:${Math.max(8, Math.min(13, Math.floor(186 / (String(s.name).length * 0.6))))}px">${esc(s.name)}</h3><div class="id">${esc(s.id)}</div>
-      <dl><dt>সেশন</dt><dd>${esc(s.session || "")}</dd><dt>ব্যাচ</dt><dd>${esc(batchName(s.batchId))}</dd><dt>সময়</dt><dd>${esc((batchById(s.batchId) || {}).time || "")}</dd><dt>মোবাইল</dt><dd>${esc(s.phone || s.guardianPhone)}</dd></dl><div class="card-sign"><img src="${location.origin}/images/signature.png" alt="কর্তৃপক্ষের স্বাক্ষর"><span>কর্তৃপক্ষের স্বাক্ষর</span></div></div>`;
+      <dl><dt>সেশন</dt><dd>${esc(s.session || "")}</dd><dt>ব্যাচ</dt><dd>${esc(batchName(s.batchId))}</dd><dt>সময়</dt><dd>${esc([(batchById(s.batchId) || {}).days, (batchById(s.batchId) || {}).time].filter(Boolean).join(" · "))}</dd><dt>মোবাইল</dt><dd>${esc(s.phone || s.guardianPhone)}</dd></dl><div class="card-sign"><img src="${location.origin}/images/signature.png" alt="কর্তৃপক্ষের স্বাক্ষর"><span>কর্তৃপক্ষের স্বাক্ষর</span></div></div>`;
   }
 
   // পরীক্ষার পেজ (admin-exams.js) — এখানকার সাধারণ জিনিসগুলো সেখানে দেওয়া হয়
