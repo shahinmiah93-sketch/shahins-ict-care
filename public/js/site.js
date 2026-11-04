@@ -188,7 +188,7 @@
         const half = Array.from({ length: rep }, (_, r) => list.map((a) => card(a, r > 0)).join("")).join("");
         const secs = (list.length * rep * (cw + gap)) / 34;
         return `<div class="ach-row reveal" data-g="${g}"><header class="ach-head"><span class="ach-pill">${t}</span><p>${sub}</p></header>
-          <div class="ach-ribbon"><div class="ach-track${k % 2 ? " rev" : ""}" style="--d:${secs.toFixed(1)}s"><div class="ach-batch">${half}</div><div class="ach-batch" aria-hidden="true">${half.replace(/alt="[^"]*"/g, 'alt=""')}</div></div></div></div>`;
+          <div class="ach-ribbon"><div class="ach-track${k % 2 ? " rev" : ""}" style="--d:${secs.toFixed(1)}s;--ach-steps:${list.length * rep * (cw + gap)}"><div class="ach-batch">${half}</div><div class="ach-batch" aria-hidden="true">${half.replace(/alt="[^"]*"/g, 'alt=""')}</div></div></div></div>`;
       }).join("");
       watch();
     };
