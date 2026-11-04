@@ -15,7 +15,7 @@ function app() {
   };
   vm.createContext(ctx);
   const studentsClean = section('  students: (b) => (','  enrollments: (b) => (');
-  vm.runInContext(section('const STUDENT_KEYS =','const CLEAN =')+'\nconst CLEAN={'+studentsClean+'};\n'+section('const monthsBetween =','// ব্যাচ বদলালেও আগের হাজিরা')+section('function validateEnrollment(','// ---------- মেয়াদ')+section('function createEnrollment(','// ---------- রাউটার ----------'),ctx);
+  vm.runInContext(section('const STUDENT_KEYS =','const CLEAN =')+'\nconst CLEAN={'+studentsClean+'};\n'+section('function moduleFee(','// ব্যাচ বদলালেও আগের হাজিরা')+section('function validateEnrollment(','// ---------- মেয়াদ')+section('function createEnrollment(','// ---------- রাউটার ----------'),ctx);
   return {ctx,stats:()=>({writes,backups}),fail:()=>{failSave=true},call:body=>ctx.admissionImportAction({body},{})};
 }
 const defaults={session:'HSC-27',batchId:'b1',courseId:'c1',admissionDate:'2026-11-04',discount:'0',chapters:''};
@@ -49,6 +49,16 @@ test('Invalid rows block entire commit; a stale fee preview and duplicate file r
 test('Save failure restores all imported students, enrollments and payments',async()=>{
   const a=app(),input={defaults,rows:[{name:'Rollback',paid:100}]};const p=await a.call(input),before=JSON.stringify(a.ctx.db);a.fail();
   await assert.rejects(a.call({...input,commit:true,previewToken:p.data.token}),/fixture save failed/);assert.equal(JSON.stringify(a.ctx.db),before);
+});
+test('Module names and numeric codes, one-time fees, chapters, discounts and provided payment dates are retained',async()=>{
+  const a=app();
+  let p=await a.call({defaults,rows:[{name:'Code',course:'1'}]});assert.equal(p.data.errors.length,0);assert.equal(p.data.rows[0].courseId,'c1');
+  p=await a.call({defaults,rows:[{name:'Once',course:'Once',discount:'200',paid:'1000',paymentDate:'2026-10-01'}]});
+  assert.equal(p.data.errors.length,0);assert.equal(p.data.rows[0].fees.totalDue,1800);assert.equal(p.data.rows[0].paymentDate,'2026-10-01');
+  a.ctx.db.courses.push({id:'ch',name:'Chapters',feeType:'chapter',fee:0,active:true,chapters:[{id:'1',fee:800},{id:'2',fee:900}]});
+  p=await a.call({defaults,rows:[{name:'Chapters',course:'Chapters',chapters:'1, 2',discount:'100'}]});
+  assert.equal(p.data.errors.length,0);assert.equal(p.data.rows[0].fees.totalDue,1600);
+  assert.equal((await a.call({defaults,rows:[{name:'No chapter',course:'Chapters'}]})).data.errors.length,1);
 });
 const browser={window:{},console};vm.createContext(browser);
 vm.runInContext(fs.readFileSync(new URL('../public/vendor/xlsx-0.20.3.full.min.js',import.meta.url),'utf8'),browser);
