@@ -1593,6 +1593,26 @@ function repairConfirmedAdmissionStart() {
 }
 
 // ---------- রাউটার ----------
+const PROFILE_REQUIRED = { name: "নাম (বাংলা)", nameEn: "নাম (ইংরেজি)", dob: "জন্ম তারিখ", phone: "শিক্ষার্থীর মোবাইল", guardianName: "অভিভাবকের নাম", guardianPhone: "অভিভাবকের মোবাইল", address: "বর্তমান ঠিকানা", permanentAddress: "স্থায়ী ঠিকানা", college: "কলেজ", klass: "শ্রেণি", group: "বিভাগ" };
+function studentProfileCompletion(student) {
+  const missing = Object.entries(PROFILE_REQUIRED).filter(([key]) => !String(key === "permanentAddress" && student.sameAddress ? student.address || "" : student[key] || "").trim()).map(([key, label]) => ({ key, label }));
+  return { complete: !missing.length, missing, total: Object.keys(PROFILE_REQUIRED).length };
+}
+async function updateStudentProfile(req, res, student) {
+  const body = await readBody(req, 64 * 1024);
+  const clean = STUDENT_KEYS({ ...student, ...body });
+  const completion = studentProfileCompletion(clean);
+  if (!completion.complete) return send(res, 400, { error: "এই তথ্যগুলো পূরণ করুন: " + completion.missing.map(x => x.label).join(", ") });
+  if (!importValidDate(clean.dob) || clean.dob >= today()) return send(res, 400, { error: "সঠিক জন্ম তারিখ দিন" });
+  for (const key of ["phone", "phone2", "whatsapp", "fatherPhone", "motherPhone", "guardianPhone", "refPhone"]) if (clean[key] && !/^01\d{9}$/.test(clean[key])) return send(res, 400, { error: "মোবাইল নম্বর ০১ দিয়ে শুরু ১১ সংখ্যার হতে হবে" });
+  if (clean.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email)) return send(res, 400, { error: "সঠিক ইমেইল দিন" });
+  if (clean.sscGpa && (!Number.isFinite(Number(clean.sscGpa)) || Number(clean.sscGpa) < 0 || Number(clean.sscGpa) > 5)) return send(res, 400, { error: "SSC GPA ০ থেকে ৫-এর মধ্যে দিন" });
+  const original = JSON.stringify(student);
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-profile-${student.id}-${Date.now()}.json`));
+  try { Object.assign(student, clean, { profileCompletedAt: new Date().toISOString(), profileUpdatedBy: "student" }); saveDb(); }
+  catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); throw error; }
+  return send(res, 200, { ok: true, profileCompletion: studentProfileCompletion(student) });
+}
 async function studentPhotoRequest(req, res, student) {
   const b = await readBody(req, 600 * 1024);
   const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.photo || ""));
@@ -2267,6 +2287,12 @@ async function api(req, res, url) {
     if (!mine) return send(res, 404, { error: "পাওয়া যায়নি" });
     return sendDoc(req, res, d, url);
   }
+  if (p === "/api/student/profile" && m === "POST") {
+    const session = getLogin(req, "student");
+    const student = session && db.students.find(s => s.id === session.sid && s.status !== "inactive");
+    if (!student) return send(res, 401, { error: "শিক্ষার্থী হিসেবে লগইন করুন" });
+    return updateStudentProfile(req, res, student);
+  }
   if (p === "/api/student/photo-request") {
     const session = getLogin(req, "student");
     const student = session && db.students.find(s => s.id === session.sid && s.status !== "inactive");
@@ -2297,7 +2323,7 @@ async function api(req, res, url) {
     const { pin, note, ...profile } = s;
     const fees = feeSummary(s);
     return send(res, 200, {
-      profile, batch, courses: fees.items.filter((i) => i.status === "active").map((i) => i.course),
+      profile, profileCompletion: studentProfileCompletion(s), batch, courses: fees.items.filter((i) => i.status === "active").map((i) => i.course),
       attendance: attendanceFor(s.id), results: resultsFor(s), schedule: scheduleFor(s),
       examRoutines: db.examRoutines.filter((r) => routineForStudent(r, s)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ id, title, type, pdf, createdAt }) => ({ id, title, type, pdf, createdAt })),
       payments: db.payments.filter((x) => x.studentId === s.id).sort((a, b) => b.date.localeCompare(a.date)),
