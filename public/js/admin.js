@@ -1519,52 +1519,65 @@ ${list.map(receiptHtml).join("")}
     };
     const pdel = $("#stuPhotoDel"); if (pdel) pdel.onclick = async () => { await api("/api/admin/student-photo", { body: { id: s.id, remove: true } }); await load(); viewStudent(s.id); };
   }
-  function students(c, arg) {
+  function students(c, arg = "") {
+    const type = ["offline","online","quiz","talent"].includes(arg.split("/")[0]) ? arg.split("/")[0] : "offline";
+    const rest = type === "offline" && arg.startsWith("batch/") ? arg : arg.split("/").slice(1).join("/");
+    c.innerHTML = SICStudentDirectory.header(DB,type) + '<div id="studentDirectoryContent"></div>';
+    const target=$("#studentDirectoryContent");
+    if(type === "offline" || type === "online") studentList(target,rest,type);
+    else SICStudentDirectory.audience(target,type,DB);
+  }
+  function studentList(c, arg, mode = "offline") {
+    const scopeIds = SICStudentDirectory.ids(DB, mode);
+    const scopedCourses = DB.courses.filter(m => modeOf(m) === mode);
+    const listModules = sid => enrollmentsOf(sid).filter(e => e.status === "active" && modeOf(courseById(e.courseId)) === mode).map(e => courseById(e.courseId)?.name).filter(Boolean);
+    const scopedFees = s => { const items = (s.fees?.items || []).filter(i => modeOf(courseById(i.courseId)) === mode), enrollmentIds = new Set(items.map(i => i.enrollmentId)); const totalDue=items.reduce((n,i)=>n+i.due,0), paid=DB.payments.filter(p=>p.studentId===s.id&&(enrollmentIds.has(p.enrollmentId)||(!p.enrollmentId&&mode==="offline"))).reduce((n,p)=>n+Number(p.amount||0),0); return {items,totalDue,paid,balance:totalDue-paid}; };
     const preBatch = arg.startsWith("batch/") ? arg.slice(6) : "";
     const preSession = preBatch ? (batchById(preBatch) || {}).session || "" : "";
-    c.innerHTML = `<div class="card">
+    c.innerHTML = `<div class="card"><div class="sd-list-title"><h2>${mode === "online" ? "অনলাইন" : "অফলাইন"} শিক্ষার্থীর তালিকা</h2><p>এই তালিকায় শুধু ${mode === "online" ? "অনলাইন" : "অফলাইন"} মডিউলের ভর্তি ও হিসাব দেখানো হচ্ছে।</p></div>
       <div class="toolbar">
         <input class="grow" id="q" placeholder="নাম, আইডি বা মোবাইল">
         <select id="fse">${opt(sessionOptions("সব সেশন"), preSession)}</select>
-        <span id="fbWrap"></span>
-        <select id="fm">${opt([["", "সব মডিউল"], ...DB.courses.map((m) => [m.id, `${m.code} — ${m.name}`])])}</select>
+        <span id="fbWrap"${mode === "online" ? " hidden" : ""}></span>
+        <select id="fm">${opt([["", "সব মডিউল"], ...scopedCourses.map((m) => [m.id, `${m.code} — ${m.name}`]), ...(mode === "online" ? (DB.onlineCourses || []).map(m => ["legacy:"+m.id, m.title]) : [])])}</select>
         <select id="fs">${opt([["", "সবাই"], ["active", "শুধু সক্রিয় (পড়ছে)"], ["inactive", "শুধু পড়া বন্ধ"]], "")}</select>
       </div>
       <div class="toolbar">
-        <a class="btn gold" href="#admission">＋ নতুন ভর্তি</a>
-        <button type="button" class="btn line" id="reviewStudentPhotos"${DB.students.some(s => s.pendingPhoto) ? "" : " hidden"}>ছবি অনুমোদন (${bn(DB.students.filter(s => s.pendingPhoto).length)})</button>
-        <button type="button" class="btn line" id="reviewStudentProfiles">তথ্য সংশোধন (${bn(DB.students.filter(s => s.pendingProfile).length)})</button>
+        <a class="btn gold" href="${mode === "online" ? "#onlineApps" : "#admission"}">＋ ${mode === "online" ? "অনলাইন " : "নতুন "}ভর্তি</a>
+        <button type="button" class="btn line" id="reviewStudentPhotos"${DB.students.some(s => scopeIds.has(s.id) && s.pendingPhoto) ? "" : " hidden"}>ছবি অনুমোদন (${bn(DB.students.filter(s => scopeIds.has(s.id) && s.pendingPhoto).length)})</button>
+        <button type="button" class="btn line" id="reviewStudentProfiles">তথ্য সংশোধন (${bn(DB.students.filter(s => scopeIds.has(s.id) && s.pendingProfile).length)})</button>
         <button class="btn line" id="csv">↓ Excel</button>
         <button class="btn line" id="cards">এই তালিকার আইডি কার্ড</button>
         <button class="btn line" id="smsAll">📩 এই তালিকার সবাইকে আইডি ও PIN</button>
         <span class="grow"></span><span class="muted" id="cnt"></span>
       </div>
       <div class="tbl-wrap"><table class="students-table"><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
-    </div>`;
+    </div>${mode === "online" ? '<div id="sdLegacyOnline"></div>' : ""}`;
     $("#reviewStudentProfiles").onclick = () => {
-      const pending=DB.students.filter(s=>s.pendingProfile);
+      const pending=DB.students.filter(s=>scopeIds.has(s.id)&&s.pendingProfile);
       openModal({title:`তথ্য সংশোধনের অনুরোধ (${bn(pending.length)})`,body:pending.length ? `<div style="display:grid;gap:10px">${pending.map(s=>`<button type="button" class="btn line" data-review-profile="${esc(s.id)}">${esc(s.name)} · ${esc(s.id)} · ${bn(Object.keys(s.pendingProfile.changes).length)}টি সংশোধন →</button>`).join("")}</div>` : '<p class="empty">এখন কোনো সংশোধন অনুমোদনের অপেক্ষায় নেই।</p>'});
       $$("#modalBody [data-review-profile]").forEach(b=>b.onclick=()=>reviewProfileChanges(b.dataset.reviewProfile));
     };
     $("#reviewStudentPhotos").onclick = () => {
-      const pending = DB.students.filter(s => s.pendingPhoto);
+      const pending = DB.students.filter(s => scopeIds.has(s.id) && s.pendingPhoto);
       openModal({ title: `ছবি অনুমোদন (${bn(pending.length)})`, body: `<div style="display:grid;gap:12px">${pending.map(s => `<button type="button" class="btn line" data-review-student="${esc(s.id)}" style="justify-content:flex-start;gap:12px"><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="" style="width:52px;height:62px;object-fit:contain;border-radius:8px"><span>${esc(s.name)} · ${esc(s.id)}<small style="display:block">ছবিটি দেখে সিদ্ধান্ত দিন →</small></span></button>`).join("")}</div>` });
       $$("#modalBody [data-review-student]").forEach(b => b.onclick = () => viewStudent(b.dataset.reviewStudent));
     };
     const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
     const list = () => {
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
-      return DB.students.filter((s) => (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
+      return DB.students.filter((s) => scopeIds.has(s.id) && (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
         && (!fm || enrollmentsOf(s.id).some((e) => e.courseId === fm && e.status === "active"))
-        && (!qv || [s.id, s.name, s.phone, s.guardianPhone].join(" ").toLowerCase().includes(qv)));
+        && (!qv || [s.id, s.name, s.phone, s.guardianPhone].join(" ").toLowerCase().includes(qv))).map(s => ({ ...s, fees: scopedFees(s) }));
     };
     const draw = () => {
       const l = list();
+      if (mode === "online") SICStudentDirectory.legacyTable($("#sdLegacyOnline"), DB, { q:$("#q").value.trim().toLowerCase(), session:$("#fse").value, module:$("#fm").value, status:$("#fs").value });
       $("#cnt").textContent = `${bn(l.length)} জন`;
       $("#rows").innerHTML = l.map((s) => `<tr>
         <td><b>${esc(s.id)}</b></td><td class="student-name-cell"><div class="student-name-line">${avatar(s.photo, "s", s.id, s.name, 32, s.gender)}<a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></div><small>${esc(s.college)}</small></td>
         <td>${esc(s.session || "—")}<small>${esc(batchName(s.batchId))}</small></td>
-        <td>${modulesOf(s.id).map((n) => `<span class="chip" style="margin:1px">${esc(n)}</span>`).join("") || "—"}</td>
+        <td>${listModules(s.id).map((n) => `<span class="chip" style="margin:1px">${esc(n)}</span>`).join("") || "—"}</td>
         <td>${esc(s.phone || "—")}<small>অভি: ${esc(s.guardianPhone || "—")}</small></td>
         <td>${balanceChip(s.fees)}</td>
         <td>${stToggle(s)}</td>
@@ -1588,7 +1601,7 @@ ${list.map(receiptHtml).join("")}
       if (t.dataset.del) remove("students", t.dataset.del, `"${studentName(t.dataset.del)}" এর সব তথ্য, ভর্তি আর পেমেন্ট`);
     };
     $("#csv").onclick = () => U.xlsx(`students-${U.today()}.xlsx`, ["আইডি", "নাম", "ছাত্র/ছাত্রী", "সেশন", "ব্যাচ", "মডিউল", "মোবাইল", "পিতা", "অভিভাবকের মোবাইল", "কলেজ", "ভর্তির তারিখ", "মোট দেনা", "পরিশোধ", "বকেয়া", "অবস্থা"],
-      list().map((s) => [s.id, s.name, { M: "ছেলে", F: "মেয়ে", O: "অন্যান্য" }[s.gender] || "", s.session, batchName(s.batchId), modulesOf(s.id).join(", "), s.phone, s.fatherName, s.guardianPhone, s.college, s.admissionDate, s.fees.totalDue, s.fees.paid, s.fees.balance, s.status === "active" ? "সক্রিয়" : "নিষ্ক্রিয়"]));
+      list().map((s) => [s.id, s.name, { M: "ছেলে", F: "মেয়ে", O: "অন্যান্য" }[s.gender] || "", s.session, batchName(s.batchId), listModules(s.id).join(", "), s.phone, s.fatherName, s.guardianPhone, s.college, s.admissionDate, s.fees.totalDue, s.fees.paid, s.fees.balance, s.status === "active" ? "সক্রিয়" : "নিষ্ক্রিয়"]));
     $("#cards").onclick = () => { const l = list(); if (!l.length) return toast("কোনো শিক্ষার্থী নেই", true); printDoc("আইডি কার্ড", l.map(idCardHtml).join("")); };
     // তালিকার সবাইকে আইডি ও PIN: একজন একজন করে, আগে পেয়েছে বা পড়া বন্ধ এমন কাউকে নয়; পরপর ৩ বার না গেলে থামে (যেমন ব্যালেন্স শেষ)
     $("#smsAll").onclick = async () => {
