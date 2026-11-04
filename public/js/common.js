@@ -108,6 +108,10 @@ window.U = {
     for (let d = 1; d <= last; d++) if (wd.includes(new Date(y, m, d).getDay())) { total++; if (d >= start.getDate()) left++; }
     return total ? { firstClasses: left, firstTotal: total, firstGrace: start.getDate() <= U.FULL_FEE_UNTIL_DAY } : null;
   },
+  monthlyFeeFor(course, enrollment, month) {
+    const rule = (course.monthlyFees || []).find(r => r.from <= month && r.to >= month);
+    return Math.max(0, Number(rule ? rule.fee : enrollment.fee) - Number(enrollment.discount || 0));
+  },
   FULL_FEE_UNTIL_DAY: 6, // ১–৬ তারিখের মধ্যে ভর্তি হলে ঐ মাসের পুরো ফি
   // ক্লাস প্রতি ৮৩ টাকা (১০০০ ÷ ১২); মাসে ১২-র বেশি ক্লাস হলে ক্লাস প্রতি ১০০০ ÷ মোট ক্লাস (একটু কম)
   STD_CLASSES: 12,

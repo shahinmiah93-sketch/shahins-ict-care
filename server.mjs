@@ -559,6 +559,21 @@ function pausedMonths(s) {
   return out;
 }
 // একটি ভর্তির (enrollment) মোট দেনা — মাসিক কোর্সে মাস ধরে ধরে
+function cleanMonthlyFees(rows) {
+  if (rows == null) return [];
+  if (!Array.isArray(rows) || rows.length > 60) throw new Error("মাসভিত্তিক ফি সর্বোচ্চ ৬০টি সারি দিন");
+  const valid = v => /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+  const out = rows.map(r => {
+    if (!r || !valid(r.from) || !valid(r.to) || r.from > r.to || !Number.isFinite(Number(r.fee)) || r.fee === "" || Number(r.fee) < 0) throw new Error("মাসভিত্তিক ফির শুরুর মাস, শেষের মাস ও টাকা সঠিকভাবে দিন");
+    return { from: r.from, to: r.to, fee: Number(r.fee) };
+  }).sort((a,b) => a.from.localeCompare(b.from));
+  for (let i=1;i<out.length;i++) if (out[i].from <= out[i-1].to) throw new Error("একই মাস একাধিক ফি তালিকায় রাখা যাবে না");
+  return out;
+}
+function monthlyFeeFor(course, enrollment, month) {
+  const rule = (course.monthlyFees || []).find(r => r.from <= month && r.to >= month);
+  return Math.max(0, num(rule ? rule.fee : enrollment.fee) - num(enrollment.discount));
+}
 function enrollmentDue(e, context = {}) {
   const c = context.course || db.courses.find((x) => x.id === e.courseId) || {};
   const net = Math.max(0, num(e.fee) - num(e.discount));
@@ -578,13 +593,14 @@ function enrollmentDue(e, context = {}) {
     if (pz.has(`${Y}-${pad2(M + 1)}`)) { adjust.push({ month: `${Y}-${pad2(M + 1)}`, fee: 0, got: 0, total: 0, shut: 0, late: false, paused: true, reasons: ["পড়া বন্ধ"] }); if (i === 0) firstNet = 0; continue; }
     // ভর্তির মাস: ১–৬ তারিখে শুরু হলে পুরো মাস ধরা হয়, পরে হলে শুরুর দিন থেকে (পুরনো ভর্তিতে পুরো মাস)
     const fromDay = i === 0 && e.firstTotal && !e.firstGrace ? start.getDate() : 1;
-    const r = wd.length ? monthFee(net, wd, Y, M, fromDay, fc.dates) : { fee: net };
+    const monthNet = monthlyFeeFor(c, e, `${Y}-${pad2(M + 1)}`);
+    const r = wd.length ? monthFee(monthNet, wd, Y, M, fromDay, fc.dates) : { fee: monthNet };
     due += r.fee;
     if (i === 0) { firstNet = r.fee; firstClasses = r.got; firstTotal = r.total; }
-    if (r.fee < net) {
+    if (r.fee < net || monthNet !== net) {
       const mk = `${Y}-${pad2(M + 1)}`;
       const reasons = fc.list.filter((x) => x.from.slice(0, 7) <= mk && x.to.slice(0, 7) >= mk).map((x) => x.reason || "ব্যাচ বন্ধ");
-      adjust.push({ month: mk, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, reasons: [...new Set(reasons)] });
+      adjust.push({ month: mk, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, monthlyRate: monthNet, scheduled: monthNet !== net, reasons: [...new Set(reasons)] });
     }
   }
   return { due, months, monthly: true, net, firstNet, firstClasses, firstTotal, adjust };
@@ -1177,7 +1193,7 @@ const CLEAN = {
   courses: (b) => ({
     code: str(b.code, 4), name: str(b.name, 120), short: str(b.short, 300), desc: str(b.desc, 3000), icon: str(b.icon, 8),
     features: lines(b.features).map((f) => str(f, 200)).filter(Boolean).slice(0, 20),
-    feeType: ["monthly", "once", "chapter"].includes(b.feeType) ? b.feeType : "once", fee: num(b.fee),
+    feeType: ["monthly", "once", "chapter"].includes(b.feeType) ? b.feeType : "once", fee: num(b.fee), monthlyFees: cleanMonthlyFees(b.monthlyFees),
     // অধ্যায়: [{id,name,fee}] অথবা লেখা "৩.১ | সংখ্যা পদ্ধতি | 800" প্রতি লাইনে
     chapters: (Array.isArray(b.chapters) ? b.chapters : lines(b.chapters).map((l) => { const [id, name, fee] = l.split("|").map((x) => x.trim()); return { id, name, fee }; }))
       .map((c) => ({ id: str(c.id, 10).replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)), name: str(c.name, 150), fee: num(String(c.fee ?? "").replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[^\d.]/g, "")) }))
@@ -3216,7 +3232,22 @@ async function api(req, res, url) {
   return send(res, 404, { error: "পাওয়া যায়নি" });
 }
 
+function installRegularMonthlyFees() {
+  const key = "regular-monthly-fees-202608-202611";
+  if (db.meta?.repairs?.[key]) return false;
+  const course = db.courses.find(c => c.id === "mod01" && c.feeType === "monthly");
+  if (!course || course.monthlyFees?.length) return false;
+  const original = JSON.stringify(db);
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-monthly-fees-${Date.now()}.json`));
+  try {
+    course.monthlyFees = [{ from: "2026-08", to: "2026-11", fee: 800 }];
+    db.meta ||= {}; db.meta.repairs ||= {};
+    db.meta.repairs[key] = { at: new Date().toISOString() };
+    saveDb(); console.info("Regular monthly fee schedule installed"); return true;
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
+}
 repairConfirmedAdmissionStart();
+installRegularMonthlyFees();
 
 // ---------- ফাইল পরিবেশন ----------
 const TYPES = {
