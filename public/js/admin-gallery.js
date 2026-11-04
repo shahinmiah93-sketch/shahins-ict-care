@@ -17,7 +17,7 @@ window.SICGallery = function (X) {
     if (!C) return;
     const l = list(), shown = l.filter((g) => g.active && g.image), al = albums(), view = filter ? l.filter((g) => g.album === filter) : l;
     const used = [...new Set(l.map((g) => g.album).filter(Boolean))];
-    for (const id of selected) if (!l.some(g => g.id === id)) selected.delete(id);
+    for (const id of selected) if (!view.some(g => g.id === id)) selected.delete(id);
     C.innerHTML = `<div class="ex-page">
       <section class="ln-banner"><div><span class="eyebrow">পাবলিক ওয়েবসাইট</span><h2>আমাদের দিনলিপি</h2>
         <p>কোচিংয়ের ক্লাস, অনুষ্ঠান, পুরস্কার বিতরণের ছবি। অ্যালবাম ধরে ওয়েবসাইটের গ্যালারিতে দেখায়, ছবিতে চাপলে বড় হয়।</p>
@@ -121,7 +121,7 @@ ${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div cla
     if (t("[data-gl-unselect]")) { selected.clear(); return updateSelection(); }
     if (t("[data-gl-upload]")) return uploadAll();
     if (t("[data-gl-clear]")) { files.forEach((f) => URL.revokeObjectURL(f.url)); files = []; return render(); }
-    if ((el = t("[data-gl-filter]"))) { filter = el.dataset.glFilter; selected.clear(); return render(); }
+    if ((el = t("[data-gl-filter]"))) { filter = el.dataset.glFilter; edit = null; selected.clear(); return render(); }
     if ((el = t("[data-gl-edit]"))) { const g = DB().gallery.find((x) => x.id === el.dataset.glEdit); edit = { id: g.id, title: g.title || "", description: g.description || "", album: g.album, date: g.date }; return render(); }
     if (t("[data-ge-cancel]")) { edit = null; return render(); }
     if (t("[data-ge-save]")) return saveEdit();
