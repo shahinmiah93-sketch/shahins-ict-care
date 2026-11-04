@@ -109,7 +109,7 @@ window.U = {
     return total ? { firstClasses: left, firstTotal: total, firstGrace: start.getDate() <= U.FULL_FEE_UNTIL_DAY } : null;
   },
   monthlyFeeFor(course, enrollment, month) {
-    const rule = (course.monthlyFees || []).find(r => r.from <= month && r.to >= month);
+    const rule = (course.monthlyFees || []).find(r => r.from <= month && (!r.to || r.to >= month));
     return Math.max(0, Number(rule ? rule.fee : enrollment.fee) - Number(enrollment.discount || 0));
   },
   FULL_FEE_UNTIL_DAY: 6, // ১–৬ তারিখের মধ্যে ভর্তি হলে ঐ মাসের পুরো ফি

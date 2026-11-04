@@ -2451,7 +2451,7 @@ ${list.map(receiptHtml).join("")}
     const readMonthlyFeeRows = () => $$("#monthlyFeeRows .monthly-fee-row").map(row => ({ from: row.querySelector('[data-month="from"]').value, to: row.querySelector('[data-month="to"]').value, fee: row.querySelector('[data-month="fee"]').value === "" ? NaN : Number(row.querySelector('[data-month="fee"]').value) }));
     const addMonthlyFeeRow = (r = {}) => {
       const row = document.createElement("div"); row.className = "monthly-fee-row fgrid";
-      row.innerHTML = `<label>শুরুর মাস<input type="month" data-month="from" value="${esc(r.from || "")}" required></label><label>শেষের মাস<input type="month" data-month="to" value="${esc(r.to || "")}" required></label><label>মাসিক ফি (৳)<input type="number" min="0" step="any" data-month="fee" value="${esc(r.fee ?? "")}" required></label><button type="button" class="btn sm line" data-remove-month>সরান</button>`;
+      row.innerHTML = `<label>শুরুর মাস<input type="month" data-month="from" value="${esc(r.from || "")}" required></label><label>শেষের মাস <small>(খালি রাখলে চলবে)</small><input type="month" data-month="to" data-dp-empty="চলবে" value="${esc(r.to || "")}"></label><label>মাসিক ফি (৳)<input type="number" min="0" step="any" data-month="fee" value="${esc(r.fee ?? "")}" required></label><button type="button" class="btn sm line" data-remove-month>সরান</button>`;
       row.querySelector('[data-remove-month]').onclick = () => row.remove();
       $("#monthlyFeeRows").append(row);
     };
@@ -2495,9 +2495,9 @@ ${list.map(receiptHtml).join("")}
       values: co ? { ...co, ...validityVals(co.validityDays), mode: modeOf(co), features: (co.features || []).join("\n"), chapters: (co.chapters || []).map((x) => `${x.id} | ${x.name} | ${x.fee}`).join("\n") } : { ...validityVals(0), active: true, feeType: "once", mode },
       onSave: async (d) => {
         d.monthlyFees = readMonthlyFeeRows();
-        for (const r of d.monthlyFees) if (!r.from || !r.to || r.from > r.to || !Number.isFinite(r.fee) || r.fee < 0) throw new Error("মাসভিত্তিক ফির মাস ও টাকা সঠিকভাবে দিন");
+        for (const r of d.monthlyFees) if (!r.from || (r.to && r.from > r.to) || !Number.isFinite(r.fee) || r.fee < 0) throw new Error("মাসভিত্তিক ফির মাস ও টাকা সঠিকভাবে দিন");
         const sorted = [...d.monthlyFees].sort((a,b) => a.from.localeCompare(b.from));
-        for (let i=1;i<sorted.length;i++) if (sorted[i].from <= sorted[i-1].to) throw new Error("একই মাস একাধিক সারিতে রাখা যাবে না");
+        for (let i=1;i<sorted.length;i++) if (sorted[i].from <= (sorted[i-1].to || "9999-12")) throw new Error("একই মাস একাধিক সারিতে রাখা যাবে না");
         const pdf = $("#cPdf").files[0], delPdf = $("#cPdfDel") && $("#cPdfDel").checked;
         const img = crop && crop.ready ? await crop.blob() : null; // ফ্রেম থেকে ৮০০×৮০০ ধারালো JPG
         if (pdf && !/\.pdf$/i.test(pdf.name)) throw new Error("রুটিন হিসেবে শুধু PDF দিন");

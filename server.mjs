@@ -564,14 +564,14 @@ function cleanMonthlyFees(rows) {
   if (!Array.isArray(rows) || rows.length > 60) throw new Error("মাসভিত্তিক ফি সর্বোচ্চ ৬০টি সারি দিন");
   const valid = v => /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
   const out = rows.map(r => {
-    if (!r || !valid(r.from) || !valid(r.to) || r.from > r.to || !Number.isFinite(Number(r.fee)) || r.fee === "" || Number(r.fee) < 0) throw new Error("মাসভিত্তিক ফির শুরুর মাস, শেষের মাস ও টাকা সঠিকভাবে দিন");
-    return { from: r.from, to: r.to, fee: Number(r.fee) };
+    if (!r || !valid(r.from) || (r.to && (!valid(r.to) || r.from > r.to)) || !Number.isFinite(Number(r.fee)) || r.fee === "" || Number(r.fee) < 0) throw new Error("মাসভিত্তিক ফির শুরুর মাস, শেষের মাস ও টাকা সঠিকভাবে দিন");
+    return { from: r.from, to: r.to || "", fee: Number(r.fee) };
   }).sort((a,b) => a.from.localeCompare(b.from));
-  for (let i=1;i<out.length;i++) if (out[i].from <= out[i-1].to) throw new Error("একই মাস একাধিক ফি তালিকায় রাখা যাবে না");
+  for (let i=1;i<out.length;i++) if (out[i].from <= (out[i-1].to || "9999-12")) throw new Error("একই মাস একাধিক ফি তালিকায় রাখা যাবে না");
   return out;
 }
 function monthlyFeeFor(course, enrollment, month) {
-  const rule = (course.monthlyFees || []).find(r => r.from <= month && r.to >= month);
+  const rule = (course.monthlyFees || []).find(r => r.from <= month && (!r.to || r.to >= month));
   return Math.max(0, num(rule ? rule.fee : enrollment.fee) - num(enrollment.discount));
 }
 function enrollmentDue(e, context = {}) {

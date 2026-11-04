@@ -93,6 +93,10 @@ test('Monthly fee ranges apply to historical months, partial admission, discount
   let due=a.ctx.enrollmentDue(e);assert.equal(due.firstNet,50);assert.equal(due.due,1650);
   a.ctx.today=()=> '2026-12-04';assert.equal(a.ctx.enrollmentDue(e).due,2650);
   assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-07'),1000);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-08'),800);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-12'),1000);
+  c.monthlyFees=a.ctx.cleanMonthlyFees([{from:'2026-08',to:'2026-11',fee:800},{from:'2026-12',to:'',fee:1000}]);
+  assert.equal(c.monthlyFees[1].to,'');assert.equal(a.ctx.monthlyFeeFor(c,e,'2027-12'),1000);
+  e.fee=1200;assert.equal(a.ctx.monthlyFeeFor(c,e,'2028-01'),1000);e.fee=1000;
+  assert.throws(()=>a.ctx.cleanMonthlyFees([{from:'2026-12',to:'',fee:1000},{from:'2027-01',to:'2027-03',fee:900}]),/একই মাস/);
   e.discount=100;assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-10'),700);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-12'),900);
   c.monthlyFees=[{from:'2026-08',to:'2026-11',fee:0}];assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-11'),0);
   assert.throws(()=>a.ctx.cleanMonthlyFees([{from:'2026-08',to:'2026-11',fee:800},{from:'2026-11',to:'2026-12',fee:900}]),/একই মাস/);
