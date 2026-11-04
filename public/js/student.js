@@ -3,6 +3,40 @@
   const { $, $$, esc, bn, money, api } = U;
   let D = null;
   const STATUS = { P: "উপস্থিত", A: "অনুপস্থিত", L: "ছুটি" };
+  function requestProfilePhoto() {
+    if (AS) return;
+    const dialog = document.createElement("dialog"); dialog.className = "student-photo-dialog";
+    dialog.innerHTML = `<h2>নিজের ছবি পাঠান</h2><p>মুখ পরিষ্কার বোঝা যায় এমন ছবি দিন। অ্যাডমিন অনুমোদন দিলে প্রোফাইল ও আইডি কার্ডে দেখাবে।</p><label>ছবি বেছে নিন<input type="file" accept="image/jpeg,image/png,image/webp"></label><img alt="নির্বাচিত ছবির প্রিভিউ" hidden><p class="student-photo-error" role="alert"></p><div class="student-photo-actions"><button type="button" class="btn line" data-cancel>বাতিল</button><button type="button" class="btn gold" data-send disabled>অনুমোদনের জন্য পাঠান</button></div>`;
+    document.body.append(dialog); const input = dialog.querySelector("input"), preview = dialog.querySelector("img"), error = dialog.querySelector('[role="alert"]'), sendButton = dialog.querySelector('[data-send]');
+    let photo = "", busy = false, revision = 0;
+    dialog.addEventListener("close", () => dialog.remove());
+    dialog.addEventListener("cancel", e => { if (busy) e.preventDefault(); });
+    dialog.querySelector('[data-cancel]').onclick = () => { if (!busy) dialog.close(); };
+    input.onchange = async () => {
+      const current = ++revision; photo = ""; sendButton.disabled = true; preview.hidden = true; error.textContent = "";
+      const file = input.files[0]; if (!file) return;
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) { error.textContent = "JPG, PNG বা WEBP ছবি দিন (১০ MB-এর মধ্যে)।"; return; }
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image(); image.src = url; await image.decode();
+        const scale = Math.min(1, 640 / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas"); canvas.width = Math.max(1, Math.round(image.naturalWidth * scale)); canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.drawImage(image,0,0,canvas.width,canvas.height);
+        let result = canvas.toDataURL("image/jpeg", .85);
+        if (result.length > 540000) result = canvas.toDataURL("image/jpeg", .65);
+        if (current !== revision || !dialog.isConnected) return;
+        photo = result; preview.src = photo; preview.hidden = false; sendButton.disabled = false;
+      } catch { if (current === revision) error.textContent = "ছবিটি খোলা যায়নি। অন্য ছবি দিন।"; }
+      finally { URL.revokeObjectURL(url); }
+    };
+    sendButton.onclick = async () => {
+      if (!photo || busy) return; busy = true; sendButton.disabled = true; input.disabled = true; error.textContent = "";
+      try { const result = await api("/api/student/photo-request", { body: { photo } }); D.profile.pendingPhoto = result.pendingPhoto; $("#studentPhotoStatus").textContent = "ছবি পাঠানো হয়েছে — অ্যাডমিনের অনুমোদনের অপেক্ষায়।"; dialog.close(); }
+      catch (e) { error.textContent = e.message; }
+      finally { busy = false; sendButton.disabled = false; input.disabled = false; }
+    };
+    dialog.showModal();
+  }
   function moduleFeeCard(i) {
     const rows = (i.breakdown || []).map(a => {
       const month = new Date(a.month + "-01T00:00:00").toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
@@ -538,6 +572,10 @@ ${inner}
     $("#siteName").textContent = "শাহিন’স আইসিটি কেয়ার";
     $("#av").textContent = "";
     $("#av").style.cssText = `background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover`; // ছবি না থাকলে ছেলে/মেয়ের আইকন
+    $("#av").disabled = !!AS;
+    $("#av").innerHTML = AS ? "" : '<span>ছবি বদলান</span>';
+    $("#av").onclick = requestProfilePhoto;
+    $("#studentPhotoStatus").textContent = p.pendingPhoto ? "নতুন ছবি অ্যাডমিনের অনুমোদনের অপেক্ষায়।" : p.photoReview?.status === "rejected" ? "আগের ছবিটি অনুমোদিত হয়নি। পরিষ্কার ছবি আবার পাঠান।" : "";
     $("#sName").textContent = p.name;
     $("#sMeta").innerHTML = `<span class="student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-batch-meta"><span class="student-session">${esc(p.session || "")}</span><b>ব্যাচ ${esc(D.batch?.name || "—")}</b><span class="student-class-time">${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</span><small>${esc(D.batch?.days || "")}</small></span>`;
     // অনলাইন মডিউলের রেকর্ড ক্লাস থাকলে "ক্লাস ভিডিও" ট্যাব (সারসংক্ষেপের পরেই)

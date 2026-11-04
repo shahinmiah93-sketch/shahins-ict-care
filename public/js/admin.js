@@ -1444,6 +1444,7 @@ ${list.map(receiptHtml).join("")}
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">${avatar(s.photo, "s", s.id, s.name, 84, s.gender)}
           <div><label class="btn sm line">${s.photo ? "ছবি বদলান" : "ছবি দিন"}<input type="file" accept="image/*" id="stuPhoto" hidden></label>
           ${s.photo ? '<button type="button" class="btn sm line" id="stuPhotoDel">সরান</button>' : ""}</div></div>
+        ${s.pendingPhoto ? `<section class="student-photo-review"><h3>নতুন ছবি অনুমোদনের অপেক্ষায়</h3><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="শিক্ষার্থীর পাঠানো ছবি" style="width:120px;height:145px;object-fit:contain;border:1px solid #dae4e2;border-radius:12px;background:#f2f6f8"><p>অনুমোদন দিলে এই ছবি প্রোফাইল ও আইডি কার্ডে ব্যবহার হবে।</p><div class="toolbar"><button type="button" class="btn gold" data-photo-review="approve">✓ অনুমোদন করুন</button><button type="button" class="btn line" data-photo-review="reject">অনুমোদন না দিন</button></div></section>` : ""}
         <dl class="kv">
           <dt>আইডি</dt><dd>${esc(s.id)}</dd><dt>নাম</dt><dd>${esc(s.name)}${s.nameEn ? ` · ${esc(s.nameEn)}` : ""} (${s.gender === "F" ? "মেয়ে" : s.gender === "O" ? "অন্যান্য" : "ছেলে"})</dd>
           ${s.dob || s.bloodGroup || s.religion ? `<dt>জন্ম · রক্ত · ধর্ম</dt><dd>${esc([s.dob && s.dob.split("-").reverse().join("/"), s.bloodGroup, s.religion, s.nationality].filter(Boolean).join(" · "))}</dd>` : ""}
@@ -1476,6 +1477,12 @@ ${list.map(receiptHtml).join("")}
     });
     $("#pinSms").onclick = () => { if (confirm(`${s.name}-কে আইডি আর PIN SMS-এ পাঠাবেন?`)) resendLogin(s, $("#pinSmsNote")); };
     $$("#modalBody [data-start]").forEach(button => { button.onclick = () => correctEnrollmentStart(s, button.dataset.start); });
+    $$("#modalBody [data-photo-review]").forEach(button => { button.onclick = async () => {
+      if (!confirm(button.dataset.photoReview === "approve" ? "এই ছবিটি অনুমোদন করবেন?" : "এই ছবিটি অনুমোদন না দিয়ে ফেরত দেবেন?")) return;
+      $$("#modalBody [data-photo-review]").forEach(b => b.disabled = true);
+      try { await api("/api/admin/student-photo-review", { body: { id: s.id, action: button.dataset.photoReview, version: s.pendingPhoto.version } }); await load(); viewStudent(s.id); toast("ছবির সিদ্ধান্ত সংরক্ষিত হয়েছে"); }
+      catch (error) { toast(error.message, true); $$("#modalBody [data-photo-review]").forEach(b => b.disabled = false); }
+    }; });
     $("#pinReset").onclick = async () => {
       if (!confirm("নতুন PIN তৈরি করবেন? আগের PIN আর কাজ করবে না।")) return;
       try { const r = await api("/api/admin/student-pin", { body: { id: s.id } }); $("#pinVal").textContent = r.pin; s.pin = r.pin; delete s.loginSms; $("#pinSmsNote").textContent = loginSmsNote(s); toast("নতুন PIN তৈরি হয়েছে"); } catch (e) { toast(e.message, true); }
@@ -1509,6 +1516,7 @@ ${list.map(receiptHtml).join("")}
       </div>
       <div class="toolbar">
         <a class="btn gold" href="#admission">＋ নতুন ভর্তি</a>
+        <button type="button" class="btn line" id="reviewStudentPhotos"${DB.students.some(s => s.pendingPhoto) ? "" : " hidden"}>ছবি অনুমোদন (${bn(DB.students.filter(s => s.pendingPhoto).length)})</button>
         <button class="btn line" id="csv">↓ Excel</button>
         <button class="btn line" id="cards">এই তালিকার আইডি কার্ড</button>
         <button class="btn line" id="smsAll">📩 এই তালিকার সবাইকে আইডি ও PIN</button>
@@ -1516,6 +1524,11 @@ ${list.map(receiptHtml).join("")}
       </div>
       <div class="tbl-wrap"><table class="students-table"><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>`;
+    $("#reviewStudentPhotos").onclick = () => {
+      const pending = DB.students.filter(s => s.pendingPhoto);
+      openModal({ title: `ছবি অনুমোদন (${bn(pending.length)})`, body: `<div style="display:grid;gap:12px">${pending.map(s => `<button type="button" class="btn line" data-review-student="${esc(s.id)}" style="justify-content:flex-start;gap:12px"><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="" style="width:52px;height:62px;object-fit:contain;border-radius:8px"><span>${esc(s.name)} · ${esc(s.id)}<small style="display:block">ছবিটি দেখে সিদ্ধান্ত দিন →</small></span></button>`).join("")}</div>` });
+      $$("#modalBody [data-review-student]").forEach(b => b.onclick = () => viewStudent(b.dataset.reviewStudent));
+    };
     const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
     const list = () => {
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
