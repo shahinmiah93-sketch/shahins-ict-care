@@ -64,7 +64,7 @@
       pages.push({width:W,height:H,bytes:new Uint8Array(await image.arrayBuffer())});canvas.width=canvas.height=0;
     }
     const blob=pdf(pages),url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download=`student-login-slips-${new Date().toISOString().slice(0,10)}.pdf`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    link.href=url;link.download=`student-login-slips-${new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Dhaka'})}.pdf`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
     return {pages:pages.length,count:students.length};
   }
   window.SICLoginSlips={download};
