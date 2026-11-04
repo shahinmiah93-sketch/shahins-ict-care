@@ -576,6 +576,11 @@ ${inner}
     $("#av").innerHTML = AS ? "" : '<span>ছবি বদলান</span>';
     $("#av").onclick = requestProfilePhoto;
     $("#studentPhotoStatus").textContent = p.pendingPhoto ? "নতুন ছবি অ্যাডমিনের অনুমোদনের অপেক্ষায়।" : p.photoReview?.status === "rejected" ? "আগের ছবিটি অনুমোদিত হয়নি। পরিষ্কার ছবি আবার পাঠান।" : "";
+    const completion = D.profileCompletion;
+    const prompt = $("#studentProfilePrompt");
+    prompt.hidden = !!AS || !completion || completion.complete;
+    $("#profileMissingCount").textContent = `${bn(completion?.missing.length || 0)}টি প্রয়োজনীয় তথ্য বাকি আছে`;
+    $("#completeStudentProfile").onclick = () => window.SICStudentProfile({ profile: D.profile, onSaved: async () => { await openPanel(); } });
     $("#sName").textContent = p.name;
     $("#sMeta").innerHTML = `<span class="student-info-item student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-info-item student-batch"><small>সেশন · ${esc(p.session || "—")}</small><strong>ব্যাচ ${esc(D.batch?.name || "—")}</strong></span><span class="student-info-item student-schedule"><small>ক্লাসের সময়</small><strong>${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</strong><span>${esc(D.batch?.days || "")}</span></span>`;
     // অনলাইন মডিউলের রেকর্ড ক্লাস থাকলে "ক্লাস ভিডিও" ট্যাব (সারসংক্ষেপের পরেই)
