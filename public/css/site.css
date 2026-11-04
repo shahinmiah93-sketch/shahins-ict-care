@@ -808,7 +808,12 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 #gallery .gal-grid.bento .c0{grid-area:a}#gallery .gal-grid.bento .c1{grid-area:b}#gallery .gal-grid.bento .c2{grid-area:c}
 #gallery .gal-grid.bento .c3{grid-area:d}#gallery .gal-grid.bento .c4{grid-area:e}#gallery .gal-grid.bento .c5{grid-area:f}
 #gallery .gal-grid.few{display:flex;flex-wrap:wrap;justify-content:center}
-#gallery .gal-grid.few .gal-it{flex:0 1 280px;aspect-ratio:4/3}
+#gallery .gal-grid.few .gal-it{flex:0 1 calc((100% - 32px)/3);aspect-ratio:4/3}
+#gallery .gal-grid.few-1 .gal-it{flex-basis:100%;max-width:860px}
+#gallery .gal-grid.few-2 .gal-it,#gallery .gal-grid.few-4 .gal-it{flex-basis:calc((100% - 16px)/2)}
+#gallery .gal-grid.few-1 figcaption b{font-size:clamp(16px,2vw,22px)}
+#gallery .gal-grid.few figcaption{flex-wrap:wrap}
+#gallery .gal-grid.few figcaption b{max-width:100%}
 #gallery .gal-it{position:relative;margin:0;border-radius:18px;overflow:hidden;cursor:zoom-in;background:#151518;
   border:1px solid rgba(243,197,93,.25);box-shadow:0 12px 28px rgba(0,0,0,.45);transition:transform .3s ease,box-shadow .3s ease,border-color .3s}
 #gallery .gal-it:hover,#gallery .gal-it:focus-visible{transform:translateY(-4px);border-color:rgba(243,197,93,.7);box-shadow:0 20px 40px rgba(0,0,0,.55),0 0 0 1px rgba(243,197,93,.35)}
@@ -826,7 +831,9 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
   #gallery .gal-grid.bento{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(4,30vw);grid-template-areas:"a a" "a a" "b c" "d d"}
   #gallery .gal-grid.bento .c4,#gallery .gal-grid.bento .c5{display:none}
   #gallery .gal-it{border-radius:12px}#gallery .gal-it figcaption b{font-size:13px}#gallery .gal-grid.bento .c0 figcaption b{font-size:16px}
-  #gallery .gal-grid.few .gal-it{flex-basis:calc(50% - 5px)}}
+  #gallery .gal-grid.few .gal-it{flex-basis:calc(50% - 5px)}
+  #gallery .gal-grid.few-1 .gal-it,#gallery .gal-grid.few-2 .gal-it,
+  #gallery .gal-grid.few-3 .gal-it:first-child,#gallery .gal-grid.few-5 .gal-it:first-child{flex-basis:100%}}
 @media(prefers-reduced-motion:reduce){#gallery .gal-it,#gallery .gal-it img{transition:none}}
 /* ===== মেনুর "নোটিশ": লাল ব্যাজে না-দেখা নোটিশের সংখ্যা ===== */
 .nav-notice{position:relative}

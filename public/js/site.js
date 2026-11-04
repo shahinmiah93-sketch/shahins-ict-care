@@ -128,11 +128,11 @@
         .map(([v, t, n]) => `<button type="button" class="${gFilter === v ? "on" : ""}" data-gal-album="${esc(v)}">${esc(t)} <i>${bn(n)}</i></button>`).join("") : "";
       // দিনলিপি: বেন্টো গ্রিড — একটা বড় ঘর আর চারপাশে ছোট ঘর (মোট ৬টা)। ছবি ৬টার বেশি হলে কয়েক সেকেন্ড পরপর
       // এলোমেলো একটা ঘরের ছবি নরমভাবে মিলিয়ে গিয়ে নতুন ছবি আসে (যেটা এখন পর্দায় নেই); মাউস রাখলে থামে।
-      // ৬টার কম ছবি হলে সমান মাপের ঘরে মাঝখানে স্থির
+      // ৬টার কম ছবি হলে সংখ্যা অনুযায়ী বড়, স্থির কার্ড
       clearInterval(gTimer);
       const grid = $("#galGrid"), N = Math.min(6, view.length), bento = view.length >= 6;
       const cap = (g) => `<b>${esc(g.title || g.album || "আমাদের দিনলিপি")}</b>${g.date ? `<small>${esc(U.date(g.date))}</small>` : ""}`;
-      grid.className = "gal-grid" + (bento ? " bento" : " few");
+      grid.className = "gal-grid" + (bento ? " bento" : ` few few-${N}`);
       grid.innerHTML = view.slice(0, N).map((g, i) => `<figure class="gal-it c${i}" data-gal-i="${i}" tabindex="0" role="button" aria-label="${esc(g.title || g.album || "ছবি")} — বড় করে দেখুন">
         <img class="on" src="${esc(g.img)}" alt="${esc(g.title || g.album || "")}" decoding="async"><img alt="" aria-hidden="true" decoding="async"><figcaption>${cap(g)}</figcaption></figure>`).join("");
       $("#galMore").hidden = true;
