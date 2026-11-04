@@ -559,14 +559,14 @@ function pausedMonths(s) {
   return out;
 }
 // একটি ভর্তির (enrollment) মোট দেনা — মাসিক কোর্সে মাস ধরে ধরে
-function enrollmentDue(e) {
-  const c = db.courses.find((x) => x.id === e.courseId) || {};
+function enrollmentDue(e, context = {}) {
+  const c = context.course || db.courses.find((x) => x.id === e.courseId) || {};
   const net = Math.max(0, num(e.fee) - num(e.discount));
   if (c.feeType !== "monthly") return { due: net, months: 0, monthly: false, net };
   const end = e.status === "ended" && e.endDate ? e.endDate : today();
   const months = monthsBetween(e.startDate, end);
-  const s = db.students.find((x) => x.id === e.studentId);
-  const b = s && db.batches.find((x) => x.id === s.batchId);
+  const s = context.student || db.students.find((x) => x.id === e.studentId);
+  const b = context.batch || (s && db.batches.find((x) => x.id === s.batchId));
   const wd = classWeekdays(b && b.days);
   const fc = b ? feeClosures(b.id) : { dates: new Set(), list: [] };
   const start = new Date((e.startDate || today()) + "T00:00:00");
