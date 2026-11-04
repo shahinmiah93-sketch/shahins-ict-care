@@ -1,0 +1,73 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import crypto from 'node:crypto';
+const source = fs.readFileSync(new URL('../server.mjs', import.meta.url), 'utf8');
+const section = (start,end) => source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start)));
+function app() {
+  let id=0, writes=0, backups=0, failSave=false;
+  const ctx={
+    db:{meta:{},sessions:[{name:'HSC-27',active:true}],batches:[{id:'b1',name:'27-A',session:'HSC-27',days:'শনি, সোম, বুধ',time:'সকাল ৭:০০',active:true}],courses:[{id:'c1',code:'01',name:'Regular',feeType:'monthly',fee:1000,active:true,chapters:[]},{id:'c2',code:'02',name:'Once',feeType:'once',fee:2000,active:true}],students:[],enrollments:[],payments:[],closures:[]},
+    Date, crypto, today:()=> '2026-11-04', num:v=>Number(v)||0,str:(v,max=500)=>String(v??'').trim().slice(0,max),phoneOf:v=>String(v||'').replace(/^88/,''),enDigits:v=>String(v??'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)),pad2:v=>String(v).padStart(2,'0'),
+    moduleFee:(c)=>c.fee,uid:prefix=>prefix+(++id),nextStudentId:()=>String(270001+ctx.db.students.length),nextSerial:()=>ctx.db.students.length+1,newPin:()=> '1234',nextReceiptNo:()=>1001+ctx.db.payments.length,rememberLists:()=>{},batchLabel:b=>b.name,
+    readBody:async req=>req.body,send:(res,status,data)=>({status,data}),saveDb:()=>{if(failSave)throw new Error('fixture save failed');writes++},writeJsonAtomic:()=>{},DB_FILE:'fixture',BACKUPS:'backups',path:{join:(...s)=>s.join('/')},fs:{copyFileSync:()=>backups++}
+  };
+  vm.createContext(ctx);
+  const studentsClean = section('  students: (b) => (','  enrollments: (b) => (');
+  vm.runInContext(section('const STUDENT_KEYS =','const CLEAN =')+'\nconst CLEAN={'+studentsClean+'};\n'+section('const monthsBetween =','// ব্যাচ বদলালেও আগের হাজিরা')+section('function validateEnrollment(','// ---------- মেয়াদ')+section('function createEnrollment(','// ---------- রাউটার ----------'),ctx);
+  return {ctx,stats:()=>({writes,backups}),fail:()=>{failSave=true},call:body=>ctx.admissionImportAction({body},{})};
+}
+const defaults={session:'HSC-27',batchId:'b1',courseId:'c1',admissionDate:'2026-11-04',discount:'0',chapters:''};
+test('Sparse rows accept missing phones and personal fields; admission date drives fee preview and saved ledger', async()=>{
+  const a=app(),input={defaults,rows:[{row:2,name:'Sparse',admissionDate:'2026-08-15'},{row:3,nameEn:'English Only'}]};
+  const before=JSON.stringify(a.ctx.db),p=await a.call(input);
+  assert.equal(p.status,200);assert.equal(p.data.errors.length,0);assert.equal(JSON.stringify(a.ctx.db),before);
+  assert.equal(p.data.rows[0].enrollment.startDate,'2026-08-15');assert.equal(p.data.rows[0].student.phone,'');assert.equal(p.data.rows[0].student.gender,'');
+  assert(p.data.rows[0].fees.firstMonth<1000);assert.equal(p.data.rows[0].fees.months,4);assert.equal(p.data.rows[1].student.admissionDate,'2026-11-04');
+  assert.equal(p.data.rows[1].fees.firstMonth,1000);
+  const result=await a.call({...input,commit:true,previewToken:p.data.token});assert.equal(result.status,200);assert.equal(result.data.create,2);
+  assert.deepEqual(a.stats(),{writes:1,backups:1});assert.equal(a.ctx.db.payments.length,0);
+  assert.equal(a.ctx.feeSummary(a.ctx.db.students[0]).totalDue,p.data.rows[0].fees.totalDue);
+  const repeat=await a.call({...input,commit:true,previewToken:p.data.token});assert.equal(repeat.data.alreadyImported,true);assert.equal(a.ctx.db.students.length,2);
+});
+test('Initial payment uses joining date; existing students are skipped and no other record overwritten',async()=>{
+  const a=app(),input={defaults,rows:[{name:'Person',phone:'1700000001',guardianPhone:'',admissionDate:'2026-09-06',paid:'500',college:'College',fatherName:'Parent'}]};
+  const p=await a.call(input);assert.equal(p.data.errors.length,0);assert.equal(p.data.rows[0].student.phone,'01700000001');assert.equal(p.data.rows[0].fees.firstMonth,1000);
+  await a.call({...input,commit:true,previewToken:p.data.token});assert.equal(a.ctx.db.payments[0].date,'2026-09-06');assert.equal(a.ctx.db.students[0].college,'College');
+  const next=await a.call({...input,rows:[{...input.rows[0],college:'Do not overwrite'}]});assert.equal(next.data.summary.skip,1);assert.equal(a.ctx.db.students[0].college,'College');
+});
+test('Invalid rows block entire commit; a stale fee preview and duplicate file rows cannot be committed',async()=>{
+  const a=app(),input={defaults,rows:[{name:'Valid'},{name:'Invalid',admissionDate:'2026-02-30'}]};
+  const p=await a.call(input);assert.equal(p.data.errors.length,1);assert.equal((await a.call({...input,commit:true,previewToken:p.data.token})).status,400);assert.equal(a.ctx.db.students.length,0);
+  const good={defaults,rows:[{name:'Valid'}]},g=await a.call(good);a.ctx.db.courses[0].fee=1200;
+  assert.equal((await a.call({...good,commit:true,previewToken:g.data.token})).status,409);
+  assert.equal((await a.call({defaults,rows:[{name:'Same'},{name:'Same'}]})).data.errors.length,1);
+  assert.equal((await a.call({defaults,rows:[{name:'Phone',phone:'bad'}]})).data.errors.length,1);
+  assert.equal((await a.call({defaults,rows:[{name:'No optional values',phone:'',guardianPhone:'',dob:'',gender:'',paid:''}]})).data.errors.length,0);
+});
+test('Save failure restores all imported students, enrollments and payments',async()=>{
+  const a=app(),input={defaults,rows:[{name:'Rollback',paid:100}]};const p=await a.call(input),before=JSON.stringify(a.ctx.db);a.fail();
+  await assert.rejects(a.call({...input,commit:true,previewToken:p.data.token}),/fixture save failed/);assert.equal(JSON.stringify(a.ctx.db),before);
+});
+const browser={window:{},console};vm.createContext(browser);
+vm.runInContext(fs.readFileSync(new URL('../public/vendor/xlsx-0.20.3.full.min.js',import.meta.url),'utf8'),browser);
+vm.runInContext(fs.readFileSync(new URL('../public/js/admission-sheet.js',import.meta.url),'utf8'),browser);
+const XLSX=browser.XLSX,parser=browser.window.SICAdmissionSheet;
+function wb(data) { const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(data),'Students');return w; }
+test('Real XLSX decoding preserves optional blanks, phones, dates, Unicode and detects formula/error rows',()=>{
+  const w=wb([['Name','Number','Guardian Number','Joining Date','Gender','Subject 1','Subject 2'],['নাম',1700000001,'',46300,'','Physics','Chemistry'],['Sparse']]);
+  const bytes=XLSX.write(w,{type:'buffer',bookType:'xlsx'});const reread=XLSX.read(bytes,{type:'buffer',cellDates:false,sheetRows:502});const p=parser.parseWorkbook(reread,'Students',XLSX);
+  assert.equal(p.errors.length,0);assert.equal(p.rows.length,2);assert.equal(p.rows[1].phone,'');assert.equal(p.rows[0].subject1,'Physics');assert.match(p.rows[0].admissionDate,/^2026-/);
+  w.Sheets.Students.B2={t:'n',v:100,f:'1+99'};assert.equal(parser.parseWorkbook(w,'Students',XLSX).errors.length,1);
+  assert.throws(()=>parser.dateValue('31/02/2026',XLSX,false),/তারিখ/);
+  assert.equal(parser.dateValue('',XLSX,false),'');
+  const bengali=parser.parseWorkbook(wb([['নাম (বাংলা)','বিষয়-০১','বিষয়-০২'],['নাম','Physics','Chemistry']]),'Students',XLSX);assert.equal(bengali.rows[0].subject1,'Physics');assert.equal(bengali.rows[0].subject2,'Chemistry');
+});
+test('Downloadable demo has every admission column, phone text formats and no demo students to import accidentally',()=>{
+  const data=fs.readFileSync(new URL('../public/templates/Admission-Import-Demo.xlsx',import.meta.url));const w=XLSX.read(data,{type:'buffer'});
+  assert(w.SheetNames.includes('Students'));assert(w.SheetNames.includes('Guide'));
+  assert.equal(w.Sheets.Students.A1.v,'Name');assert.equal(w.Sheets.Students.B1.v,'English Name');
+  assert.equal(parser.FIELDS.length,54);
+  assert.throws(()=>parser.parseWorkbook(w,'Students',XLSX),/শিরোনামের নিচে/);
+});
