@@ -1567,7 +1567,7 @@ function repairConfirmedAdmissionStart() {
     setFirstMonth(e);
     db.meta ||= {}; db.meta.repairs ||= {};
     db.meta.repairs[key] = { at, enrollmentId: e.id, startDate: e.startDate };
-    saveDb(); return true;
+    saveDb(); console.info("Confirmed admission date repair applied"); return true;
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
 

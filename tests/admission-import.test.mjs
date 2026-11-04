@@ -75,6 +75,17 @@ test('October 12 joining date produces October 700 plus November 1000; reviewed 
   assert.equal((await a.ctx.enrollmentStartAction({body:{id:e.id,startDate:'2026-10-11'}},{})).status,400);
   assert.equal((await a.ctx.enrollmentStartAction({body:{id:e.id,startDate:'2026-11-05'}},{})).status,400);
 });
+test('Confirmed record repair is backed up, idempotent and leaves other enrollments and payments intact',()=>{
+  const a=app(),s={id:'280001',admissionDate:'2026-10-12',batchId:'b1'};a.ctx.db.students.push(s);
+  const e=a.ctx.createEnrollment(s.id,{course:a.ctx.db.courses[0],chapters:[],fee:1000,discount:0},'2026-11-04','');
+  const later=a.ctx.createEnrollment(s.id,{course:a.ctx.db.courses[0],chapters:[],fee:1000,discount:0},'2026-11-04','');
+  a.ctx.db.payments.push({studentId:s.id,enrollmentId:e.id,amount:300});
+  assert.equal(a.ctx.repairConfirmedAdmissionStart(),true);assert.equal(e.startDate,'2026-10-12');assert.equal(later.startDate,'2026-11-04');
+  assert.equal(a.ctx.enrollmentDue(e).due,1700);assert.equal(a.ctx.db.payments[0].amount,300);assert.equal(a.stats().backups,1);
+  assert.equal(a.ctx.repairConfirmedAdmissionStart(),false);assert.equal(a.stats().backups,1);
+  const b=app();b.ctx.db.students.push(s);const untouched=b.ctx.createEnrollment(s.id,{course:b.ctx.db.courses[0],chapters:[],fee:1000,discount:0},'2026-10-20','');
+  assert.equal(b.ctx.repairConfirmedAdmissionStart(),false);assert.equal(untouched.startDate,'2026-10-20');
+});
 test('Initial admission ignores a stale course-start field; a later module retains its own date',async()=>{
   const a=app();a.ctx.db.leads=[];a.ctx.db.applications=[];a.ctx.smsStudentLogin=async()=>({ok:false});
   const block=section('  if (p === "/api/admin/admit" && m === "POST") {','  // আগের শিক্ষার্থীকে আরেকটি মডিউলে ভর্তি');
