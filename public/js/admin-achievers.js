@@ -14,6 +14,30 @@ window.SICAchievers = function (X) {
   const blank = (g) => ({ id: "", group: g || "university", name: "", detail: "", subject: "", batch: "", active: true });
   const num = (v) => Number(String(v).replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)));
 
+  const historyKey = "sic-achiever-field-history-v1";
+  const remembered = () => { try { return JSON.parse(localStorage.getItem(historyKey) || "{}"); } catch { return {}; } };
+  const fieldKey = key => ["detail","subject"].includes(key) ? `${F.group}:${key}` : key;
+  function rememberField(el) {
+    const key = el.dataset.k, value = el.value.trim();
+    if (!["name","detail","subject","batch"].includes(key) || !value) return;
+    const history = remembered(), id = fieldKey(key);
+    history[id] = [...new Set([value,...(history[id] || [])])].slice(0,40);
+    try { localStorage.setItem(historyKey,JSON.stringify(history)); } catch {}
+  }
+  function suggest(el) {
+    C.querySelectorAll(".ac-suggestions").forEach(n => n.remove());
+    const key = el.dataset.k;
+    if (!["name","detail","subject","batch"].includes(key)) return;
+    const values = [...new Set([...(remembered()[fieldKey(key)] || []),...all().filter(a => !["detail","subject"].includes(key) || a.group === F.group).map(a => a[key]).filter(Boolean)])];
+    const query = el.value.trim().toLocaleLowerCase(), matches = values.filter(v => !query || v.toLocaleLowerCase().includes(query)).slice(0,12);
+    if (!matches.length) return;
+    const list = document.createElement("div"); list.className = "ac-suggestions"; list.setAttribute("role","listbox"); list.setAttribute("aria-label","আগের লেখা");
+    list.innerHTML = matches.map(v => `<button type="button" role="option">${esc(v)}</button>`).join("");
+    el.parentElement.style.position = "relative"; el.parentElement.append(list);
+    list.querySelectorAll("button").forEach(b => b.onmousedown = e => { e.preventDefault(); el.value = b.textContent; rememberField(el); list.remove(); el.focus(); });
+    el.onkeydown = e => { if (e.key === "Escape") list.remove(); };
+  }
+
   function formHtml() {
     const f = F, G = GROUPS.find((x) => x[0] === f.group);
     const img = preview || (f.id ? imgOf(DB().achievers.find((a) => a.id === f.id) || {}) : "");
@@ -44,6 +68,10 @@ window.SICAchievers = function (X) {
   function render() {
     if (!C) return;
     const l = all(), live = l.filter((a) => a.active && a.image), secs = Number(DB().settings.achieverSeconds) || 3.5;
+    C.onfocusin = e => { if (e.target.matches("input[data-k]")) suggest(e.target); };
+    C.oninput = e => { if (e.target.matches("input[data-k]")) suggest(e.target); };
+    C.onchange = e => { if (e.target.matches("input[data-k]")) rememberField(e.target); };
+    C.onfocusout = e => { if (!e.relatedTarget?.closest(".ac-suggestions")) C.querySelectorAll(".ac-suggestions").forEach(n => n.remove()); };
     C.innerHTML = `<div class="ex-page">
       <section class="ln-banner"><div><span class="eyebrow">ওয়েবসাইটের মূল পাতা</span><h2>সফল শিক্ষার্থী</h2>
         <p>"আমাদের সফল শিক্ষার্থীরা" অংশে দুই কলাম — বিশ্ববিদ্যালয়ে পড়ছে আর পেশায় প্রতিষ্ঠিত। প্রতিটা কলামে ছবি আর নাম-বিবরণ কয়েক সেকেন্ড পরপর বদলায়। শুধু আসল শিক্ষার্থীর ছবি দিন — তাদের অনুমতি নিয়ে।</p>
@@ -67,6 +95,7 @@ window.SICAchievers = function (X) {
   async function save() {
     if (busy) return;
     read();
+    $$("input[data-k]", C).forEach(rememberField);
     if (!F.name.trim()) { toast("শিক্ষার্থীর নাম লিখুন", true); return $('[data-k="name"]', C).focus(); }
     if (!F.id && !file) return toast("আগে ছবি বেছে নিন", true);
     busy = true;

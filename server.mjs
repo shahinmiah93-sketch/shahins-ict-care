@@ -1642,13 +1642,14 @@ function renumberStudentsByAdmission() {
     for (const field of ["absentSent","monthlySent","feeSent"]) for (const day of Object.keys(db[field] || {})) db[field][day] = db[field][day].map(to);
     for (const lead of db.leads) for (const src of lead.sources || []) if (src.type === "qna" && mapping[src.ref]) src.ref = to(src.ref);
     for (const receipt of db.meta?.admissionImports || []) if (Array.isArray(receipt.ids)) receipt.ids = receipt.ids.map(to);
+    for (const [file,data] of files) if (data) fs.unlinkSync(file);
     for (const s of ordered) {
       const old = s.id;
       for (const kind of ["s","p"]) { const data = files.get(photoFile(kind,old)); if (data) fs.writeFileSync(photoFile(kind,to(old)),data); }
       s.id = to(old);
     }
     const targetFiles = new Set(ordered.flatMap(s => [photoFile("s",s.id),photoFile("p",s.id)]));
-    for (const [file,data] of files) if (data && !targetFiles.has(file)) fs.unlinkSync(file);
+    for (const [file,data] of files) if (data && !targetFiles.has(file) && fs.existsSync(file)) fs.unlinkSync(file);
     db.students = ordered;
     // Retire old student sessions so a reused numeric ID can never open another profile.
     for (const [token,session] of logins) if (session.role === "student") logins.delete(token);
