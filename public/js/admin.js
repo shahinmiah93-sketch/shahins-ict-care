@@ -2813,12 +2813,13 @@ ${list.map(receiptHtml).join("")}
   // ফ্রি: লগইন করলেই PDF নামানো যায়; প্রিমিয়াম: "ক্রেতা" ঘরে যার মোবাইল নম্বর লেখা আছে শুধু সে নামাতে পারে
   // (ওয়েবসাইটে "কিনুন" চাপলে WhatsApp-এ অর্ডারের বার্তা আসে — টাকা পেলে এখানে তার নম্বর যোগ করুন)
   function ebookForm(e) {
+    const categories = [...new Set([...DB.sessions.map((s) => s.name), ...(DB.ebooks || []).map((book) => book.category), e && e.category].filter(Boolean))];
     openForm({
       title: e ? "ই-বুক বদলান" : "নতুন ই-বুক",
       fields: [
         { name: "title", label: "ই-বুকের নাম", required: true, wide: true, placeholder: "যেমন: আইসিটি শর্ট নোট — HSC 27" },
         { name: "short", label: "ছোট বিবরণ (কার্ডে দুই লাইন দেখায়)", type: "textarea", wide: true, rows: 3 },
-        { name: "category", label: "শ্রেণি / সেশন (ফিল্টারে দেখায়)", placeholder: "যেমন: HSC-27" },
+        { name: "category", label: "শ্রেণি / সেশন (ফিল্টারে দেখায়)", type: "select", options: [["", "শ্রেণি / সেশন বেছে নিন"], ...categories.map((name) => [name, name])] },
         { name: "kind", label: "ধরন", type: "select", options: [["free", "ফ্রি"], ["students", "ভর্তি হওয়া শিক্ষার্থীদের জন্য"], ["premium", "প্রিমিয়াম (টাকায়)"]] },
         { name: "price", label: "দাম (৳) — প্রিমিয়াম হলে", type: "number" },
         { name: "oldPrice", label: "আগের দাম (৳) — কেটে দেখাবে, ঐচ্ছিক", type: "number" },
@@ -2837,7 +2838,8 @@ ${list.map(receiptHtml).join("")}
         if (cover && cover.size > 8 * 1024 * 1024) throw new Error("কভার ছবি ৮ MB-এর মধ্যে দিন");
         if (pdf && !/\.pdf$/i.test(pdf.name)) throw new Error("শুধু PDF ফাইল দিন");
         if (pdf && pdf.size > 80 * 1024 * 1024) throw new Error("PDF ৮০ MB-এর মধ্যে দিন");
-        d.validityDays = validityFrom(d); delete d.validityText;
+        d.validityDays = d.kind === "premium" ? validityFrom(d) : 0; delete d.validityText;
+        if (d.kind !== "premium") { d.price = 0; d.oldPrice = 0; d.buyers = ""; }
         const r = await save("ebooks", d, e && e.id), id = (e && e.id) || r.item.id;
         const up = async (url, file, type) => { const x = await fetch(url, { method: "POST", headers: { "Content-Type": type }, body: file }); if (!x.ok) throw new Error((await x.json().catch(() => ({}))).error || "ফাইল জমা হয়নি"); };
         try {
@@ -2848,6 +2850,17 @@ ${list.map(receiptHtml).join("")}
       },
     });
     attachValidityList();
+    const kind = $('#modalBody [name="kind"]');
+    const updatePremiumFields = () => {
+      const premium = kind.value === "premium";
+      for (const name of ["price", "oldPrice", "validityText", "buyers"]) {
+        const input = $(`#modalBody [name="${name}"]`);
+        input.closest("label").style.display = premium ? "" : "none";
+        input.disabled = !premium;
+      }
+    };
+    kind.addEventListener("change", updatePremiumFields);
+    updatePremiumFields();
   }
   function ebooks(c) {
     const list = (DB.ebooks || []).slice().sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || String(b.createdAt).localeCompare(String(a.createdAt)));
