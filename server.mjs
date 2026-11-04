@@ -1610,7 +1610,15 @@ function studentProfileCompletion(student) {
 async function updateStudentProfile(req, res, student) {
   const body = await readBody(req, 64 * 1024);
   if (!["M", "F", "O"].includes(body.gender ?? student.gender)) return send(res, 400, { error: "লিঙ্গ বেছে নিন" });
-  const clean = STUDENT_KEYS({ ...student, ...body });
+  const current = STUDENT_KEYS(student), submitted = STUDENT_KEYS({ ...student, ...body });
+  const baseline = body.profileBase && typeof body.profileBase === "object" ? STUDENT_KEYS(body.profileBase) : null;
+  const edits = {};
+  for (const key of Object.keys(current)) {
+    if (baseline && submitted[key] === baseline[key]) continue;
+    if (baseline && current[key] !== baseline[key] && submitted[key] !== current[key]) return send(res, 409, { error: "অ্যাডমিন তথ্য বদলেছেন। পেজ রিফ্রেশ করে আবার ফর্ম খুলুন" });
+    edits[key] = submitted[key];
+  }
+  const clean = STUDENT_KEYS({ ...student, ...edits });
   const completion = studentProfileCompletion(clean);
   if (!completion.complete) return send(res, 400, { error: "এই তথ্যগুলো পূরণ করুন: " + completion.missing.map(x => x.label).join(", ") });
   if (!importValidDate(clean.dob) || clean.dob >= today()) return send(res, 400, { error: "সঠিক জন্ম তারিখ দিন" });
@@ -1618,10 +1626,44 @@ async function updateStudentProfile(req, res, student) {
   if (clean.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email)) return send(res, 400, { error: "সঠিক ইমেইল দিন" });
   if (clean.sscGpa && (!Number.isFinite(Number(clean.sscGpa)) || Number(clean.sscGpa) < 0 || Number(clean.sscGpa) > 5)) return send(res, 400, { error: "SSC GPA ০ থেকে ৫-এর মধ্যে দিন" });
   const original = JSON.stringify(student);
+  const changes = {}, additions = {};
+  const addressKeys = ["address", "permanentAddress", "sameAddress"];
+  const filled = value => typeof value === "boolean" ? value : String(value ?? "").trim() !== "";
+  const addressReview = addressKeys.some(k => clean[k] !== current[k] && (filled(current[k]) || (k === "sameAddress" && (filled(current.address) || filled(current.permanentAddress)))));
+  for (const key of Object.keys(current)) {
+    if (clean[key] === current[key]) continue;
+    if (filled(current[key]) || (addressReview && addressKeys.includes(key))) changes[key] = { from: current[key], to: clean[key], label: PROFILE_LABELS[key] || key };
+    else additions[key] = clean[key];
+  }
   fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-profile-${student.id}-${Date.now()}.json`));
-  try { Object.assign(student, clean, { profileCompletedAt: new Date().toISOString(), profileUpdatedBy: "student" }); saveDb(); }
+  try {
+    Object.assign(student, additions, { profileUpdatedBy: "student" });
+    if (Object.keys(changes).length) student.pendingProfile = { version: uid("profile"), submittedAt: new Date().toISOString(), changes };
+    else delete student.pendingProfile;
+    delete student.profileReview;
+    if (studentProfileCompletion(student).complete) student.profileCompletedAt = new Date().toISOString();
+    saveDb();
+  }
   catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); throw error; }
-  return send(res, 200, { ok: true, profileCompletion: studentProfileCompletion(student) });
+  return send(res, 200, { ok: true, profileCompletion: studentProfileCompletion(student), pending: Object.keys(changes).length, saved: Object.keys(additions).length });
+}
+const PROFILE_LABELS = { ...PROFILE_REQUIRED, bloodGroup:"রক্তের গ্রুপ", religion:"ধর্ম", nationality:"জাতীয়তা", phone2:"অতিরিক্ত মোবাইল", whatsapp:"হোয়াটসঅ্যাপ", email:"ইমেইল", fatherName:"বাবার নাম", fatherOccupation:"বাবার পেশা", fatherPhone:"বাবার মোবাইল", motherName:"মায়ের নাম", motherOccupation:"মায়ের পেশা", motherPhone:"মায়ের মোবাইল", guardianRelation:"অভিভাবকের সাথে সম্পর্ক", guardianOccupation:"অভিভাবকের পেশা", sameAddress:"বর্তমান ঠিকানাই স্থায়ী ঠিকানা", sscExam:"পরীক্ষা", sscSchool:"SSC প্রতিষ্ঠান", sscBoard:"SSC বোর্ড", sscGroup:"SSC বিভাগ", sscYear:"SSC সাল", sscGpa:"SSC GPA", sscRoll:"SSC রোল", collegeRoll:"কলেজ রোল", subject1:"বিষয়–১", subject2:"বিষয়–২", subject3:"বিষয়–৩", subject4:"৪র্থ বিষয়", groupSubjects:"গ্রুপ বিষয়", fourthSubject:"৪র্থ বিষয় (অতিরিক্ত)", source:"ভর্তির উৎস", refName:"রেফারেন্সকারীর নাম", refPhone:"রেফারেন্সকারীর মোবাইল", refOccupation:"রেফারেন্সকারীর পেশা" };
+async function reviewStudentProfile(req, res) {
+  const body = await readBody(req), student = db.students.find(s => s.id === str(body.id,40));
+  const pending = student?.pendingProfile;
+  if (!pending || !["approve","reject"].includes(body.action)) return send(res,400,{error:"তথ্য সংশোধনের অনুরোধ পাওয়া যায়নি"});
+  if (body.version !== pending.version) return send(res,409,{error:"অনুরোধ বদলেছে। আবার খুলে দেখুন"});
+  const current = STUDENT_KEYS(student), allowed = new Set(Object.keys(current));
+  if (Object.entries(pending.changes).some(([key,change])=>!allowed.has(key) || current[key] !== change.from)) return send(res,409,{error:"মূল তথ্য বদলেছে। শিক্ষার্থীকে নতুন করে সংশোধন পাঠাতে বলুন"});
+  const original = JSON.stringify(student), at = new Date().toISOString();
+  fs.copyFileSync(DB_FILE,path.join(BACKUPS,`before-profile-review-${student.id}-${Date.now()}.json`));
+  try {
+    if (body.action === "approve") for (const [key,change] of Object.entries(pending.changes)) student[key] = change.to;
+    student.profileReview = { status: body.action === "approve" ? "approved" : "rejected", at, count: Object.keys(pending.changes).length };
+    student.profileChangeHistory = [...(student.profileChangeHistory || []),{...pending,...student.profileReview}].slice(-20);
+    delete student.pendingProfile; saveDb();
+  } catch(error) { Object.keys(student).forEach(k=>delete student[k]); Object.assign(student,JSON.parse(original)); throw error; }
+  return send(res,200,{ok:true});
 }
 async function studentPhotoRequest(req, res, student) {
   const b = await readBody(req, 600 * 1024);
@@ -2330,7 +2372,7 @@ async function api(req, res, url) {
     const s = panelStudent(res);
     if (!s) return send(res, 401, { error: "লগইন করুন" });
     const batch = db.batches.find((b) => b.id === s.batchId) || null;
-    const { pin, note, ...profile } = s;
+    const { pin, note, profileChangeHistory, ...profile } = s;
     const fees = feeSummary(s);
     return send(res, 200, {
       profile, profileCompletion: studentProfileCompletion(s), batch, courses: fees.items.filter((i) => i.status === "active").map((i) => i.course),
@@ -2653,6 +2695,7 @@ async function api(req, res, url) {
   }
 
   // ছবি দেখা: /api/admin/photo/s/<studentId> বা /api/admin/photo/a/<applicationId>
+  if (p === "/api/admin/student-profile-review" && m === "POST") return reviewStudentProfile(req, res);
   if (p === "/api/admin/student-photo-review" && m === "POST") return reviewStudentPhoto(req, res);
   const pm = p.match(/^\/api\/admin\/photo\/([sap])\/([\w-]+)$/);
   if (pm && m === "GET") return sendPhoto(res, pm[1], pm[2]);
