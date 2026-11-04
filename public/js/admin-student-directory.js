@@ -10,9 +10,7 @@
     }).map(s=>s.id));
   }
   function legacyOnline(db) {
-    const modern=ids(db,'online');
-    const linkedPhones=new Set((db.students || []).filter(s=>modern.has(s.id)).map(s=>phone(s.phone)).filter(Boolean));
-    return (db.learners || []).filter(l=>(db.ocEnrolls || []).some(e=>e.learnerId===l.id)&&!linkedPhones.has(phone(l.phone)));
+    return (db.learners || []).filter(l=>(db.ocEnrolls || []).some(e=>e.learnerId===l.id));
   }
   function quizParticipants(db) {
     const admittedPhones=new Set((db.students || []).map(s=>phone(s.phone)).filter(Boolean));
