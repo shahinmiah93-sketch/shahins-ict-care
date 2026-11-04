@@ -86,6 +86,18 @@ test('Confirmed record repair is backed up, idempotent and leaves other enrollme
   const b=app();b.ctx.db.students.push(s);const untouched=b.ctx.createEnrollment(s.id,{course:b.ctx.db.courses[0],chapters:[],fee:1000,discount:0},'2026-10-20','');
   assert.equal(b.ctx.repairConfirmedAdmissionStart(),false);assert.equal(untouched.startDate,'2026-10-20');
 });
+test('Monthly fee ranges apply to historical months, partial admission, discounts and December fallback',()=>{
+  const a=app(),s={id:'schedule',batchId:'b1',admissionDate:'2026-09-30'};a.ctx.db.students.push(s);
+  const c=a.ctx.db.courses[0];c.monthlyFees=a.ctx.cleanMonthlyFees([{from:'2026-08',to:'2026-11',fee:800}]);
+  const e=a.ctx.createEnrollment(s.id,{course:c,chapters:[],fee:1000,discount:0},s.admissionDate,'');
+  let due=a.ctx.enrollmentDue(e);assert.equal(due.firstNet,50);assert.equal(due.due,1650);
+  a.ctx.today=()=> '2026-12-04';assert.equal(a.ctx.enrollmentDue(e).due,2650);
+  assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-07'),1000);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-08'),800);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-12'),1000);
+  e.discount=100;assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-10'),700);assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-12'),900);
+  c.monthlyFees=[{from:'2026-08',to:'2026-11',fee:0}];assert.equal(a.ctx.monthlyFeeFor(c,e,'2026-11'),0);
+  assert.throws(()=>a.ctx.cleanMonthlyFees([{from:'2026-08',to:'2026-11',fee:800},{from:'2026-11',to:'2026-12',fee:900}]),/একই মাস/);
+  for(const r of [{from:'2026-13',to:'2026-14',fee:800},{from:'2026-11',to:'2026-08',fee:800},{from:'2026-08',to:'2026-11',fee:-1}]) assert.throws(()=>a.ctx.cleanMonthlyFees([r]));
+});
 test('Initial admission ignores a stale course-start field; a later module retains its own date',async()=>{
   const a=app();a.ctx.db.leads=[];a.ctx.db.applications=[];a.ctx.smsStudentLogin=async()=>({ok:false});
   const block=section('  if (p === "/api/admin/admit" && m === "POST") {','  // আগের শিক্ষার্থীকে আরেকটি মডিউলে ভর্তি');
