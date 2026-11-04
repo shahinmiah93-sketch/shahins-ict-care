@@ -1354,113 +1354,6 @@ function createPayment(studentId, enrollmentId, pay, note) {
   return p;
 }
 
-// ---------- Reviewed Excel student import ----------
-const importDateValid = value => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
-  const [y, m, d] = value.split("-").map(Number), dt = new Date(value + "T00:00:00Z");
-  return y >= 2000 && y <= 2100 && dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
-};
-function studentImportPlan(input) {
-  const batch = db.batches.find(x => x.id === input.batchId && x.active !== false);
-  const course = db.courses.find(x => x.id === input.courseId && x.active !== false && x.feeType === "monthly");
-  if (!batch || !db.sessions.some(s => s.name === batch.session && s.active !== false)) throw new Error("সক্রিয় সেশন ও ব্যাচ বেছে নিন");
-  if (!course) throw new Error("মাসের হিসাব আমদানির জন্য একটি সক্রিয় মাসিক মডিউল বেছে নিন");
-  const year = Number(input.year), mode = input.monthMode, discount = Number(input.discount || 0);
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new Error("মাসগুলোর বছর সঠিকভাবে দিন");
-  if (!["paid", "due", "status"].includes(mode)) throw new Error("মাসের কলামে জমা, বকেয়া না Paid/Unpaid—বেছে নিন");
-  if (!Number.isFinite(discount) || discount < 0 || discount > Number(course.fee)) throw new Error("মাসিক ছাড় মডিউলের ফি-এর মধ্যে হতে হবে");
-  if (!Array.isArray(input.rows) || !input.rows.length || input.rows.length > 500) throw new Error("একবারে ১ থেকে ৫০০ শিক্ষার্থী দিন");
-  const seen = new Set(), errors = [], rows = [];
-  const normalizedName = n => String(n).normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
-  const normalizePhone = value => {
-    let v = enDigits(String(value ?? "")).trim().replace(/[\s()+-]/g, "");
-    if (/^8801\d{9}$/.test(v)) v = v.slice(2);
-    if (/^1\d{9}$/.test(v)) v = "0" + v;
-    if (v && !/^01\d{9}$/.test(v)) throw new Error("মোবাইল নম্বর সঠিক নয়");
-    return v;
-  };
-  for (let i = 0; i < input.rows.length; i++) {
-    const raw = input.rows[i] || {}, rowNo = i + 2;
-    try {
-      const name = String(raw.name || "").trim();
-      if (!name || name.length > 120) throw new Error("Name দিন (সর্বোচ্চ ১২০ অক্ষর)");
-      const phone = normalizePhone(raw.phone), guardianPhone = normalizePhone(raw.guardianPhone), admissionDate = String(raw.admissionDate || "");
-      if (!phone && !guardianPhone) throw new Error("অন্তত একটি মোবাইল নম্বর দিন");
-      if (!importDateValid(admissionDate) || admissionDate > today()) throw new Error("Joining Date সঠিক অতীত বা আজকের তারিখ হতে হবে");
-      const phones = [phone, guardianPhone].filter(Boolean), nm = normalizedName(name);
-      for (const ph of phones) {
-        const identity = nm + "|" + ph;
-        if (seen.has(identity)) throw new Error("ফাইলে একই শিক্ষার্থী একাধিকবার আছে");
-      }
-      const old = db.students.find(s => s.session === batch.session && normalizedName(s.name) === nm && [s.phone, s.guardianPhone].some(ph => ph && phones.includes(phoneOf(ph))));
-      const months = raw.months;
-      if (!months || typeof months !== "object" || Array.isArray(months) || Object.keys(months).some(k => !/^(?:[1-9]|1[0-2])$/.test(k))) throw new Error("মাসের কলাম সঠিক নয়");
-      const entries = [], net = Math.max(0, Number(course.fee) - discount);
-      const first = firstMonthClasses(batch.days, admissionDate) || {};
-      const closed = feeClosures(batch.id).dates, weekdays = classWeekdays(batch.days);
-      for (const [month, rawValue] of Object.entries(months).sort((a, b) => Number(a[0]) - Number(b[0]))) {
-        const value = enDigits(String(rawValue ?? "")).trim();
-        if (!value) continue;
-        const mk = `${year}-${String(month).padStart(2, "0")}`;
-        if (mk < admissionDate.slice(0, 7)) throw new Error(`${mk}: ভর্তির আগের মাসের ঘর খালি রাখুন`);
-        const fromDay = mk === admissionDate.slice(0, 7) && first.firstTotal && !first.firstGrace ? Number(admissionDate.slice(8)) : 1;
-        const charge = weekdays.length ? monthFee(net, weekdays, year, Number(month) - 1, fromDay, closed).fee : net;
-        let amount;
-        if (mode === "status") {
-          if (!/^(paid|unpaid|পরিশোধিত|অপরিশোধিত)$/i.test(value)) throw new Error(`${mk}: Paid বা Unpaid লিখুন`);
-          amount = /^(paid|পরিশোধিত)$/i.test(value) ? charge : 0;
-        } else {
-          const text = value.replace(/,/g, "");
-          if (!/^\d+(?:\.\d{1,2})?$/.test(text) || Number(text) > 1000000) throw new Error(`${mk}: শূন্য বা ধনাত্মক টাকার পরিমাণ দিন`);
-          const money = Number(text);
-          if (mode === "due" && money > charge) throw new Error(`${mk}: বকেয়া ${charge} টাকার ফি-এর বেশি হতে পারে না`);
-          amount = mode === "due" ? Math.round((charge - money) * 100) / 100 : money;
-        }
-        entries.push({ month: mk, amount, charge });
-      }
-      phones.forEach(ph => seen.add(nm + "|" + ph));
-      rows.push({ row: Number.isInteger(raw.row) ? raw.row : rowNo, name, phone, guardianPhone, admissionDate, entries, existingId: old?.id || "" });
-    } catch (e) { errors.push({ row: Number.isInteger(raw.row) ? raw.row : rowNo, error: e.message }); }
-  }
-  const validRows = rows.filter(r => !r.existingId);
-  const summary = { create: validRows.length, skip: rows.length - validRows.length, payments: validRows.reduce((n, r) => n + r.entries.filter(e => e.amount > 0).length, 0), paid: Math.round(validRows.reduce((n, r) => n + r.entries.reduce((sum, e) => sum + e.amount, 0), 0) * 100) / 100 };
-  const hash = crypto.createHash("sha256").update(JSON.stringify({ batch: { id: batch.id, session: batch.session, days: batch.days }, course: { id: course.id, fee: course.fee }, year, mode, discount, rows })).digest("hex");
-  return { batch, course, discount, rows, errors, summary, token: hash };
-}
-async function studentImportAction(req, res) {
-  const input = await readBody(req, 2 * 1024 * 1024);
-  let plan;
-  try { plan = studentImportPlan(input); } catch (e) { return send(res, 400, { error: e.message }); }
-  if (!input.commit) return send(res, 200, { rows: plan.rows, errors: plan.errors, summary: plan.summary, token: plan.token });
-  // A completed import has a receipt even if the client lost its response.
-  const receipt = (db.meta?.studentImports || []).find(r => r.token === input.previewToken);
-  if (receipt) return send(res, 200, { ok: true, alreadyImported: true, ...receipt });
-  if (plan.errors.length) return send(res, 400, { error: "ফাইলের সব ভুল ঠিক করে আবার যাচাই করুন", errors: plan.errors });
-  if (input.previewToken !== plan.token) return send(res, 409, { error: "তথ্য বা হিসাব বদলেছে। আবার প্রিভিউ দেখে আমদানি করুন" });
-  if (!plan.summary.create) return send(res, 400, { error: "নতুন শিক্ষার্থী নেই; আগে থাকা শিক্ষার্থীদের তথ্য বদলানো হয়নি" });
-  const original = JSON.stringify(db);
-  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-student-import-${Date.now()}.json`));
-  try {
-    const ids = [];
-    for (const row of plan.rows.filter(r => !r.existingId)) {
-      const s = { ...CLEAN.students({ name: row.name, phone: row.phone, guardianPhone: row.guardianPhone, admissionDate: row.admissionDate, batchId: plan.batch.id, session: plan.batch.session }), gender: "", id: nextStudentId(plan.batch.session), serial: nextSerial(), pin: newPin(), status: "active", photo: false, note: "Excel থেকে আমদানি", createdAt: new Date().toISOString() };
-      db.students.push(s); ids.push(s.id);
-      const enrollment = createEnrollment(s.id, { course: plan.course, chapters: [], fee: Number(plan.course.fee), discount: plan.discount }, row.admissionDate, "");
-      for (const entry of row.entries.filter(e => e.amount > 0)) db.payments.push({ id: uid("pay"), studentId: s.id, enrollmentId: enrollment.id, amount: entry.amount, month: entry.month, date: today(), method: "আমদানি", note: `${entry.month} — Excel-এর আগের জমার হিসাব; প্রকৃত লেনদেনের তারিখ দেওয়া নেই`, receiptNo: nextReceiptNo(), createdAt: new Date().toISOString() });
-    }
-    const result = { token: input.previewToken, at: new Date().toISOString(), ids, ...plan.summary };
-    db.meta ||= {};
-    db.meta.studentImports = [...(db.meta.studentImports || []), result].slice(-100);
-    saveDb();
-    return send(res, 200, { ok: true, ...result });
-  } catch (e) {
-    db = JSON.parse(original);
-    writeJsonAtomic(DB_FILE, db);
-    throw e;
-  }
-}
-
-
 // ---------- রাউটার ----------
 async function api(req, res, url) {
   const p = url.pathname;
@@ -2458,8 +2351,6 @@ async function api(req, res, url) {
     saveDb();
     return send(res, 200, { ok: true });
   }
-
-  if (p === "/api/admin/student-import" && m === "POST") return studentImportAction(req, res);
 
   // ভর্তি (নতুন শিক্ষার্থী বা অনলাইন আবেদন থেকে): শিক্ষার্থী + মডিউলে ভর্তি + জমা
   if (p === "/api/admin/admit" && m === "POST") {
