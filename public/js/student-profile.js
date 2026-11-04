@@ -1,5 +1,7 @@
 // Existing students complete their admission details without creating a second admission.
 window.SICStudentProfile = function ({ profile, onSaved }) {
+  const changes = profile.pendingProfile?.changes || {};
+  const values = { ...profile, ...Object.fromEntries(Object.entries(changes).map(([key,change])=>[key,change.to])) };
   const required = new Set(['name','nameEn','dob','gender','phone','guardianName','guardianPhone','address','permanentAddress','college','klass','group']);
   const groups = [
     ['শিক্ষার্থীর তথ্য', [['name','নাম (বাংলা)'],['nameEn','নাম (ইংরেজি)'],['dob','জন্ম তারিখ','date'],['gender','লিঙ্গ',['ছেলে|M','মেয়ে|F','অন্যান্য|O']],['bloodGroup','রক্তের গ্রুপ',U.BLOOD_GROUPS],['religion','ধর্ম',U.RELIGIONS],['nationality','জাতীয়তা'],['phone','শিক্ষার্থীর মোবাইল','tel'],['phone2','অতিরিক্ত মোবাইল','tel'],['whatsapp','হোয়াটসঅ্যাপ','tel'],['email','ইমেইল','email']]],
@@ -10,7 +12,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   ];
   const esc = U.esc;
   const field = ([key,label,type]) => {
-    const value = profile[key] ?? '', req = required.has(key) ? ' required' : '';
+    const value = values[key] ?? '', req = required.has(key) ? ' required' : '';
     if (type === 'checkbox') return `<label class="sp-check"><input type="checkbox" name="${key}"${value ? ' checked' : ''}>${label}</label>`;
     let input;
     if (Array.isArray(type)) {
@@ -19,14 +21,17 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
       input = `<select name="${key}"${req}><option value="">বেছে নিন</option>${options.map(([v,t])=>`<option value="${esc(v)}"${v===value?' selected':''}>${esc(t)}</option>`).join('')}</select>`;
     } else if(type==='textarea') input=`<textarea name="${key}" rows="2" maxlength="300"${req}>${esc(value)}</textarea>`;
     else input=`<input name="${key}" type="${type||'text'}" value="${esc(value)}" maxlength="${/phone|whatsapp/i.test(key)?16:300}"${type==='date'?` max="${U.today()}"`:''}${req}>`;
-    return `<label>${esc(label)}${required.has(key)?' <em>*</em>':' <small>ঐচ্ছিক</small>'}${input}</label>`;
+    return `<label>${esc(label)}${required.has(key)?' <em>*</em>':' <small>ঐচ্ছিক</small>'}${input}${changes[key] ? `<small class="sp-pending">অনুমোদনের অপেক্ষায় · আগে: ${esc(String(changes[key].from || 'খালি'))}</small>` : ''}</label>`;
   };
   const dialog=document.createElement('dialog'); dialog.className='student-profile-dialog';
   dialog.innerHTML=`<form><header><div><small>রোল ${esc(profile.id)}</small><h2>ভর্তি ফর্ম সম্পূর্ণ করুন</h2></div><button type="button" class="sp-close" aria-label="ফর্ম বন্ধ করুন">×</button></header><p class="sp-help">আগের তথ্য দেওয়া আছে। <b>*</b> চিহ্নের ঘরগুলো পূরণ করুন; অন্য তথ্য প্রযোজ্য হলে দিন।</p>${groups.map(([title,fields],i)=>`<section><h3><span>${U.bn(i+1)}</span>${title}</h3><div class="sp-grid">${fields.map(field).join('')}</div></section>`).join('')}<p class="sp-error" role="alert"></p><footer><button type="button" class="btn line" data-cancel>পরে পূরণ করব</button><button type="submit" class="btn gold">তথ্য সংরক্ষণ করুন</button></footer></form>`;
   document.body.append(dialog);const form=dialog.querySelector('form'),error=dialog.querySelector('.sp-error'),save=form.querySelector('[type=submit]');let busy=false;
+  dialog.querySelector('h2').textContent = profile.pendingProfile ? 'পাঠানো সংশোধন দেখুন' : profile.profileCompletedAt ? 'ভর্তির তথ্য সংশোধন' : 'ভর্তি ফর্ম সম্পূর্ণ করুন';
+  dialog.querySelector('.sp-help').innerHTML = `খালি ঘরের নতুন তথ্য সরাসরি সংরক্ষণ হবে। আগে দেওয়া তথ্য বদলালে অ্যাডমিনের অনুমোদন লাগবে। <b>*</b> চিহ্নের ঘরগুলো পূরণ করুন।${profile.pendingProfile ? '<strong class="sp-pending-banner">আপনার সংশোধন অনুমোদনের অপেক্ষায় আছে। নিচে পাঠানো নতুন তথ্য দেখানো হচ্ছে।</strong>' : profile.profileReview?.status === 'rejected' ? '<strong class="sp-pending-banner">আগের সংশোধন অনুমোদিত হয়নি। সঠিক তথ্য দিয়ে আবার পাঠাতে পারেন।</strong>' : ''}`;
+  save.textContent = 'সংরক্ষণ / সংশোধন পাঠান';
   const close=()=>{if(!busy)dialog.close();};dialog.querySelector('.sp-close').onclick=close;dialog.querySelector('[data-cancel]').onclick=close;dialog.oncancel=e=>{if(busy)e.preventDefault();};dialog.onclose=()=>dialog.remove();
   const same=form.elements.namedItem('sameAddress'),address=form.elements.namedItem('address'),permanent=form.elements.namedItem('permanentAddress');
   const syncAddress=()=>{permanent.readOnly=same.checked;if(same.checked)permanent.value=address.value;};same.onchange=syncAddress;address.oninput=syncAddress;syncAddress();
-  form.onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;save.disabled=true;error.textContent='';try{const data=Object.fromEntries(new FormData(form));data.sameAddress=same.checked;for(const key of ['phone','phone2','whatsapp','fatherPhone','motherPhone','guardianPhone','refPhone','sscYear','sscGpa','sscRoll','collegeRoll'])data[key]=String(data[key]||'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));await U.api('/api/student/profile',{body:data});await onSaved();dialog.close();}catch(er){error.textContent=er.message;error.scrollIntoView({block:'nearest'});}finally{busy=false;save.disabled=false;}};
+  form.onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;save.disabled=true;error.textContent='';try{const data=Object.fromEntries(new FormData(form));data.sameAddress=same.checked;data.profileBase=profile;for(const key of ['phone','phone2','whatsapp','fatherPhone','motherPhone','guardianPhone','refPhone','sscYear','sscGpa','sscRoll','collegeRoll'])data[key]=String(data[key]||'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));await U.api('/api/student/profile',{body:data});await onSaved();dialog.close();}catch(er){error.textContent=er.message;error.scrollIntoView({block:'nearest'});}finally{busy=false;save.disabled=false;}};
   dialog.showModal();
 };

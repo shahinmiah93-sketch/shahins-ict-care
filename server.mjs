@@ -1612,6 +1612,8 @@ async function updateStudentProfile(req, res, student) {
   if (!["M", "F", "O"].includes(body.gender ?? student.gender)) return send(res, 400, { error: "লিঙ্গ বেছে নিন" });
   const current = STUDENT_KEYS(student), submitted = STUDENT_KEYS({ ...student, ...body });
   const baseline = body.profileBase && typeof body.profileBase === "object" ? STUDENT_KEYS(body.profileBase) : null;
+  if (!student.gender) current.gender = "";
+  if (baseline && !body.profileBase.gender) baseline.gender = "";
   const edits = {};
   for (const key of Object.keys(current)) {
     if (baseline && submitted[key] === baseline[key]) continue;
@@ -1654,6 +1656,7 @@ async function reviewStudentProfile(req, res) {
   if (!pending || !["approve","reject"].includes(body.action)) return send(res,400,{error:"তথ্য সংশোধনের অনুরোধ পাওয়া যায়নি"});
   if (body.version !== pending.version) return send(res,409,{error:"অনুরোধ বদলেছে। আবার খুলে দেখুন"});
   const current = STUDENT_KEYS(student), allowed = new Set(Object.keys(current));
+  if (!student.gender) current.gender = "";
   if (Object.entries(pending.changes).some(([key,change])=>!allowed.has(key) || current[key] !== change.from)) return send(res,409,{error:"মূল তথ্য বদলেছে। শিক্ষার্থীকে নতুন করে সংশোধন পাঠাতে বলুন"});
   const original = JSON.stringify(student), at = new Date().toISOString();
   fs.copyFileSync(DB_FILE,path.join(BACKUPS,`before-profile-review-${student.id}-${Date.now()}.json`));
