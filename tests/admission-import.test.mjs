@@ -133,3 +133,9 @@ test('Downloadable demo has every admission column, phone text formats and no de
   assert.equal(parser.FIELDS.length,54);
   assert.throws(()=>parser.parseWorkbook(w,'Students',XLSX),/শিরোনামের নিচে/);
 });
+
+ test('Import assigns new IDs in joining-date order even when spreadsheet rows are reversed',async()=>{
+ const a=app(),input={defaults,rows:[{name:'Later',admissionDate:'2026-11-01'},{name:'Earlier',admissionDate:'2026-08-01'}]};
+ const p=await a.call(input);const r=await a.call({...input,commit:true,previewToken:p.data.token});assert.equal(r.status,200);
+ assert.equal(a.ctx.db.students[0].name,'Earlier');assert.equal(a.ctx.db.students[0].id,'270001');assert.equal(a.ctx.db.students[1].name,'Later');
+ });

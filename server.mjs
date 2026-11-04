@@ -728,7 +728,7 @@ function upsertLead(info, source, extra = {}) {
 (function syncLeads() {
   const ENQ = { called: "contacted", admitted: "admitted", closed: "notinterested" };
   const before = JSON.stringify(db.leads);
-  for (const g of db.quizGuests) upsertLead({ name: g.name, phone: g.phone, batch: g.hsc, institution: g.college }, { type: "quiz", ref: g.id, note: g.group, at: g.createdAt });
+  for (const g of db.quizGuests.filter(g => !g.pinHash || db.quizzes.some(q => (q.attempts?.[g.id] || []).length))) upsertLead({ name: g.name, phone: g.phone, batch: g.hsc, institution: g.college }, { type: "quiz", ref: g.id, note: g.group, at: g.createdAt });
   for (const q of db.qna) {
     const person = db.quizGuests.find(g => g.id === q.guestId) || db.students.find(s => s.id === q.studentId) || q;
     upsertLead({ name: person.name, phone: person.phone, batch: person.hsc || person.session, institution: person.college }, { type: "qna", ref: q.guestId || q.studentId || q.id, at: q.createdAt });
