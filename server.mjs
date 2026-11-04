@@ -700,7 +700,7 @@ const nextGuestId = () => "G" + String(db.quizGuests.reduce((n, g) => Math.max(n
 // সব উৎস (অনলাইন কুইজ, ভর্তির আগ্রহ ফর্ম, Talent Hunt, অফলাইন মার্কেটিং, হাতে যোগ) এক তালিকায়।
 // একই মোবাইল একবারই থাকে — আবার এলে আগের রেকর্ডে নতুন উৎস যোগ হয়, খালি ঘরগুলো পূরণ হয়।
 const LEAD_STATUS = ["new", "contacted", "interested", "followup", "admitted", "notinterested", "wrong", "dnc"];
-const LEAD_SOURCES = ["quiz", "enquiry", "talent", "course", "offline", "manual"];
+const LEAD_SOURCES = ["quiz", "qna", "guest", "enquiry", "talent", "course", "offline", "manual"];
 const LEAD_FIELDS = ["name", "guardianPhone", "batch", "institution", "location", "course"];
 const nextLeadNo = () => "L" + String(db.leads.reduce((n, l) => Math.max(n, Number(String(l.leadNo).slice(1)) || 0), 0) + 1).padStart(4, "0");
 const cleanSource = (s = {}) => ({
@@ -729,6 +729,11 @@ function upsertLead(info, source, extra = {}) {
   const ENQ = { called: "contacted", admitted: "admitted", closed: "notinterested" };
   const before = JSON.stringify(db.leads);
   for (const g of db.quizGuests) upsertLead({ name: g.name, phone: g.phone, batch: g.hsc, institution: g.college }, { type: "quiz", ref: g.id, note: g.group, at: g.createdAt });
+  for (const q of db.qna) {
+    const person = db.quizGuests.find(g => g.id === q.guestId) || db.students.find(s => s.id === q.studentId) || q;
+    upsertLead({ name: person.name, phone: person.phone, batch: person.hsc || person.session, institution: person.college }, { type: "qna", ref: q.guestId || q.studentId || q.id, at: q.createdAt });
+  }
+  for (const g of db.quizGuests.filter(g => g.qnaJoinedAt)) upsertLead({ name:g.name, phone:g.phone, batch:g.hsc, institution:g.college }, { type:"qna", ref:g.id, at:g.qnaJoinedAt });
   for (const e of db.enquiries) upsertLead({ name: e.name, phone: e.phone, course: e.course, institution: e.college, batch: e.klass }, { type: "enquiry", ref: e.id, note: e.message, at: e.createdAt }, { status: ENQ[e.status] || "new", remarks: e.note || "" });
   for (const s of db.students) { const l = db.leads.find((x) => x.phone === s.phone); if (l && l.status !== "admitted") { l.status = "admitted"; l.studentId = s.id; } }
   if (JSON.stringify(db.leads) !== before) saveDb();
@@ -1511,7 +1516,7 @@ async function admissionImportAction(req, res) {
   fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-admission-import-${Date.now()}.json`));
   try {
     const ids = [];
-    for (const row of plan.rows.filter(r => !r.existingId)) {
+    for (const row of plan.rows.filter(r => !r.existingId).sort((a,b) => a.student.admissionDate.localeCompare(b.student.admissionDate))) {
       const student = { ...row.student, id: nextStudentId(row.student.session), serial: nextSerial(), pin: newPin(), status: "active", photo: false, createdAt: new Date().toISOString() };
       db.students.push(student); ids.push(student.id); rememberLists(student);
       const course = db.courses.find(c => c.id === row.courseId);
@@ -1919,6 +1924,17 @@ async function api(req, res, url) {
     return send(res, 200, { item: { ...dailyCard(d), body: d.body, quiz: d.quiz || [] }, newer: j > 0 ? dailyCard(same[j - 1]) : null, older: j < same.length - 1 ? dailyCard(same[j + 1]) : null, more: same.filter((x) => x !== d).slice(0, 4).map(dailyCard) });
   }
   // ---- প্রশ্নোত্তর বক্স (ওয়েবসাইট) ----
+  if (p === "/api/qna/join" && m === "POST") {
+    const person = guestOf(req);
+    if (!person) return send(res, 401, { error: "আগে অতিথি লগইন করুন" });
+    if (!person.qnaJoinedAt) person.qnaJoinedAt = new Date().toISOString();
+    const existing = db.leads.find(l => phoneOf(l.phone) === phoneOf(person.phone));
+    if (!existing?.sources?.some(s => s.type === "qna" && s.ref === person.id)) {
+      upsertLead({ name:person.name, phone:person.phone, batch:person.hsc, institution:person.college }, { type:"qna", ref:person.id, at:person.qnaJoinedAt });
+      saveDb();
+    }
+    return send(res, 200, { ok:true });
+  }
   if (p === "/api/qna/mine" && m === "GET") {
     const who = qnaAsker(req);
     if (!who) return send(res, 200, { items: [] });
@@ -1937,7 +1953,9 @@ async function api(req, res, url) {
     if (db.qna.filter((q) => q.date === today()).length >= 300) return send(res, 429, { error: "আজ অনেক প্রশ্ন এসেছে, কাল আবার চেষ্টা করুন" });
     qnaHits.set(ip, [...hits, now]);
     const q = { id: uid("qna"), name, phone, guestId: gst ? gst.id : "", studentId: stu ? stu.id : "", text, status: "new", public: true, date: today(), createdAt: new Date().toISOString(), token: crypto.randomBytes(12).toString("hex"), files: {} };
-    db.qna.push(q); saveDb();
+    db.qna.push(q);
+    upsertLead({ name, phone, batch: (gst || stu).hsc || (gst || stu).session, institution: (gst || stu).college }, { type:"qna", ref:q.guestId || q.studentId, at:q.createdAt });
+    saveDb();
     return send(res, 200, { ok: true, id: q.id, token: q.token });
   }
   const qfm = p.match(/^\/api\/qna\/([\w-]+)\/(q-image|q-audio|a-image|a-audio|a-video)$/);
@@ -2496,7 +2514,7 @@ async function api(req, res, url) {
   }
 
   if (p === "/api/admin/db" && m === "GET") {
-    const students = db.students.map((s) => ({ ...s, fees: feeSummary(s) }));
+    const students = [...db.students].sort((a,b) => String(a.admissionDate || "9999").localeCompare(String(b.admissionDate || "9999")) || String(a.id).localeCompare(String(b.id))).map((s) => ({ ...s, fees: feeSummary(s) }));
     return send(res, 200, { ...db, batches: [...db.batches].sort(compareBatchSchedule), students, bookMeta: { geo: BD_GEO, ship: bookShip(), methods: BOOK_METHODS, status: BOOK_STATUS } });
   }
   // সেটআপ পাতা থেকে PIN / ইমেইল / পাসওয়ার্ড বদলানো — বর্তমান পাসওয়ার্ড লাগবে; ফাঁকা ঘর আগের মতো থাকে

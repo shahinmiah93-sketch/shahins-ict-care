@@ -744,7 +744,7 @@ ${list.map(receiptHtml).join("")}
     const pay = mons.map((m) => ({ lab: U.month(m), short: U.month(m).split(" ")[0], v: DB.payments.filter((p) => (p.date || "").startsWith(m)).reduce((t, p) => t + p.amount, 0) }));
     const paid = DB.payments.reduce((t, p) => t + p.amount, 0), due = act.reduce((t, s) => t + Math.max(0, s.fees.balance), 0);
     const sess = liveSessions().map((se, i) => ({ lab: se.name, v: act.filter((s) => s.session === se.name).length, c: DV[i % DV.length] }));
-    const SRC = [["quiz", "অনলাইন কুইজ"], ["enquiry", "ভর্তির আগ্রহ ফর্ম"], ["talent", "Talent Hunt"], ["course", "অনলাইন কোর্স"], ["offline", "অফলাইন মার্কেটিং"], ["manual", "হাতে যোগ"]];
+    const SRC = [["qna", "প্রশ্ন ও উত্তর"], ["guest", "অতিথি অ্যাকাউন্ট"], ["quiz", "অনলাইন কুইজ"], ["enquiry", "ভর্তির আগ্রহ ফর্ম"], ["talent", "Talent Hunt"], ["course", "অনলাইন কোর্স"], ["offline", "অফলাইন মার্কেটিং"], ["manual", "হাতে যোগ"]];
     const leads = SRC.map(([k, t], i) => ({ lab: t, v: (DB.leads || []).filter((l) => ((l.sources || [])[0] || {}).type === k).length, c: DV[i] })).filter((x) => x.v);
     const card = (t, sub, body, link, k) => `<div class="card dv-card ${k}"><div class="card-head"><div><h2>${t}</h2><small class="dv-sub">${sub}</small></div>${link || ""}</div>${body}</div>`;
     return `<div class="dv-grid">

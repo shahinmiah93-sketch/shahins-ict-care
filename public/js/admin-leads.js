@@ -12,7 +12,7 @@ window.SICLeads = function (X) {
   const cleanPhone = (s) => enNum(s).replace(/\D/g, "").replace(/^88/, "");
 
   const STATUS = [["new", "নতুন", ""], ["contacted", "যোগাযোগ হয়েছে", ""], ["interested", "আগ্রহী", "ok"], ["followup", "ফলো-আপ", "warn"], ["admitted", "ভর্তি হয়েছে", "ok"], ["notinterested", "আগ্রহ নেই", "bad"], ["wrong", "ভুল নম্বর", "bad"], ["dnc", "যোগাযোগ করবেন না", "bad"]];
-  const SOURCES = [["quiz", "অনলাইন কুইজ"], ["enquiry", "ভর্তির আগ্রহ ফর্ম"], ["talent", "Talent Hunt"], ["course", "অনলাইন কোর্স"], ["offline", "অফলাইন মার্কেটিং"], ["manual", "হাতে যোগ"]];
+  const SOURCES = [["qna", "প্রশ্ন ও উত্তর"], ["guest", "অতিথি অ্যাকাউন্ট"], ["quiz", "অনলাইন কুইজ"], ["enquiry", "ভর্তির আগ্রহ ফর্ম"], ["talent", "Talent Hunt"], ["course", "অনলাইন কোর্স"], ["offline", "অফলাইন মার্কেটিং"], ["manual", "হাতে যোগ"]];
   const ST = Object.fromEntries(STATUS.map(([k, t, c]) => [k, [t, c]])), SRC = Object.fromEntries(SOURCES);
   const CLOSED = ["admitted", "notinterested", "wrong", "dnc"]; // এদের ফলো-আপ লাগে না
   const smsOk = (l) => l.smsConsent !== false && !["dnc", "wrong"].includes(l.status);

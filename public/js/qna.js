@@ -12,6 +12,7 @@
   const gate = $("#qaGate");
   const drawGate = () => {
     form.classList.toggle("locked", !me); loadMine();
+    if (me?.kind === "guest") fetch("/api/qna/join", { method:"POST" }).catch(() => {});
     gate.innerHTML = me
       ? (me.kind === "guest" ? '<div class="qa-me"><button type="button" class="qa-link" data-qa-out>অতিথি লগআউট</button></div>' : "") // লগইন থাকলে নামের লেখা লাগে না — অতিথির জন্য শুধু লগআউট
       : `<div class="qa-login"><b>প্রশ্ন করতে লগইন করুন</b><small>মোবাইল নম্বরই আপনার আইডি — একবার অ্যাকাউন্ট খুললে PIN দিয়ে যখন খুশি লগইন করতে পারবেন</small>
