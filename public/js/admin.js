@@ -1547,6 +1547,7 @@ ${list.map(receiptHtml).join("")}
         <button type="button" class="btn line" id="reviewStudentProfiles">তথ্য সংশোধন (${bn(DB.students.filter(s => scopeIds.has(s.id) && s.pendingProfile).length)})</button>
         <button class="btn line" id="csv">↓ Excel</button>
         <button class="btn line" id="cards">এই তালিকার আইডি কার্ড</button>
+        <button class="btn line" id="loginSlips" title="A4 পাতায় ১০টি করে নাম, রোল ও PIN-এর স্লিপ">↓ লগইন স্লিপ PDF</button>
         <button class="btn line" id="smsAll">📩 এই তালিকার সবাইকে আইডি ও PIN</button>
         <span class="grow"></span><span class="muted" id="cnt"></span>
       </div>
@@ -1602,6 +1603,14 @@ ${list.map(receiptHtml).join("")}
     };
     $("#csv").onclick = () => U.xlsx(`students-${U.today()}.xlsx`, ["আইডি", "নাম", "ছাত্র/ছাত্রী", "সেশন", "ব্যাচ", "মডিউল", "মোবাইল", "পিতা", "অভিভাবকের মোবাইল", "কলেজ", "ভর্তির তারিখ", "মোট দেনা", "পরিশোধ", "বকেয়া", "অবস্থা"],
       list().map((s) => [s.id, s.name, { M: "ছেলে", F: "মেয়ে", O: "অন্যান্য" }[s.gender] || "", s.session, batchName(s.batchId), listModules(s.id).join(", "), s.phone, s.fatherName, s.guardianPhone, s.college, s.admissionDate, s.fees.totalDue, s.fees.paid, s.fees.balance, s.status === "active" ? "সক্রিয়" : "নিষ্ক্রিয়"]));
+    $("#loginSlips").onclick = async () => {
+      const button=$("#loginSlips"), students=list();
+      if(!students.length) return toast("কোনো শিক্ষার্থী নেই",true);
+      button.disabled=true; button.textContent="PDF তৈরি হচ্ছে…";
+      try { const result=await SICLoginSlips.download(students,{settings:DB.settings,batchName}); toast(`${bn(result.count)} জনের লগইন স্লিপ ডাউনলোড হয়েছে`); }
+      catch(error){toast(error.message || "PDF তৈরি হয়নি",true);}
+      finally{button.disabled=false;button.textContent="↓ লগইন স্লিপ PDF";}
+    };
     $("#cards").onclick = () => { const l = list(); if (!l.length) return toast("কোনো শিক্ষার্থী নেই", true); printDoc("আইডি কার্ড", l.map(idCardHtml).join("")); };
     // তালিকার সবাইকে আইডি ও PIN: একজন একজন করে, আগে পেয়েছে বা পড়া বন্ধ এমন কাউকে নয়; পরপর ৩ বার না গেলে থামে (যেমন ব্যালেন্স শেষ)
     $("#smsAll").onclick = async () => {
