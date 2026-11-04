@@ -1466,6 +1466,27 @@ async function admissionImportAction(req, res) {
   } catch (e) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw e; }
 }
 
+// Gallery bulk deletion keeps private copies before removing the public records.
+async function galleryDeleteAction(req, res) {
+  const body = await readBody(req, 1024 * 1024);
+  if (!body || !Array.isArray(body.ids) || !body.ids.length || body.ids.length > 5000 || body.ids.some(id => typeof id !== "string" || !/^[\w-]{1,100}$/.test(id))) return send(res, 400, { error: "মোছার জন্য ছবি নির্বাচন করুন (সর্বোচ্চ ৫০০০টি)" });
+  const ids = new Set(body.ids), targets = db.gallery.filter(g => ids.has(g.id));
+  if (!targets.length) return send(res, 200, { ok: true, deleted: 0, skipped: ids.size });
+  const tag = uid("gallery-deleted"), archived = [];
+  for (const g of targets) {
+    const file = imgFile("gallery", g);
+    let copy = "";
+    if (file && fs.existsSync(file)) { copy = `${tag}-${g.id}${g.image.ext}`; fs.copyFileSync(file, path.join(BACKUPS, copy)); }
+    archived.push({ item: g, imageBackup: copy });
+  }
+  writeJsonAtomic(path.join(BACKUPS, `${tag}.json`), { deletedAt: new Date().toISOString(), items: archived });
+  const original = JSON.stringify(db);
+  try { db.gallery = db.gallery.filter(g => !ids.has(g.id)); saveDb(); }
+  catch (e) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw e; }
+  targets.forEach(g => dropImg("gallery", g));
+  return send(res, 200, { ok: true, deleted: targets.length, skipped: ids.size - targets.length });
+}
+
 // ---------- রাউটার ----------
 async function api(req, res, url) {
   const p = url.pathname;
@@ -2465,6 +2486,7 @@ async function api(req, res, url) {
   }
 
   if (p === "/api/admin/admission-import" && m === "POST") return admissionImportAction(req, res);
+  if (p === "/api/admin/gallery-delete" && m === "POST") return galleryDeleteAction(req, res);
 
   // ভর্তি (নতুন শিক্ষার্থী বা অনলাইন আবেদন থেকে): শিক্ষার্থী + মডিউলে ভর্তি + জমা
   if (p === "/api/admin/admit" && m === "POST") {
