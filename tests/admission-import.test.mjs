@@ -60,6 +60,30 @@ test('Module names and numeric codes, one-time fees, chapters, discounts and pro
   assert.equal(p.data.errors.length,0);assert.equal(p.data.rows[0].fees.totalDue,1600);
   assert.equal((await a.call({defaults,rows:[{name:'No chapter',course:'Chapters'}]})).data.errors.length,1);
 });
+test('October 12 joining date produces October 700 plus November 1000; reviewed correction preserves payments',async()=>{
+  const a=app(),student={id:'280001',name:'Date fixture',session:'HSC-27',batchId:'b1',admissionDate:'2026-10-12'};
+  a.ctx.db.students.push(student);
+  const course=a.ctx.db.courses[0],e=a.ctx.createEnrollment(student.id,{course,chapters:[],fee:1000,discount:0},'2026-11-04','');
+  assert.equal(a.ctx.feeSummary(student).totalDue,1000);
+  a.ctx.db.payments.push({id:'existing-payment',studentId:student.id,enrollmentId:e.id,amount:300,date:'2026-11-04'});
+  const input={id:e.id,startDate:'2026-10-12'},p=await a.ctx.enrollmentStartAction({body:input},{});
+  assert.equal(p.status,200);assert.equal(p.data.proposed.firstMonth,700);assert.equal(p.data.proposed.due,1700);assert.equal(p.data.proposed.balance,1400);assert.equal(e.startDate,'2026-11-04');
+  assert.equal((await a.ctx.enrollmentStartAction({body:{...input,commit:true,token:'stale'}},{})).status,409);
+  const saved=await a.ctx.enrollmentStartAction({body:{...input,commit:true,token:p.data.token}},{});
+  assert.equal(saved.status,200);assert.equal(saved.data.fees.totalDue,1700);assert.equal(e.startDate,'2026-10-12');assert.equal(e.admissionLinked,true);assert.equal(e.startDateHistory[0].from,'2026-11-04');
+  assert.equal(a.ctx.db.payments.length,1);assert.equal(a.ctx.db.payments[0].amount,300);assert.equal(a.stats().backups,1);
+  assert.equal((await a.ctx.enrollmentStartAction({body:{id:e.id,startDate:'2026-10-11'}},{})).status,400);
+  assert.equal((await a.ctx.enrollmentStartAction({body:{id:e.id,startDate:'2026-11-05'}},{})).status,400);
+});
+test('Initial admission ignores a stale course-start field; a later module retains its own date',async()=>{
+  const a=app();a.ctx.db.leads=[];a.ctx.db.applications=[];a.ctx.smsStudentLogin=async()=>({ok:false});
+  const block=section('  if (p === "/api/admin/admit" && m === "POST") {','  // আগের শিক্ষার্থীকে আরেকটি মডিউলে ভর্তি');
+  vm.runInContext('async function initialAdmission(req,res){const p="/api/admin/admit",m="POST";'+block+'}',a.ctx);
+  const result=await a.ctx.initialAdmission({body:{student:{name:'Past joining date',batchId:'b1',admissionDate:'2026-10-12'},enrollment:{courseId:'c1',startDate:'2026-11-04'}}},{});
+  assert.equal(result.status,200);assert.equal(result.data.enrollment.startDate,'2026-10-12');assert.equal(result.data.enrollment.admissionLinked,true);assert.equal(a.ctx.feeSummary(result.data.student).totalDue,1700);
+  const later=a.ctx.createEnrollment(result.data.student.id,{course:a.ctx.db.courses[1],chapters:[],fee:2000,discount:0},'2026-11-03','');
+  assert.equal(later.startDate,'2026-11-03');assert.equal(later.admissionLinked,undefined);
+});
 const browser={window:{},console};vm.createContext(browser);
 vm.runInContext(fs.readFileSync(new URL('../public/vendor/xlsx-0.20.3.full.min.js',import.meta.url),'utf8'),browser);
 vm.runInContext(fs.readFileSync(new URL('../public/js/admission-sheet.js',import.meta.url),'utf8'),browser);
