@@ -1593,7 +1593,7 @@ function repairConfirmedAdmissionStart() {
 }
 
 // ---------- রাউটার ----------
-const PROFILE_REQUIRED = { name: "নাম (বাংলা)", nameEn: "নাম (ইংরেজি)", dob: "জন্ম তারিখ", phone: "শিক্ষার্থীর মোবাইল", guardianName: "অভিভাবকের নাম", guardianPhone: "অভিভাবকের মোবাইল", address: "বর্তমান ঠিকানা", permanentAddress: "স্থায়ী ঠিকানা", college: "কলেজ", klass: "শ্রেণি", group: "বিভাগ" };
+const PROFILE_REQUIRED = { name: "নাম (বাংলা)", nameEn: "নাম (ইংরেজি)", dob: "জন্ম তারিখ", gender: "লিঙ্গ", phone: "শিক্ষার্থীর মোবাইল", guardianName: "অভিভাবকের নাম", guardianPhone: "অভিভাবকের মোবাইল", address: "বর্তমান ঠিকানা", permanentAddress: "স্থায়ী ঠিকানা", college: "কলেজ", klass: "শ্রেণি", group: "বিভাগ" };
 function studentProfileCompletion(student) {
   const missing = Object.entries(PROFILE_REQUIRED).filter(([key]) => !String(key === "permanentAddress" && student.sameAddress ? student.address || "" : student[key] || "").trim()).map(([key, label]) => ({ key, label }));
   return { complete: !missing.length, missing, total: Object.keys(PROFILE_REQUIRED).length };
