@@ -2813,13 +2813,13 @@ ${list.map(receiptHtml).join("")}
   // ফ্রি: লগইন করলেই PDF নামানো যায়; প্রিমিয়াম: "ক্রেতা" ঘরে যার মোবাইল নম্বর লেখা আছে শুধু সে নামাতে পারে
   // (ওয়েবসাইটে "কিনুন" চাপলে WhatsApp-এ অর্ডারের বার্তা আসে — টাকা পেলে এখানে তার নম্বর যোগ করুন)
   function ebookForm(e) {
-    const categories = [...new Set([...DB.sessions.map((s) => s.name), ...(DB.ebooks || []).map((book) => book.category), e && e.category].filter(Boolean))];
+    const categories = [...new Set([...DB.sessions.map((s) => s.name), ...(DB.ebooks || []).map((book) => book.category), e && e.category].filter(name => name && name !== "উভয়"))];
     openForm({
       title: e ? "ই-বুক বদলান" : "নতুন ই-বুক",
       fields: [
         { name: "title", label: "ই-বুকের নাম", required: true, wide: true, placeholder: "যেমন: আইসিটি শর্ট নোট — HSC 27" },
         { name: "short", label: "ছোট বিবরণ (কার্ডে দুই লাইন দেখায়)", type: "textarea", wide: true, rows: 3 },
-        { name: "category", label: "শ্রেণি / সেশন (ফিল্টারে দেখায়)", type: "select", options: [["", "শ্রেণি / সেশন বেছে নিন"], ...categories.map((name) => [name, name])] },
+        { name: "category", label: "শ্রেণি / সেশন (ফিল্টারে দেখায়)", type: "select", options: [["", "শ্রেণি / সেশন বেছে নিন"], ["উভয়", "উভয় (HSC-27 ও HSC-28)"], ...categories.map((name) => [name, name])] },
         { name: "kind", label: "ধরন", type: "select", options: [["free", "ফ্রি"], ["students", "ভর্তি হওয়া শিক্ষার্থীদের জন্য"], ["premium", "প্রিমিয়াম (টাকায়)"]] },
         { name: "price", label: "দাম (৳) — প্রিমিয়াম হলে", type: "number" },
         { name: "oldPrice", label: "আগের দাম (৳) — কেটে দেখাবে, ঐচ্ছিক", type: "number" },

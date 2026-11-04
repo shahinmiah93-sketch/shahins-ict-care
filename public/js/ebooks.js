@@ -15,7 +15,8 @@
   const loadMine = async () => { try { mine = await fetch("/api/ebooks/mine").then((r) => r.json()); } catch {} draw(); };
   const money = (n) => "৳" + bn(Number(n || 0).toLocaleString("en-IN"));
   const off = (b) => (b.kind === "premium" && b.oldPrice > b.price && b.price > 0 ? Math.round((1 - b.price / b.oldPrice) * 100) : 0);
-  const cats = () => [...new Set(books.map((b) => b.category).filter(Boolean))];
+  const categoryMatches = (b, selected) => !selected || b.category === selected || (b.category === "উভয়" && ["HSC-27", "HSC-28"].includes(selected));
+  const cats = () => [...new Set(books.flatMap((b) => b.category === "উভয়" ? ["HSC-27", "HSC-28"] : b.category ? [b.category] : []))];
 
   const btn = (b) => {
     if (!b.hasPdf) return '<button type="button" class="eb-btn wait" disabled>শীঘ্রই আসছে</button>';
@@ -53,8 +54,8 @@
   addEventListener("resize", () => { syncNav(); alignHeads(); });
 
   function draw() {
-    const list = books.filter((b) => (!cat || b.category === cat) && (kind === "mine" ? mine.open.includes(b.id) : !kind || b.kind === kind));
-        $("#ebCats").innerHTML = cats().length > 1 ? [["", "সব ই-বুক", books.length], ...cats().map((c) => [c, c, books.filter((b) => b.category === c).length])]
+    const list = books.filter((b) => categoryMatches(b, cat) && (kind === "mine" ? mine.open.includes(b.id) : !kind || b.kind === kind));
+        $("#ebCats").innerHTML = cats().length > 1 ? [["", "সব ই-বুক", books.length], ...cats().map((c) => [c, c, books.filter((b) => categoryMatches(b, c)).length])]
       .map(([v, t, n]) => `<button type="button" class="${cat === v ? "on" : ""}" data-eb-cat="${esc(v)}">${esc(t)} <i>${bn(n)}</i></button>`).join("") : "";
     // ধরন: প্রতিটার নিজের রং আর আইকন — সব (সোনালি), ফ্রি (সবুজ), প্রিমিয়াম (কমলা), আমার ই-বুক (নীল)
     const IC = { all: '<path d="M4 5h7v14H4zM13 5h7v14h-7z"/>', free: '<path d="M20 12v8H4v-8M2 7h20v5H2zM12 20V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/>', premium: '<path d="m2 8 5 4 5-7 5 7 5-4-2 11H4z"/>', mine: '<path d="M6 2h12v20l-6-4-6 4z"/>', students: '<path d="m2 9 10-5 10 5-10 5zM6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/>' };
