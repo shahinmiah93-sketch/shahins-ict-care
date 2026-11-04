@@ -1066,7 +1066,29 @@ const activeNotices = (onlyPublic) =>
   db.notices
     .filter((n) => (!n.until || n.until >= today()) && (!onlyPublic || n.public))
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-const batchLabel = (b) => (b ? `${b.name} (${b.session}) — ${b.days}, ${b.time}` : "");
+function parseBatchTime(value) {
+  const text = String(value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const match = text.match(/(\d{1,2})(?:[:ঃ.](\d{2}))?/);
+  if (!match) return null;
+  let hour = Number(match[1]), minute = Number(match[2] || 0);
+  if (hour > 23 || minute > 59) return null;
+  let period = /সকাল/.test(text) ? "সকাল" : /দুপুর/.test(text) ? "দুপুর" : /বিক[াে]ল/.test(text) ? "বিকাল" : /সন্ধ্যা/.test(text) ? "সন্ধ্যা" : /রাত/.test(text) ? "রাত" : /ভোর/.test(text) ? "ভোর" : "";
+  if (period && (hour < 1 || hour > 12)) return null;
+  if (!period) period = hour < 6 ? "রাত" : hour < 12 ? "সকাল" : hour < 16 ? "দুপুর" : hour < 18 ? "বিকাল" : "রাত";
+  let h24 = hour;
+  if (hour <= 12) {
+    if (["দুপুর", "বিকাল", "সন্ধ্যা"].includes(period)) h24 = hour % 12 + 12;
+    else if (period === "রাত") h24 = hour >= 6 && hour < 12 ? hour + 12 : hour % 12;
+  }
+  return { period, hour: String(hour % 12 || 12), minute: String(minute).padStart(2, "0"), minutes: h24 * 60 + minute };
+}
+function compareBatchSchedule(a, b) {
+  return String(a.session || "").localeCompare(String(b.session || ""), "en", { numeric: true }) ||
+    ((parseBatchTime(a.time)?.minutes ?? 9999) - (parseBatchTime(b.time)?.minutes ?? 9999)) ||
+    String(a.name || "").localeCompare(String(b.name || ""), "en", { numeric: true }) || String(a.id || "").localeCompare(String(b.id || ""));
+}
+
+const batchLabel = (b) => (b ? `${b.name}${[b.days, b.time].filter(Boolean).length ? " (" + [b.days, b.time].filter(Boolean).join(" · ") + ")" : ""}` : "");
 // ---------- মূল পাতার ব্যানার স্লাইডার ----------
 const IMG_TYPES = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif" };
 // ছবিওয়ালা কালেকশন: কোন ফোল্ডারে ছবি থাকে, আর ওয়েবসাইটের ঠিকানা কী
@@ -1379,7 +1401,7 @@ async function api(req, res, url) {
   if (p === "/api/public" && m === "GET") {
     const settings = Object.fromEntries(SETTINGS_KEYS.map((k) => [k, db.settings[k] || ""]));
     const live = activeSessions();
-    const batches = db.batches.filter((b) => live.includes(b.session) && b.active !== false).map((b) => ({
+    const batches = [...db.batches].sort(compareBatchSchedule).filter((b) => live.includes(b.session) && b.active !== false).map((b) => ({
       ...b, seatsLeft: Math.max(0, b.capacity - db.students.filter((s) => s.batchId === b.id && s.status !== "inactive").length),
     }));
     return send(res, 200, {
@@ -2108,7 +2130,7 @@ async function api(req, res, url) {
 
   if (p === "/api/admin/db" && m === "GET") {
     const students = db.students.map((s) => ({ ...s, fees: feeSummary(s) }));
-    return send(res, 200, { ...db, students, bookMeta: { geo: BD_GEO, ship: bookShip(), methods: BOOK_METHODS, status: BOOK_STATUS } });
+    return send(res, 200, { ...db, batches: [...db.batches].sort(compareBatchSchedule), students, bookMeta: { geo: BD_GEO, ship: bookShip(), methods: BOOK_METHODS, status: BOOK_STATUS } });
   }
   // সেটআপ পাতা থেকে PIN / ইমেইল / পাসওয়ার্ড বদলানো — বর্তমান পাসওয়ার্ড লাগবে; ফাঁকা ঘর আগের মতো থাকে
   if (p === "/api/admin/creds" && m === "GET") return send(res, 200, { email: auth ? auth.email || "" : "" });

@@ -2467,18 +2467,25 @@ ${list.map(receiptHtml).join("")}
     bindFeeForm(co ? modeOf(co) : mode); // ফি-এর ধরন অনুযায়ী অধ্যায়ের ঘর দেখানো / লুকানো
   }
   function batchForm(b, session) {
+    const clock = U.parseBatchTime(b?.time);
     openForm({
       title: b ? `ব্যাচ বদলান — ${b.name}` : "নতুন ক্লাস ব্যাচ",
       fields: [
         { name: "session", label: "সেশন", type: "select", options: sessionOptions(), required: true },
         { name: "name", label: "ব্যাচের নাম", required: true, placeholder: "যেমন: 27-H" },
         { name: "days", label: "দিন", placeholder: "যেমন: শনি, সোম, বুধ" },
-        { name: "time", label: "সময়", placeholder: "যেমন: সকাল ৮:০০" },
+        { name: "timePeriod", label: "সময়কাল", type: "select", options: [["", "সময় নির্ধারণ হয়নি"], ...["ভোর", "সকাল", "দুপুর", "বিকাল", "সন্ধ্যা", "রাত"].map(p => [p, p]), ...(!clock && b?.time ? [["__legacy", b.time + " (বর্তমান সময়)"]] : [])] },
+        { name: "timeHour", label: "ঘণ্টা", type: "select", options: [["", "ঘণ্টা বাছুন"], ...Array.from({length:12}, (_, i) => [String(i + 1), bn(i + 1)])] },
+        { name: "timeMinute", label: "মিনিট", type: "select", options: Array.from({length:60}, (_, i) => [String(i).padStart(2, "0"), bn(String(i).padStart(2, "0"))]) },
         { name: "capacity", label: "মোট সিট", type: "number", value: 15, min: 1 },
         { name: "tag", label: "ওয়েবসাইটে লাল ট্যাগ (ঐচ্ছিক)", placeholder: "যেমন: নতুন ব্যাচে ভর্তি চলছে — খালি রাখলে ট্যাগ দেখাবে না", wide: true },
       ],
-      values: b || { session, name: session ? `${session.slice(-2)}-${String.fromCharCode(65 + DB.batches.filter((x) => x.session === session).length)}` : "" },
-      onSave: async (d) => { await save("batches", { ...d, active: !b || b.active !== false }, b && b.id); await load(); route(); toast("সেভ হয়েছে"); },
+      values: { ...(b || { session, name: session ? `${session.slice(-2)}-${String.fromCharCode(65 + DB.batches.filter((x) => x.session === session).length)}` : "" }), timePeriod: clock?.period || (b?.time ? "__legacy" : ""), timeHour: clock?.hour || "", timeMinute: clock?.minute || "00" },
+      onSave: async (d) => { const { timePeriod, timeHour, timeMinute, ...details } = d;
+        if (timePeriod && timePeriod !== "__legacy" && !timeHour) throw new Error("সময় নির্ধারণ করতে ঘণ্টা বাছুন");
+        if (!timePeriod && (timeHour || timeMinute !== "00")) throw new Error("সকাল, দুপুর, বিকাল বা রাত বাছুন");
+        const time = timePeriod === "__legacy" ? b.time : timePeriod ? timePeriod + " " + bn(timeHour + ":" + timeMinute) : "";
+        await save("batches", { ...details, time, active: !b || b.active !== false }, b && b.id); await load(); route(); toast("সেভ হয়েছে"); },
     });
   }
   function sessionForm(se) {

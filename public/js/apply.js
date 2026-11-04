@@ -24,7 +24,7 @@
 
   const course = () => D.courses.find((c) => c.id === data.courseId);
   const batch = () => D.batches.find((b) => b.id === data.batchId && b.session === data.session);
-  const batchLabel = (b) => (b ? `${b.name} (${b.session}) — ${b.days}, ${b.time}` : "");
+  const batchLabel = (b) => (b ? U.batchLabel(b) : "");
   const chosenChapters = (c) => (c && c.feeType === "chapter" ? (c.chapters || []).filter((x) => (data.chapters || []).includes(x.id)) : []);
   // মডিউলের ফি: মাসিক → প্রতি মাসে; এককালীন; অধ্যায়ভিত্তিক → বাছাই করা অধ্যায়ের যোগফল
   const feeOf = (c) => (!c ? 0 : c.feeType === "chapter" ? chosenChapters(c).reduce((t, x) => t + x.fee, 0) : c.fee);

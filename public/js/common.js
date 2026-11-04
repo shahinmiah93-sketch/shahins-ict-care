@@ -1,5 +1,28 @@
+function parseBatchTime(value) {
+  const text = String(value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const match = text.match(/(\d{1,2})(?:[:ঃ.](\d{2}))?/);
+  if (!match) return null;
+  let hour = Number(match[1]), minute = Number(match[2] || 0);
+  if (hour > 23 || minute > 59) return null;
+  let period = /সকাল/.test(text) ? "সকাল" : /দুপুর/.test(text) ? "দুপুর" : /বিক[াে]ল/.test(text) ? "বিকাল" : /সন্ধ্যা/.test(text) ? "সন্ধ্যা" : /রাত/.test(text) ? "রাত" : /ভোর/.test(text) ? "ভোর" : "";
+  if (period && (hour < 1 || hour > 12)) return null;
+  if (!period) period = hour < 6 ? "রাত" : hour < 12 ? "সকাল" : hour < 16 ? "দুপুর" : hour < 18 ? "বিকাল" : "রাত";
+  let h24 = hour;
+  if (hour <= 12) {
+    if (["দুপুর", "বিকাল", "সন্ধ্যা"].includes(period)) h24 = hour % 12 + 12;
+    else if (period === "রাত") h24 = hour >= 6 && hour < 12 ? hour + 12 : hour % 12;
+  }
+  return { period, hour: String(hour % 12 || 12), minute: String(minute).padStart(2, "0"), minutes: h24 * 60 + minute };
+}
+function compareBatchSchedule(a, b) {
+  return String(a.session || "").localeCompare(String(b.session || ""), "en", { numeric: true }) ||
+    ((parseBatchTime(a.time)?.minutes ?? 9999) - (parseBatchTime(b.time)?.minutes ?? 9999)) ||
+    String(a.name || "").localeCompare(String(b.name || ""), "en", { numeric: true }) || String(a.id || "").localeCompare(String(b.id || ""));
+}
+
 // সব পেজে ব্যবহৃত ছোট সাহায্যকারী ফাংশন
 window.U = {
+  parseBatchTime, compareBatchSchedule,
   // বাবা-মায়ের সম্ভাব্য পেশা (ড্রপডাউন)
   OCCUPATIONS: [
     "সরকারি চাকরিজীবী", "বেসরকারি চাকরিজীবী", "ব্যবসায়ী", "শিক্ষক", "কৃষক", "প্রবাসী", "গৃহিণী",
@@ -115,7 +138,7 @@ window.U = {
   // পরীক্ষার নাম তালিকায়: "Model Test-01 (২০ অক্টোবর, ২০২৬)"
   examLabel: (e) => (e ? `${e.title}${e.date ? ` (${U.date(e.date)})` : ""}` : ""),
   // ব্যাচের নাম তালিকায়: "27-A — শনি, সোম, বুধ (সকাল ৭:০০)"
-  batchLabel: (b) => (b ? `${b.name}${b.days ? ` — ${b.days}` : ""}${b.time ? ` (${b.time})` : ""}` : ""),
+  batchLabel: (b) => (b ? `${b.name}${[b.days, b.time].filter(Boolean).length ? " (" + [b.days, b.time].filter(Boolean).join(" · ") + ")" : ""}` : ""),
   // বাড়ির কাজ / পড়া: কাজটা কোন কোন শিক্ষার্থীর জন্য (পুরো সেশন বা নির্দিষ্ট ব্যাচ)
   hwFor: (h, s) => !!s && h.session === s.session && (!(h.batchIds || []).length || h.batchIds.includes(s.batchId)),
   // একজনের হার: করেছে ÷ (করেছে + করেনি); অনুপস্থিত আর যাচাই না হওয়া গোনা হয় না (প্রতিটা "করেছে" = ১ পয়েন্ট)
