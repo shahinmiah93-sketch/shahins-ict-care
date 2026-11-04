@@ -1572,8 +1572,9 @@ ${list.map(receiptHtml).join("")}
     };
     const draw = () => {
       const l = list();
-      if (mode === "online") SICStudentDirectory.legacyTable($("#sdLegacyOnline"), DB, { q:$("#q").value.trim().toLowerCase(), session:$("#fse").value, module:$("#fm").value, status:$("#fs").value });
-      $("#cnt").textContent = `${bn(l.length)} জন`;
+      const legacyCount = mode === "online" ? SICStudentDirectory.legacyTable($("#sdLegacyOnline"), DB, { q:$("#q").value.trim().toLowerCase(), session:$("#fse").value, module:$("#fm").value, status:$("#fs").value }) || 0 : 0;
+      $("#cnt").textContent = `${bn(l.length + legacyCount)} জন`;
+      $("#rows").closest(".tbl-wrap").hidden = mode === "online" && !l.length && legacyCount > 0;
       $("#rows").innerHTML = l.map((s) => `<tr>
         <td><b>${esc(s.id)}</b></td><td class="student-name-cell"><div class="student-name-line">${avatar(s.photo, "s", s.id, s.name, 32, s.gender)}<a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></div><small>${esc(s.college)}</small></td>
         <td>${esc(s.session || "—")}<small>${esc(batchName(s.batchId))}</small></td>
