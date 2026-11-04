@@ -3,6 +3,14 @@
   const { $, $$, esc, bn, money, api } = U;
   let D = null;
   const STATUS = { P: "উপস্থিত", A: "অনুপস্থিত", L: "ছুটি" };
+  function moduleFeeCard(i) {
+    const rows = (i.breakdown || []).map(a => {
+      const month = new Date(a.month + "-01T00:00:00").toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
+      const note = a.paused ? "পড়া বন্ধ — ফি নেই" : a.late ? `${bn(a.fromDay)} তারিখ থেকে · ${bn(a.got)}টি ক্লাসের আংশিক ফি` : a.shut ? `${bn(a.shut)}টি বন্ধের ক্লাস বাদ দিয়ে` : "পুরো মাসের ফি";
+      return `<div class="sf-month"><div><b>${esc(month)}</b><small>${esc(note)}</small></div><div class="sf-month-rate"><small>মাসিক ফি${i.discount ? " (ছাড় বাদে)" : ""}</small><span>${a.paused ? "—" : money(a.monthlyRate)}</span></div><strong>${money(a.fee)}</strong></div>`;
+    }).join("");
+    return `<article class="sf-module"><header><div><h3>${esc(i.course)}</h3><p>শুরু: ${U.date(i.startDate)}${i.monthly ? ` · ${bn(i.months)} মাসের হিসাব` : ""}</p></div><span class="sf-status">${i.status === "ended" ? "কোর্স শেষ" : "চলমান"}</span></header><div class="sf-meta"><span>মূল ফি <b>${money(i.fee)}${i.monthly ? "/মাস" : ""}</b></span>${i.discount ? `<span>ছাড় <b>${money(i.discount)}${i.monthly ? "/মাস" : ""}</b></span>` : ""}${i.chapters?.length ? `<span>অধ্যায় ${esc(i.chapters.join(", "))}</span>` : ""}</div>${i.monthly ? `<div class="sf-months">${rows || `<p>মাসভিত্তিক হিসাব দেখতে পেজ রিফ্রেশ করুন।</p>`}</div>` : `<div class="sf-once">এককালীন কোর্স ফি <b>${money(i.due)}</b></div>`}<footer><span>এই মডিউলের মোট ফি</span><strong>${money(i.due)}</strong></footer></article>`;
+  }
 
   function ring(pct, label, color) {
     return `<div style="text-align:center"><div class="ring" style="--p:${pct ?? 0};--c:${color || "var(--em2)"}"><span>${pct === null ? "—" : bn(pct) + "%"}</span></div><small style="color:var(--muted);font-weight:600">${label}</small></div>`;
@@ -323,9 +331,7 @@ ${inner}
           <div class="tile"><small>পরিশোধ করেছেন</small><b>${money(f.paid)}</b></div>
           <div class="tile dark"><small>${f.balance >= 0 ? "বকেয়া" : "অগ্রিম"}</small><b>${money(Math.abs(f.balance))}</b></div>
         </div>
-        <div class="card"><h2>আমার মডিউল</h2><div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>মডিউল</th><th>শুরু</th><th class="num">ফি</th><th class="num">ছাড়</th><th class="num">এখন পর্যন্ত</th></tr></thead><tbody>
-          ${f.items.map((i) => `<tr><td><b>${esc(i.course)}</b>${i.status === "ended" ? ' <span class="chip">শেষ</span>' : ""}${i.chapters.length ? `<small>অধ্যায় ${esc(i.chapters.join(", "))}</small>` : ""}</td><td>${U.date(i.startDate)}</td><td class="num">${money(i.fee)}${i.monthly ? "/মাস" : ""}</td><td class="num">${i.discount ? money(i.discount) : "—"}</td><td class="num">${money(i.due)}${i.monthly ? `<small>${bn(i.months)} মাস</small>${(i.adjust || []).map((a) => `<small>${esc(new Date(a.month + "-01T00:00:00").toLocaleDateString("bn-BD", { month: "long" }))}: ${a.paused ? "⏸ পড়া বন্ধ" : `${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` (${bn(a.shut)}টি বন্ধ)` : ""}`} → ${money(a.fee)}</small>`).join("")}` : ""}</td></tr>`).join("") || '<tr><td colspan="5" class="empty">কোনো মডিউল নেই</td></tr>'}
-        </tbody></table></div></div>
+        <section class="student-module-fees"><h2>মডিউল অনুযায়ী বেতনের হিসাব</h2><p class="sf-intro">কোন মাসে কত ফি ধরা হয়েছে, নিচে আলাদা করে দেখুন।</p>${f.items.map(moduleFeeCard).join('') || '<p class="empty">কোনো মডিউল নেই</p>'}</section>
         <div class="card"><h2>পেমেন্টের ইতিহাস</h2><div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>রসিদ</th><th>তারিখ</th><th>মাস</th><th>মাধ্যম</th><th class="num">টাকা</th></tr></thead><tbody>
           ${D.payments.map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b></td></tr>`).join("") || '<tr><td colspan="5" class="empty">কোনো পেমেন্ট নেই</td></tr>'}
         </tbody></table></div></div>`;

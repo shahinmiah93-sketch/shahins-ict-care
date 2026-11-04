@@ -586,16 +586,17 @@ function enrollmentDue(e, context = {}) {
   const fc = b ? feeClosures(b.id) : { dates: new Set(), list: [] };
   const start = new Date((e.startDate || today()) + "T00:00:00");
   let due = 0, firstNet = net, firstClasses, firstTotal;
-  const adjust = []; // যে মাসগুলোতে ফি কম ধরা হয়েছে
+  const adjust = [], breakdown = []; // প্রতিটি মাসের স্পষ্ট হিসাব, এবং কমানো ফি
   const pz = pausedMonths(s);
   for (let i = 0; i < months; i++) {
     const md = new Date(start.getFullYear(), start.getMonth() + i, 1), Y = md.getFullYear(), M = md.getMonth();
-    if (pz.has(`${Y}-${pad2(M + 1)}`)) { adjust.push({ month: `${Y}-${pad2(M + 1)}`, fee: 0, got: 0, total: 0, shut: 0, late: false, paused: true, reasons: ["পড়া বন্ধ"] }); if (i === 0) firstNet = 0; continue; }
+    if (pz.has(`${Y}-${pad2(M + 1)}`)) { const row = { month: `${Y}-${pad2(M + 1)}`, fee: 0, got: 0, total: 0, shut: 0, late: false, paused: true, reasons: ["পড়া বন্ধ"] }; adjust.push(row); breakdown.push(row); if (i === 0) firstNet = 0; continue; }
     // ভর্তির মাস: ১–৬ তারিখে শুরু হলে পুরো মাস ধরা হয়, পরে হলে শুরুর দিন থেকে (পুরনো ভর্তিতে পুরো মাস)
     const fromDay = i === 0 && e.firstTotal && !e.firstGrace ? start.getDate() : 1;
     const monthNet = monthlyFeeFor(c, e, `${Y}-${pad2(M + 1)}`);
     const r = wd.length ? monthFee(monthNet, wd, Y, M, fromDay, fc.dates) : { fee: monthNet };
     due += r.fee;
+    breakdown.push({ month: `${Y}-${pad2(M + 1)}`, monthlyRate: monthNet, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, fromDay, paused: false });
     if (i === 0) { firstNet = r.fee; firstClasses = r.got; firstTotal = r.total; }
     if (r.fee < net || monthNet !== net) {
       const mk = `${Y}-${pad2(M + 1)}`;
@@ -603,7 +604,7 @@ function enrollmentDue(e, context = {}) {
       adjust.push({ month: mk, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, monthlyRate: monthNet, scheduled: monthNet !== net, reasons: [...new Set(reasons)] });
     }
   }
-  return { due, months, monthly: true, net, firstNet, firstClasses, firstTotal, adjust };
+  return { due, months, monthly: true, net, firstNet, firstClasses, firstTotal, adjust, breakdown };
 }
 function feeSummary(s) {
   const items = db.enrollments.filter((e) => e.studentId === s.id).map((e) => {
