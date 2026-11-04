@@ -76,6 +76,7 @@ window.U = {
     if (!res.ok) {
       const err = new Error(data.error || "সমস্যা হয়েছে (" + res.status + ")");
       err.status = res.status;
+      if (data.loginSms) err.loginSms = data.loginSms;
       throw err;
     }
     return data;

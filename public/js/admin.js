@@ -1355,7 +1355,7 @@ ${list.map(receiptHtml).join("")}
     const buttons = $$("#dnSms,#pinSms"), labels = buttons.map(b => b.textContent);
     buttons.forEach(b => { b.disabled = true; b.textContent = "SMS পাঠানো হচ্ছে…"; });
     try { const r = await api("/api/admin/login-sms", { body: { id: s.id } }); s.loginSms = r.loginSms; toast("SMS গেটওয়ে গ্রহণ করেছে; ফোনে পৌঁছানোর অপেক্ষা করুন"); }
-    catch (e) { s.loginSms = { ok: false, error: e.message }; toast(e.message, true); }
+    catch (e) { s.loginSms = e.loginSms || { ok: false, status: e.status ? "failed" : "unknown", error: e.message }; toast(e.message, true); }
     finally { loginSmsSending.delete(s.id); buttons.forEach((b, i) => { b.disabled = false; b.textContent = labels[i]; }); }
     if (note) note.textContent = loginSmsNote(s);
   }
