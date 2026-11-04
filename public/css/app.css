@@ -799,3 +799,5 @@ html.stu-live .stu-hero{margin-top:18px}html.stu-live .stu-hero h1{font-size:28p
 .student-profile-prompt button{background:linear-gradient(110deg,#7735c5,#a02cac 55%,#c12978);border-color:#f8a4ef;box-shadow:0 0 12px #ed65df50,0 0 22px #a476ff30,inset 0 1px 0 #fff3}.student-profile-prompt button:hover{background:linear-gradient(110deg,#8843d6,#b136bd 55%,#d23588);box-shadow:0 0 17px #ed65df75,0 0 27px #a476ff45}.student-profile-prompt .spp-icon,.student-profile-prompt .spp-arrow{display:inline-flex;align-items:center;flex:0 0 18px;width:18px;height:18px;color:#fff}.student-profile-prompt svg{display:block;width:18px;height:18px}.student-profile-prompt .spp-eyebrow{background:linear-gradient(110deg,#fff4e4,#ffe5f1);border:1px solid #ffc4de;box-shadow:0 0 9px #ff9cc02b}
 
 .student-profile-prompt .spp-eyebrow{background:transparent;border:0;box-shadow:none;padding:0;color:#ffb3cc;text-shadow:0 0 8px #ff4f8b35}
+
+.student-profile-prompt .spp-eyebrow{color:#ffe066;font-size:14px;font-weight:800;line-height:1.5;text-shadow:0 1px 2px #071f3a,0 0 9px #ffc83d40;background:transparent;border:0;box-shadow:none}
