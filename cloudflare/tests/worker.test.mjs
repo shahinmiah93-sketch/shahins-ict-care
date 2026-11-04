@@ -38,6 +38,7 @@ test("Real Cloudflare runtime: import, static assets, auth, file upload, records
   assert.equal((await call("/api/health")).data.migrated, true);
   assert.equal((await call("/api/public")).status, 200);
   assert.equal((await call("/api/admin/db")).status, 401);
+  assert.equal((await call("/api/admin/admission-import", { rows: [] })).status, 401);
   assert.equal((await call("/api/admin/setup", {})).status, 400);
   assert.equal((await fetch(base + "/__migration/commit", { method: "POST", headers: { authorization: "Bearer " + token }, body: "{}" })).status, 409);
   for (const route of ["/", "/admin", "/student", "/books", "/quiz", "/courses", "/daily", "/online-apply", "/js/admin-books.js", "/css/site.css"]) {
@@ -51,6 +52,27 @@ test("Real Cloudflare runtime: import, static assets, auth, file upload, records
   assert.equal((await call("/api/admin/login", { ticket: pin.data.ticket, email: auth.email, password: "fixture-password" })).status, 200);
   const admin = await call("/api/admin/db");
   assert.equal(admin.status, 200);
+  // Sparse Excel admission uses the original fee engine and is all-or-nothing.
+  const importBatch = admin.data.batches.find(b => b.active !== false);
+  const importCourse = admin.data.courses.find(c => c.active !== false && c.feeType === "monthly");
+  const importPayload = { defaults: { batchId: importBatch.id, courseId: importCourse.id, admissionDate: "2026-08-15" }, rows: [{ name: "Synthetic Excel admission", paid: "500" }, { nameEn: "Sparse synthetic admission" }] };
+  const preview = await call("/api/admin/admission-import", importPayload);
+  assert.equal(preview.status, 200); assert.equal(preview.data.errors.length, 0);
+  if (preview.data.summary.create) {
+    assert.equal(preview.data.summary.create, 2);
+    const imported = await call("/api/admin/admission-import", { ...importPayload, commit: true, previewToken: preview.data.token });
+    assert.equal(imported.status, 200); assert.equal(imported.data.ids.length, 2);
+    const replay = await call("/api/admin/admission-import", { ...importPayload, commit: true, previewToken: preview.data.token });
+    assert.equal(replay.data.alreadyImported, true);
+    const saved = await call("/api/admin/db");
+    const record = saved.data.students.find(s => s.id === imported.data.ids[0]);
+    assert.equal(record.phone, ""); assert.equal(record.gender, ""); assert.equal(record.admissionDate, "2026-08-15");
+    assert.equal(saved.data.enrollments.find(e => e.studentId === record.id).startDate, "2026-08-15");
+    assert.equal(record.fees.totalDue, preview.data.rows[0].fees.totalDue);
+    assert.equal(saved.data.payments.find(p => p.studentId === record.id).date, "2026-08-15");
+  } else assert.equal(preview.data.summary.skip, 2);
+  const demo = await fetch(base + "/templates/Admission-Import-Demo.xlsx");
+  assert.equal(demo.status, 200); assert.ok((await demo.arrayBuffer()).byteLength > 1000);
   if (before.data.migrated) {
     assert.ok(admin.data.notices.some(n => n.title === "Cloudflare test notice"), "Saved record survives a runtime restart");
     assert.ok(admin.data.quizzes.find(q => q.id === "test_quiz").attempts[student.id].some(a => a.no === 2 && a.submittedAt), "Quiz submission survives a runtime restart");
