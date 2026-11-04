@@ -1431,6 +1431,20 @@ ${list.map(receiptHtml).join("")}
       finally { button.disabled = false; }
     };
   }
+  function reviewProfileChanges(id) {
+    const student = studentById(id), pending = student?.pendingProfile;
+    if (!pending) return toast("সংশোধনের অনুরোধ নেই", true);
+    const value = v => typeof v === "boolean" ? v ? "হ্যাঁ" : "না" : String(v || "—");
+    let busy = false;
+    const decide = async action => {
+      if (busy) return true;
+      busy = true; $("#modalSave").disabled = true; $("#rejectProfileChanges").disabled = true;
+      try { await api("/api/admin/student-profile-review",{body:{id,version:pending.version,action}}); await load(); route(); viewStudent(id); toast(action === "approve" ? "তথ্য সংশোধন অনুমোদিত হয়েছে" : "সংশোধন অনুমোদিত হয়নি"); return true; }
+      finally { busy = false; if ($("#rejectProfileChanges")) { $("#rejectProfileChanges").disabled=false; $("#modalSave").disabled=false; } }
+    };
+    openModal({title:"তথ্য সংশোধনের অনুমোদন",wide:true,saveText:"✓ সংশোধন অনুমোদন করুন",onSave:()=>decide("approve"),body:`<p><b>${esc(student.name)}</b> · রোল ${esc(student.id)}</p><p class="muted">নিচের আগের তথ্যগুলো এখনো চালু আছে। অনুমোদন দিলে নতুন তথ্য বসবে।</p><div class="tbl-wrap"><table class="profile-change-table"><thead><tr><th>তথ্য</th><th>আগের তথ্য</th><th>নতুন তথ্য</th></tr></thead><tbody>${Object.entries(pending.changes).map(([key,change])=>`<tr><td><b>${esc(change.label || key)}</b></td><td>${esc(value(change.from))}</td><td><strong>${esc(value(change.to))}</strong></td></tr>`).join("")}</tbody></table></div><p><button type="button" class="btn line" id="rejectProfileChanges">অনুমোদন না দিন</button></p>`});
+    $("#rejectProfileChanges").onclick=()=>decide("reject").catch(error=>toast(error.message,true));
+  }
   function viewStudent(id) {
     const s = studentById(id);
     if (!s) return;
@@ -1445,6 +1459,7 @@ ${list.map(receiptHtml).join("")}
           <div><label class="btn sm line">${s.photo ? "ছবি বদলান" : "ছবি দিন"}<input type="file" accept="image/*" id="stuPhoto" hidden></label>
           ${s.photo ? '<button type="button" class="btn sm line" id="stuPhotoDel">সরান</button>' : ""}</div></div>
         ${s.pendingPhoto ? `<section class="student-photo-review"><h3>নতুন ছবি অনুমোদনের অপেক্ষায়</h3><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="শিক্ষার্থীর পাঠানো ছবি" style="width:120px;height:145px;object-fit:contain;border:1px solid #dae4e2;border-radius:12px;background:#f2f6f8"><p>অনুমোদন দিলে এই ছবি প্রোফাইল ও আইডি কার্ডে ব্যবহার হবে।</p><div class="toolbar"><button type="button" class="btn gold" data-photo-review="approve">✓ অনুমোদন করুন</button><button type="button" class="btn line" data-photo-review="reject">অনুমোদন না দিন</button></div></section>` : ""}
+        ${s.pendingProfile ? `<section class="student-photo-review"><h3>তথ্য সংশোধন অনুমোদনের অপেক্ষায়</h3><p>${bn(Object.keys(s.pendingProfile.changes).length)}টি তথ্য বদলানোর অনুরোধ এসেছে।</p><button type="button" class="btn gold" id="viewProfileChanges">আগের ও নতুন তথ্য দেখুন →</button></section>` : ""}
         <dl class="kv">
           <dt>আইডি</dt><dd>${esc(s.id)}</dd><dt>নাম</dt><dd>${esc(s.name)}${s.nameEn ? ` · ${esc(s.nameEn)}` : ""} (${s.gender === "F" ? "মেয়ে" : s.gender === "O" ? "অন্যান্য" : "ছেলে"})</dd>
           ${s.dob || s.bloodGroup || s.religion ? `<dt>জন্ম · রক্ত · ধর্ম</dt><dd>${esc([s.dob && s.dob.split("-").reverse().join("/"), s.bloodGroup, s.religion, s.nationality].filter(Boolean).join(" · "))}</dd>` : ""}
@@ -1476,6 +1491,7 @@ ${list.map(receiptHtml).join("")}
         </div>`,
     });
     $("#pinSms").onclick = () => { if (confirm(`${s.name}-কে আইডি আর PIN SMS-এ পাঠাবেন?`)) resendLogin(s, $("#pinSmsNote")); };
+    if ($("#viewProfileChanges")) $("#viewProfileChanges").onclick=()=>reviewProfileChanges(s.id);
     $$("#modalBody [data-start]").forEach(button => { button.onclick = () => correctEnrollmentStart(s, button.dataset.start); });
     $$("#modalBody [data-photo-review]").forEach(button => { button.onclick = async () => {
       if (!confirm(button.dataset.photoReview === "approve" ? "এই ছবিটি অনুমোদন করবেন?" : "এই ছবিটি অনুমোদন না দিয়ে ফেরত দেবেন?")) return;
@@ -1517,6 +1533,7 @@ ${list.map(receiptHtml).join("")}
       <div class="toolbar">
         <a class="btn gold" href="#admission">＋ নতুন ভর্তি</a>
         <button type="button" class="btn line" id="reviewStudentPhotos"${DB.students.some(s => s.pendingPhoto) ? "" : " hidden"}>ছবি অনুমোদন (${bn(DB.students.filter(s => s.pendingPhoto).length)})</button>
+        <button type="button" class="btn line" id="reviewStudentProfiles">তথ্য সংশোধন (${bn(DB.students.filter(s => s.pendingProfile).length)})</button>
         <button class="btn line" id="csv">↓ Excel</button>
         <button class="btn line" id="cards">এই তালিকার আইডি কার্ড</button>
         <button class="btn line" id="smsAll">📩 এই তালিকার সবাইকে আইডি ও PIN</button>
@@ -1524,6 +1541,11 @@ ${list.map(receiptHtml).join("")}
       </div>
       <div class="tbl-wrap"><table class="students-table"><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>`;
+    $("#reviewStudentProfiles").onclick = () => {
+      const pending=DB.students.filter(s=>s.pendingProfile);
+      openModal({title:`তথ্য সংশোধনের অনুরোধ (${bn(pending.length)})`,body:pending.length ? `<div style="display:grid;gap:10px">${pending.map(s=>`<button type="button" class="btn line" data-review-profile="${esc(s.id)}">${esc(s.name)} · ${esc(s.id)} · ${bn(Object.keys(s.pendingProfile.changes).length)}টি সংশোধন →</button>`).join("")}</div>` : '<p class="empty">এখন কোনো সংশোধন অনুমোদনের অপেক্ষায় নেই।</p>'});
+      $$("#modalBody [data-review-profile]").forEach(b=>b.onclick=()=>reviewProfileChanges(b.dataset.reviewProfile));
+    };
     $("#reviewStudentPhotos").onclick = () => {
       const pending = DB.students.filter(s => s.pendingPhoto);
       openModal({ title: `ছবি অনুমোদন (${bn(pending.length)})`, body: `<div style="display:grid;gap:12px">${pending.map(s => `<button type="button" class="btn line" data-review-student="${esc(s.id)}" style="justify-content:flex-start;gap:12px"><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="" style="width:52px;height:62px;object-fit:contain;border-radius:8px"><span>${esc(s.name)} · ${esc(s.id)}<small style="display:block">ছবিটি দেখে সিদ্ধান্ত দিন →</small></span></button>`).join("")}</div>` });
