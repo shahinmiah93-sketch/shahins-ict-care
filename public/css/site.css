@@ -1101,3 +1101,6 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 #enquiry .lead{font-size:21px;line-height:1.65}
 @media(max-width:620px){#enquiry .lead{font-size:18px}}
 #enquiry .enquiry-grid{align-items:center}
+
+.gal-lb{overflow-y:auto}.gal-lb figure{max-height:100%;overflow-y:auto}.gal-lb .gal-description{white-space:pre-wrap;overflow-wrap:anywhere;max-width:760px;margin:8px auto;line-height:1.7;text-align:left}.gal-lb figcaption{max-width:100%;padding-bottom:10px}
+@media(max-width:640px){.gal-lb figure{padding-bottom:80px}}

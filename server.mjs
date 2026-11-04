@@ -1089,7 +1089,7 @@ const liveBanners = () => db.banners.filter((b) => b.active && b.image).sort(byO
 // ---------- সফল শিক্ষার্থী (বিশ্ববিদ্যালয় / পেশা) — মূল পাতায় দুই কলামে পালা করে ----------
 // ---------- ফটো গ্যালারি — পাবলিক সাইটে অ্যালবাম অনুযায়ী ----------
 const liveGallery = () => db.gallery.filter((g) => g.active && g.image).sort(byOrder)
-  .map((g) => ({ id: g.id, title: g.title, album: g.album, date: g.date, img: `/api/gphoto/${g.id}/image?v=${g.image.v}` }));
+  .map((g) => ({ id: g.id, title: g.title, description: g.description || "", album: g.album, date: g.date, img: `/api/gphoto/${g.id}/image?v=${g.image.v}` }));
 const liveAchievers = () => db.achievers.filter((a) => a.active && a.image).sort(byOrder)
   .map((a) => ({ id: a.id, group: a.group, name: a.name, detail: a.detail, subject: a.subject || "", batch: a.batch, img: `/api/achiever/${a.id}/image?v=${a.image.v}` }));
 
@@ -1253,7 +1253,7 @@ const CLEAN = {
   teachers: (b) => ({ name: str(b.name, 120), subject: str(b.subject, 120), bio: str(b.bio, 600), photo: str(b.photo, 300) }),
   // ব্যানার: ছবি আসে আলাদা আপলোডে; লিংক — /apply, #batches বা http(s)://… (খালি = চাপ দিলে কিছু হয় না)
   // সফল শিক্ষার্থী: group — university (বিশ্ববিদ্যালয়ে পড়ছে) বা career (পেশায় প্রতিষ্ঠিত)
-  gallery: (b) => ({ title: str(b.title, 150), album: str(b.album, 60) || "অন্যান্য", date: /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
+  gallery: (b) => ({ title: str(b.title, 150), description: str(b.description, 3000), album: str(b.album, 60) || "অন্যান্য", date: /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
   achievers: (b) => ({ group: b.group === "career" ? "career" : "university", name: str(b.name, 120), detail: str(b.detail, 200), subject: str(b.subject, 120), batch: str(b.batch, 40), active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
   banners: (b) => { const link = str(b.link, 300); return { title: str(b.title, 120), link: /^(https?:\/\/|\/|#)/i.test(link) ? link : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }; },
   // ব্যাচ বন্ধ / ছুটি: কোন ব্যাচ, কবে থেকে কবে, কারণ; reduceFee = বন্ধের ক্লাসের টাকা কমবে কি না (ঈদের ছুটিতে সাধারণত না)

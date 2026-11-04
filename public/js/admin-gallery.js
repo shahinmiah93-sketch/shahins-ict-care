@@ -33,7 +33,8 @@ window.SICGallery = function (X) {
             <label>তারিখ<input type="date" data-gl-date value="${esc(date)}"></label>
             <div class="rs-act"><button type="button" class="btn gold" data-gl-upload${files.length ? "" : " disabled"}>↑ ${files.length ? bn(files.length) + "টি " : ""}ছবি তুলুন</button>${files.length ? '<button type="button" class="btn line" data-gl-clear>বাতিল</button>' : ""}</div>
             <p class="gl-prog" hidden></p>
-          </div></div></section>
+          </div></div>
+${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div class="card"><b>${bn(i + 1)}. ${esc(f.file.name)}</b><label>ছবির ক্যাপশন<input data-gf="title" data-fi="${i}" value="${esc(f.title || "")}" maxlength="150" placeholder="ছবির সংক্ষিপ্ত ক্যাপশন"></label><label>ছবির বিস্তারিত বিবরণ<textarea data-gf="description" data-fi="${i}" maxlength="3000" rows="3" placeholder="এই ছবির গল্প বা বিস্তারিত লিখুন">${esc(f.description || "")}</textarea></label></div>`).join("")}</div>` : ""}</section>
 
       <section class="card"><h3>সব ছবি <small class="ln-count">${bn(view.length)}টি</small></h3>
         ${used.length ? `<div class="gl-chips"><button type="button" class="${filter ? "" : "on"}" data-gl-filter="">সব</button>${used.map((a) => `<button type="button" class="${filter === a ? "on" : ""}" data-gl-filter="${esc(a)}">${esc(a)} <i>${bn(l.filter((g) => g.album === a).length)}</i></button>`).join("")}</div>` : ""}
@@ -45,7 +46,8 @@ window.SICGallery = function (X) {
   }
   function editCard(g, al) {
     return `<figure class="gl-item gl-edit"><div class="gl-ph">${g.image ? `<img src="${esc(imgOf(g))}" alt="">` : ""}</div>
-      <div class="gl-ef"><label>শিরোনাম<input data-ge="title" value="${esc(edit.title || "")}" maxlength="150" placeholder="যেমন: HSC-27 এর ক্লাস"></label>
+      <div class="gl-ef"><label>ছবির ক্যাপশন<input data-ge="title" value="${esc(edit.title || "")}" maxlength="150" placeholder="যেমন: HSC-27 এর ক্লাস"></label>
+        <label>ছবির বিস্তারিত বিবরণ<textarea data-ge="description" maxlength="3000" rows="4">${esc(edit.description || "")}</textarea></label>
         <label>অ্যালবাম<input data-ge="album" value="${esc(edit.album || "")}" list="glAlbums" maxlength="60"></label><datalist id="glAlbums">${al.map((a) => `<option value="${esc(a)}">`).join("")}</datalist>
         <label>তারিখ<input type="date" data-ge="date" value="${esc(edit.date || "")}"></label>
         <label class="gl-rep">ছবি বদলান<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-ge-file></label>
@@ -68,7 +70,7 @@ window.SICGallery = function (X) {
       for (const [i, f] of files.entries()) {
         prog.textContent = `↑ তোলা হচ্ছে… ${bn(i + 1)} / ${bn(files.length)}`;
         top += 10;
-        const r = await X.save("gallery", { title: "", album: al, date, active: true, order: top });
+        const r = await X.save("gallery", { title: (f.title || "").trim(), description: (f.description || "").trim(), album: al, date, active: true, order: top });
         await sendImg(r.item.id, f.file); ok++;
       }
       files.forEach((f) => URL.revokeObjectURL(f.url)); files = []; album = al; newAlbum = ""; filter = "";
@@ -81,7 +83,7 @@ window.SICGallery = function (X) {
     busy = true;
     try {
       const g = DB().gallery.find((x) => x.id === edit.id);
-      await X.save("gallery", { ...g, title: edit.title.trim(), album: edit.album.trim() || "অন্যান্য", date: edit.date }, g.id);
+      await X.save("gallery", { ...g, title: edit.title.trim(), description: (edit.description || "").trim(), album: edit.album.trim() || "অন্যান্য", date: edit.date }, g.id);
       if (edit.file) await sendImg(g.id, edit.file);
       edit = null; await X.load(); render(); toast("ছবির তথ্য সংরক্ষণ হয়েছে");
     } catch (e) { toast(e.message, true); } finally { busy = false; }
@@ -91,7 +93,7 @@ window.SICGallery = function (X) {
     if (t("[data-gl-upload]")) return uploadAll();
     if (t("[data-gl-clear]")) { files.forEach((f) => URL.revokeObjectURL(f.url)); files = []; return render(); }
     if ((el = t("[data-gl-filter]"))) { filter = el.dataset.glFilter; return render(); }
-    if ((el = t("[data-gl-edit]"))) { const g = DB().gallery.find((x) => x.id === el.dataset.glEdit); edit = { id: g.id, title: g.title, album: g.album, date: g.date }; return render(); }
+    if ((el = t("[data-gl-edit]"))) { const g = DB().gallery.find((x) => x.id === el.dataset.glEdit); edit = { id: g.id, title: g.title || "", description: g.description || "", album: g.album, date: g.date }; return render(); }
     if (t("[data-ge-cancel]")) { edit = null; return render(); }
     if (t("[data-ge-save]")) return saveEdit();
     if ((el = t("[data-gl-toggle]"))) { const g = DB().gallery.find((x) => x.id === el.dataset.glToggle); return X.save("gallery", { ...g, active: !g.active }, g.id).then(() => X.load()).then(() => { render(); toast(g.active ? "ছবি লুকানো হয়েছে" : "ছবি ওয়েবসাইটে দেখাচ্ছে"); }).catch((er) => toast(er.message, true)); }
@@ -111,6 +113,6 @@ window.SICGallery = function (X) {
     if (el.matches("[data-gl-date]")) date = el.value;
     if (el.matches("[data-ge-file]")) { $$("[data-ge]", C).forEach((x) => (edit[x.dataset.ge] = x.value)); edit.file = el.files[0] || null; }
   }
-  function onInput(e) { if (e.target.matches("[data-gl-newalbum]")) newAlbum = e.target.value; }
+  function onInput(e) { if (e.target.matches("[data-gf]")) files[Number(e.target.dataset.fi)][e.target.dataset.gf] = e.target.value; if (e.target.matches("[data-gl-newalbum]")) newAlbum = e.target.value; }
   return function galleryPage(c) { C = c; if (!album) album = albums()[0]; c.onclick = onClick; c.onchange = onChange; c.oninput = onInput; render(); };
 };

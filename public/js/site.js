@@ -155,7 +155,7 @@
       }
     };
     const lb = $("#galLb"), lbImg = $("#galLbImg"), lbCap = $("#galLbCap");
-    const showLb = (i) => { lbAt = (i + view.length) % view.length; const g = view[lbAt]; lbImg.src = g.img; lbImg.alt = g.title || g.album || ""; lbCap.innerHTML = `${g.title ? `<b>${esc(g.title)}</b>` : ""}<small>${esc([g.album, g.date && U.date(g.date)].filter(Boolean).join(" · "))} · ${bn(lbAt + 1)} / ${bn(view.length)}</small>`; };
+    const showLb = (i) => { lbAt = (i + view.length) % view.length; const g = view[lbAt]; lbImg.src = g.img; lbImg.alt = g.title || g.album || ""; lbCap.innerHTML = `${g.title ? `<b>${esc(g.title)}</b>` : ""}${g.description ? `<p class="gal-description">${esc(g.description)}</p>` : ""}<small>${esc([g.album, g.date && U.date(g.date)].filter(Boolean).join(" · "))} · ${bn(lbAt + 1)} / ${bn(view.length)}</small>`; };
     const openLb = (i) => { showLb(i); lb.hidden = false; document.body.style.overflow = "hidden"; $(".gal-x", lb).focus(); };
     const closeLb = () => { lb.hidden = true; document.body.style.overflow = ""; };
     $("#gallery").addEventListener("click", (e) => {
