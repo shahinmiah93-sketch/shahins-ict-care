@@ -1593,6 +1593,38 @@ function repairConfirmedAdmissionStart() {
 }
 
 // ---------- রাউটার ----------
+async function studentPhotoRequest(req, res, student) {
+  const b = await readBody(req, 600 * 1024);
+  const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.photo || ""));
+  const bytes = match && Buffer.from(match[1], "base64");
+  if (!bytes || bytes.length < 100 || bytes.length > 400 * 1024 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[2] !== 255) return send(res, 400, { error: "সঠিক JPG ছবি দিন (৪০০ KB-এর মধ্যে)" });
+  const file = photoFile("p", student.id), old = fs.existsSync(file) ? fs.readFileSync(file) : null;
+  const original = JSON.stringify(student);
+  try {
+    fs.writeFileSync(file, bytes);
+    student.pendingPhoto = { version: uid("photo"), submittedAt: new Date().toISOString() };
+    delete student.photoReview; saveDb();
+    return send(res, 200, { ok: true, pendingPhoto: student.pendingPhoto });
+  } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(file, old); else removePhoto("p", student.id); throw error; }
+}
+async function reviewStudentPhoto(req, res) {
+  const b = await readBody(req), student = db.students.find(s => s.id === str(b.id, 40));
+  if (!student?.pendingPhoto || !["approve", "reject"].includes(b.action)) return send(res, 400, { error: "অনুমোদনের অপেক্ষায় থাকা ছবি পাওয়া যায়নি" });
+  if (b.version !== student.pendingPhoto.version) return send(res, 409, { error: "শিক্ষার্থী নতুন ছবি পাঠিয়েছে। আবার খুলে দেখুন" });
+  const pending = photoFile("p", student.id), current = photoFile("s", student.id);
+  if (!fs.existsSync(pending)) return send(res, 400, { error: "ছবিটি পাওয়া যায়নি। আবার পাঠাতে বলুন" });
+  const tag = `photo-review-${Date.now()}-${student.id}`, original = JSON.stringify(student), old = fs.existsSync(current) ? fs.readFileSync(current) : null;
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, tag + ".json"));
+  fs.copyFileSync(pending, path.join(BACKUPS, tag + "-submitted.jpg"));
+  if (old) fs.writeFileSync(path.join(BACKUPS, tag + "-previous.jpg"), old);
+  try {
+    if (b.action === "approve") { fs.copyFileSync(pending, current); student.photo = true; }
+    student.photoReview = { status: b.action === "approve" ? "approved" : "rejected", at: new Date().toISOString() };
+    delete student.pendingPhoto; saveDb();
+  } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(current, old); else removePhoto("s", student.id); throw error; }
+  removePhoto("p", student.id);
+  return send(res, 200, { ok: true });
+}
 async function api(req, res, url) {
   const p = url.pathname;
   const m = req.method;
@@ -2235,6 +2267,14 @@ async function api(req, res, url) {
     if (!mine) return send(res, 404, { error: "পাওয়া যায়নি" });
     return sendDoc(req, res, d, url);
   }
+  if (p === "/api/student/photo-request") {
+    const session = getLogin(req, "student");
+    const student = session && db.students.find(s => s.id === session.sid && s.status !== "inactive");
+    if (!student) return send(res, 401, { error: "শিক্ষার্থী হিসেবে লগইন করুন" });
+    if (m === "POST") return studentPhotoRequest(req, res, student);
+    if (m === "GET" && student.pendingPhoto) return sendPhoto(res, "p", student.id);
+    return send(res, 404, { error: "ছবি পাওয়া যায়নি" });
+  }
   if (p === "/api/student/photo" && m === "GET") {
     const ps = panelStudent();
     if (!ps) return send(res, 401, { error: "লগইন করুন" });
@@ -2577,7 +2617,8 @@ async function api(req, res, url) {
   }
 
   // ছবি দেখা: /api/admin/photo/s/<studentId> বা /api/admin/photo/a/<applicationId>
-  const pm = p.match(/^\/api\/admin\/photo\/([sa])\/([\w-]+)$/);
+  if (p === "/api/admin/student-photo-review" && m === "POST") return reviewStudentPhoto(req, res);
+  const pm = p.match(/^\/api\/admin\/photo\/([sap])\/([\w-]+)$/);
   if (pm && m === "GET") return sendPhoto(res, pm[1], pm[2]);
   if (p === "/api/admin/student-photo" && m === "POST") {
     const b = await readBody(req, 1024 * 1024);
