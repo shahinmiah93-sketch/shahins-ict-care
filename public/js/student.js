@@ -577,7 +577,7 @@ ${inner}
     $("#av").onclick = requestProfilePhoto;
     $("#studentPhotoStatus").textContent = p.pendingPhoto ? "নতুন ছবি অ্যাডমিনের অনুমোদনের অপেক্ষায়।" : p.photoReview?.status === "rejected" ? "আগের ছবিটি অনুমোদিত হয়নি। পরিষ্কার ছবি আবার পাঠান।" : "";
     $("#sName").textContent = p.name;
-    $("#sMeta").innerHTML = `<span class="student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-batch-meta"><span class="student-session">${esc(p.session || "")}</span><b>ব্যাচ ${esc(D.batch?.name || "—")}</b><span class="student-class-time">${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</span><small>${esc(D.batch?.days || "")}</small></span>`;
+    $("#sMeta").innerHTML = `<span class="student-info-item student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-info-item student-batch"><small>সেশন · ${esc(p.session || "—")}</small><strong>ব্যাচ ${esc(D.batch?.name || "—")}</strong></span><span class="student-info-item student-schedule"><small>ক্লাসের সময়</small><strong>${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</strong><span>${esc(D.batch?.days || "")}</span></span>`;
     // অনলাইন মডিউলের রেকর্ড ক্লাস থাকলে "ক্লাস ভিডিও" ট্যাব (সারসংক্ষেপের পরেই)
     const vt = $("#tabs [data-t=\"videos\"]");
     if ((D.videos || []).length && !vt) $("#tabs [data-t=\"home\"]").insertAdjacentHTML("afterend", '<button data-t="videos" class="tab-vid">🎬 ক্লাস ভিডিও</button>');
