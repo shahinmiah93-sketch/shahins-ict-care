@@ -48,6 +48,8 @@
     const scoped=rows.map(l=>({l,enrollments:(db.ocEnrolls || []).filter(e=>e.learnerId===l.id&&(!filters.module||filters.module==='legacy:'+e.courseId)&&(!filters.status||e.status===filters.status))})).filter(x=>x.enrollments.length);
     if(!legacyOnline(db).length){container.innerHTML='';return;}
     container.innerHTML=`<section class="card" style="margin-top:18px"><h3>অনলাইন কোর্সের শিক্ষার্থী <small>(${bn(scoped.length)} জন)</small></h3><div class="tbl-wrap"><table><thead><tr><th>আইডি</th><th>নাম</th><th>মোবাইল</th><th>অনলাইন কোর্স</th><th>অবস্থা</th></tr></thead><tbody>${scoped.map(({l,enrollments})=>`<tr><td>${esc(l.id)}</td><td><b>${esc(l.name)}</b><small>${esc(l.college || '')}</small></td><td>${esc(l.phone)}</td><td>${enrollments.map(e=>`<small>${esc((db.onlineCourses || []).find(c=>c.id===e.courseId)?.title || 'অনলাইন কোর্স')}</small>`).join('')}</td><td>${enrollments.some(e=>e.status==='active')?'চালু':'অপেক্ষায়'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>'}</tbody></table></div></section>`;
+    container.insertAdjacentHTML('beforeend','<p><button type="button" class="btn line" id="sdLegacyExport">↓ এই অনলাইন কোর্সের তালিকা Excel</button></p>');
+    document.querySelector('#sdLegacyExport').onclick=()=>U.xlsx(`online-course-students-${U.today()}.xlsx`,['আইডি','নাম','মোবাইল','কলেজ','অনলাইন কোর্স','অবস্থা'],scoped.map(({l,enrollments})=>[l.id,l.name,l.phone,l.college,enrollments.map(e=>(db.onlineCourses || []).find(c=>c.id===e.courseId)?.title || 'অনলাইন কোর্স').join(', '),enrollments.some(e=>e.status==='active')?'চালু':'অপেক্ষায়']));
     return scoped.length;
   }
   window.SICStudentDirectory={mode,ids,legacyOnline,quizParticipants,header,audience,legacyTable};

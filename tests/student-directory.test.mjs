@@ -11,6 +11,7 @@ test('Offline and online are classified by enrollments, including mixed and spar
 });
 test('Quiz directory contains only external quiz participants; admitted students can still take quizzes',()=>{
   const db=fixture(),before=JSON.stringify(db);assert.deepEqual(directory.quizParticipants(db).map(g=>g.id),['G1']);assert.equal(JSON.stringify(db),before);assert.equal(db.quizzes[0].attempts.offline.length,1);
+  db.leads=[{sources:[{type:'quiz',ref:'G4'}]}];assert.deepEqual(directory.quizParticipants(db).map(g=>g.id),['G1','G4']);
 });
 test('Four directory buttons have distinct destinations and retain the selected category',()=>{
   const html=directory.header(fixture(),'online');for(const key of ['offline','online','quiz','talent'])assert(html.includes('href="#students/'+key+'"'));assert.equal((html.match(/aria-current="page"/g)||[]).length,1);assert(html.includes('sd-online selected'));
