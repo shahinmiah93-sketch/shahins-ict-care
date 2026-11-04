@@ -32,7 +32,7 @@
     </div>
     <div class="eb-body"><div class="eb-meta"><span class="eb-tag ${b.kind === "premium" ? "pre" : b.kind === "students" ? "st" : "fr"}">${b.kind === "premium" ? "PREMIUM" : b.kind === "students" ? "ভর্তি শিক্ষার্থী" : "FREE"}</span>${off(b) ? `<span class="eb-off">-${bn(off(b))}%</span>` : ""}
       ${mine.owned.includes(b.id) ? (mine.open.includes(b.id) ? `<span class="eb-own">কেনা আছে${(mine.expiry || {})[b.id] ? " · " + U.date(mine.expiry[b.id]) + " পর্যন্ত" : ""}</span>` : '<span class="eb-own exp">মেয়াদ শেষ — নবায়ন করুন</span>') : ""}</div><div class="eb-head"><h3>${esc(b.title)}</h3>${b.short ? `<p>${esc(b.short)}</p>` : ""}</div>
-      <div class="eb-foot"><div class="eb-price">${b.kind === "premium" ? `<b>${money(b.price)}</b>${b.oldPrice > b.price ? `<s>${money(b.oldPrice)}</s>` : ""}` : b.kind === "students" ? '<b class="st">শুধু ভর্তি হওয়া শিক্ষার্থীদের জন্য</b>' : '<b class="fr">ফ্রি</b>'}</div>${btn(b)}</div></div></article>`;
+      <div class="eb-foot">${b.kind === "premium" || b.kind === "students" ? `<div class="eb-price">${b.kind === "premium" ? `<b>${money(b.price)}</b>${b.oldPrice > b.price ? `<s>${money(b.oldPrice)}</s>` : ""}` : '<b class="st">শুধু ভর্তি হওয়া শিক্ষার্থীদের জন্য</b>'}</div>` : ""}${btn(b)}</div></div></article>`;
 
   // স্লাইডার: এক সারিতে সব বই — তীর চাপলে বা টানলে সরে, নিজে থেকেও ধীরে সরে; মাউস রাখলে থামে, শেষে গিয়ে আবার শুরু
   const fits = () => { const g = $("#ebGrid"); return g.scrollWidth <= g.clientWidth + 2; };
