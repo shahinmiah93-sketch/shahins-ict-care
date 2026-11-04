@@ -1612,6 +1612,7 @@ async function updateStudentProfile(req, res, student) {
   if (!["M", "F", "O"].includes(body.gender ?? student.gender)) return send(res, 400, { error: "লিঙ্গ বেছে নিন" });
   const current = STUDENT_KEYS(student), submitted = STUDENT_KEYS({ ...student, ...body });
   const baseline = body.profileBase && typeof body.profileBase === "object" ? STUDENT_KEYS(body.profileBase) : null;
+  if (body.profileBase && (body.profileBase.pendingProfile?.version || "") !== (student.pendingProfile?.version || "")) return send(res,409,{error:"সংশোধনের অনুরোধ বদলেছে। পেজ রিফ্রেশ করে আবার খুলুন"});
   if (!student.gender) current.gender = "";
   if (baseline && !body.profileBase.gender) baseline.gender = "";
   const edits = {};

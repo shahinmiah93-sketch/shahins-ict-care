@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const source=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 function app(){
-  let writes=0,backups=0,fail=false;
-  const c={Date,today:()=> '2026-11-04',str:(v,n=500)=>String(v??'').trim().slice(0,n),phoneOf:v=>String(v??'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/^\+?88/,''),readBody:async r=>r.body,send:(_,status,data)=>({status,data}),saveDb:()=>{if(fail)throw Error('save failed');writes++},DB_FILE:'db',BACKUPS:'backups',path:{join:(...p)=>p.join('/')},fs:{copyFileSync:()=>backups++},importValidDate:v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))};
+  let writes=0,backups=0,fail=false,sequence=0;
+  const c={Date,db:{students:[]},uid:()=>String(++sequence),today:()=> '2026-11-04',str:(v,n=500)=>String(v??'').trim().slice(0,n),phoneOf:v=>String(v??'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/^\+?88/,''),readBody:async r=>r.body,send:(_,status,data)=>({status,data}),saveDb:()=>{if(fail)throw Error('save failed');writes++},DB_FILE:'db',BACKUPS:'backups',path:{join:(...p)=>p.join('/')},fs:{copyFileSync:()=>backups++},importValidDate:v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))};
   vm.createContext(c);vm.runInContext(source.slice(source.indexOf('const STUDENT_KEYS ='),source.indexOf('const CLEAN ='))+source.slice(source.indexOf('const PROFILE_REQUIRED ='),source.indexOf('async function studentPhotoRequest(')),c);
   return{c,stats:()=>({writes,backups}),fail:()=>fail=true};
 }
