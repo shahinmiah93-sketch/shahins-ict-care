@@ -1054,12 +1054,12 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 /* ই-বুক স্লাইডার: এক সারি, পাশে তীর */
 .eb-slider{position:relative}
 #ebooks .eb-grid{display:flex;flex-wrap:nowrap;justify-content:safe center;gap:16px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:8px 2px 18px}#ebooks .eb-grid::-webkit-scrollbar{display:none}
-#ebooks .eb-card{flex:0 0 calc((100% - 4 * 16px) / 5);min-width:0;scroll-snap-align:start}
+#ebooks .eb-card{flex:0 0 calc((100% - 3 * 16px) / 4);min-width:0;scroll-snap-align:start}
 #ebooks .eb-empty{flex:1}
 .eb-nav{position:absolute;top:40%;z-index:3;width:44px;height:44px;border-radius:50%;border:1px solid rgba(243,197,93,.55);background:rgba(10,10,14,.88);color:#f3c55d;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.5)}.eb-nav:hover{background:#f3c55d;color:#1a1206}.eb-nav.prev{left:-10px}.eb-nav.next{right:-10px}.eb-nav[hidden]{display:none}
 @media(min-width:721px){#ebooks .eb-btns{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:1000px){#ebooks .eb-card{flex-basis:calc((100% - 2 * 16px) / 3)}}
-@media(max-width:720px){#ebooks .eb-card{flex-basis:calc((100% - 16px) / 2)}}
+@media(max-width:720px){#ebooks .eb-card{flex-basis:min(280px,100%)}}
 /* ই-বুক কার্ড: দাম উপরে, নিচে "পড়ুন" + "ডাউনলোড" পাশাপাশি */
 #ebooks .eb-foot{flex-direction:column;align-items:stretch;gap:10px}
 #ebooks .eb-foot>.eb-btn{text-align:center}
