@@ -1475,7 +1475,7 @@ ${list.map(receiptHtml).join("")}
         <button class="btn line" id="smsAll">📩 এই তালিকার সবাইকে আইডি ও PIN</button>
         <span class="grow"></span><span class="muted" id="cnt"></span>
       </div>
-      <div class="tbl-wrap"><table><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div class="tbl-wrap"><table class="students-table"><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>`;
     const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
     const list = () => {
@@ -1488,7 +1488,7 @@ ${list.map(receiptHtml).join("")}
       const l = list();
       $("#cnt").textContent = `${bn(l.length)} জন`;
       $("#rows").innerHTML = l.map((s) => `<tr>
-        <td><b>${esc(s.id)}</b></td><td>${avatar(s.photo, "s", s.id, s.name, 32, s.gender)} <a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a><small>${esc(s.college)}</small></td>
+        <td><b>${esc(s.id)}</b></td><td class="student-name-cell"><div class="student-name-line">${avatar(s.photo, "s", s.id, s.name, 32, s.gender)}<a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></div><small>${esc(s.college)}</small></td>
         <td>${esc(s.session || "—")}<small>${esc(batchName(s.batchId))}</small></td>
         <td>${modulesOf(s.id).map((n) => `<span class="chip" style="margin:1px">${esc(n)}</span>`).join("") || "—"}</td>
         <td>${esc(s.phone || "—")}<small>অভি: ${esc(s.guardianPhone || "—")}</small></td>
