@@ -40,10 +40,9 @@
 
   // ================= /free-classes =================
   if (path === "/free-classes") {
-    document.body.classList.add("free-class-page");
     const FC = PUB.freeClasses || [], subs = [...new Set(FC.map((c) => c.subject).filter(Boolean))];
     document.title = `ফ্রি ক্লাস — ${SITE.name}`;
-    $("#lhEye").textContent = "বিনামূল্যে শেখো"; $("#lhTitle").innerHTML = 'সব ফ্রি <span class="fc-highlight">ক্লাস</span>';
+    $("#lhEye").textContent = "বিনামূল্যে শেখো"; $("#lhTitle").textContent = "সব ফ্রি ক্লাস";
     $("#lhLead").textContent = FC.length ? "যে কেউ দেখতে পারবে — চাপ দিলেই ক্লাস শুরু।" : "এখনো কোনো ফ্রি ক্লাস দেওয়া হয়নি।";
     $("#lhMeta").innerHTML = `<span>🎬 ${bn(FC.length)}টি ক্লাস</span>`;
     full(true);
