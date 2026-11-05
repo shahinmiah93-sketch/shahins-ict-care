@@ -180,20 +180,70 @@
     const card = (a, dup) => `<article class="ach-card"${dup ? ' aria-hidden="true"' : ""}><div class="ach-in"><div class="ach-photo"><img src="${esc(a.img)}" alt="${dup ? "" : esc(a.name)}" loading="lazy" decoding="async">${a.batch ? `<span class="ach-badge">${esc(a.batch)}</span>` : ""}</div><div class="ach-cap"><h4>${esc(a.name)}</h4>${a.group === "career" ? (a.subject ? `<p class="ach-job">${esc(a.subject)}</p>` : "") + (a.detail ? `<p class="ach-sub2">${esc(a.detail)}</p>` : "") : (a.detail ? `<p>${esc(a.detail)}</p>` : "") + (a.subject ? `<p class="ach-sub2">${esc(a.subject)}</p>` : "")}</div></div></article>`;
     $("#achievers").hidden = false;
     const grid = $("#achGrid");
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+    let carousels = [], inView = false;
+    new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; }).observe(grid);
     const draw = () => {
-      const W = grid.clientWidth || innerWidth, cw = W <= 650 ? 190 : 240, gap = W <= 650 ? 16 : 22;
-      grid.innerHTML = rows.map(([g, t, sub, list], k) => {
-        // একই কার্ড কয়েকবার বসিয়ে অর্ধেকটা পর্দার চেয়ে চওড়া করা — অর্ধেক সরালে ফাঁক পড়ে না
-        const rep = Math.max(1, Math.ceil((W + cw) / (list.length * (cw + gap))));
-        const half = Array.from({ length: rep }, (_, r) => list.map((a) => card(a, r > 0)).join("")).join("");
-        const secs = (list.length * rep * (cw + gap)) / 34;
+      const compact = matchMedia("(max-width: 650px)").matches;
+      const step = compact ? 206 : 262;
+      grid.innerHTML = rows.map(([g, t, sub, list]) => {
+        const repeats = reducedMotion.matches ? 1 : Math.max(1, Math.ceil(grid.clientWidth / (list.length * step)) + 1);
+        const cards = Array.from({ length: repeats }, (_, i) => list.map(a => card(a, i > 0)).join("")).join("");
+        const copy = reducedMotion.matches ? "" : '<div class="ach-batch" aria-hidden="true">' + cards.replace(/alt="[^"]*"/g, 'alt=""') + '</div>';
         return `<div class="ach-row reveal" data-g="${g}"><header class="ach-head"><span class="ach-pill">${t}</span><p>${sub}</p></header>
-          <div class="ach-ribbon"><div class="ach-track${k % 2 ? " rev" : ""}" style="--d:${secs.toFixed(1)}s;--ach-steps:${list.length * rep * (cw + gap)}"><div class="ach-batch">${half}</div><div class="ach-batch" aria-hidden="true">${half.replace(/alt="[^"]*"/g, 'alt=""')}</div></div></div></div>`;
+          <div class="ach-controls"><button type="button" data-step="-1" aria-label="আগের ছবি">←</button><button type="button" data-step="1" aria-label="পরের ছবি">→</button></div>
+          <div class="ach-ribbon" tabindex="0" role="region" aria-label="${t} ছবি"><div class="ach-track"><div class="ach-batch">${cards}</div>${copy}</div></div></div>`;
       }).join("");
+      carousels = [...grid.querySelectorAll(".ach-row")].map((row, i) => {
+        const ribbon = row.querySelector(".ach-ribbon");
+        const loop = reducedMotion.matches ? 0 : row.querySelector(".ach-batch").offsetWidth;
+        const state = { ribbon, loop, direction: i % 2 ? -1 : 1, pauseUntil: 0, remainder: 0 };
+        const pause = () => { state.pauseUntil = performance.now() + 3000; };
+        ribbon.addEventListener("pointerdown", pause);
+        ribbon.addEventListener("pointerup", pause);
+        ribbon.addEventListener("wheel", pause, { passive: true });
+        ribbon.addEventListener("keydown", pause);
+        if (loop && state.direction < 0) ribbon.scrollLeft = loop;
+        state.autoPosition = ribbon.scrollLeft;
+        ribbon.addEventListener("scroll", () => {
+          if (ribbon.scrollLeft !== state.autoPosition) pause();
+        }, { passive: true });
+        row.querySelectorAll("[data-step]").forEach(button => {
+          button.disabled = ribbon.scrollWidth <= ribbon.clientWidth;
+          button.onclick = () => {
+            pause();
+            const direction = Number(button.dataset.step);
+            if (loop && direction < 0 && ribbon.scrollLeft < step) ribbon.scrollLeft += loop;
+            if (loop && direction > 0 && ribbon.scrollLeft + step >= ribbon.scrollWidth - ribbon.clientWidth) ribbon.scrollLeft -= loop;
+            ribbon.scrollBy({ left: direction * step, behavior: reducedMotion.matches ? "instant" : "smooth" });
+          };
+        });
+        return state;
+      });
       watch();
     };
     draw();
-    let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(draw, 200); });
+    let last = 0;
+    const advance = now => {
+      const elapsed = Math.min(now - last, 50);
+      last = now;
+      for (const state of carousels) {
+        const { ribbon, loop, direction } = state;
+        if (!inView || !loop || now < state.pauseUntil || ribbon.matches(":hover, :focus-within")) continue;
+        state.remainder += elapsed * .034;
+        const pixels = Math.floor(state.remainder);
+        if (!pixels) continue;
+        state.remainder -= pixels;
+        const next = ribbon.scrollLeft + pixels * direction;
+        ribbon.scrollLeft = ((next % loop) + loop) % loop;
+        state.autoPosition = ribbon.scrollLeft;
+      }
+      requestAnimationFrame(advance);
+    };
+    requestAnimationFrame(advance);
+    reducedMotion.addEventListener("change", draw);
+    let rt;
+    addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(draw, 200); });
   }
 
   // 🎬 ফ্রি ক্লাস (প্রথম ৪টা) — বাকিগুলো আলাদা পাতায়; রেকর্ড ক্লাস এখন অনলাইন কোর্স মডিউলের ভেতরে

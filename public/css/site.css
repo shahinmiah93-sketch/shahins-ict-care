@@ -774,12 +774,13 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
   background:linear-gradient(120deg,#ffe3a3,#f3c55d 45%,#d99a2b);box-shadow:0 8px 26px rgba(243,197,93,.35),inset 0 1px 0 rgba(255,255,255,.6)}
 #achievers .ach-row[data-g="career"] .ach-pill{background:linear-gradient(120deg,#c9f2ff,#7fd3f5 45%,#3d9bff);box-shadow:0 8px 26px rgba(61,155,255,.35),inset 0 1px 0 rgba(255,255,255,.6)}
 #achievers .ach-head p{margin:0;color:#b9b9c0;font-size:15px}
-#achievers .ach-ribbon{overflow:hidden;padding:16px 0;mask-image:none;-webkit-mask-image:none}
-#achievers .ach-track{display:flex;width:max-content;animation:achSlide var(--d,40s) steps(var(--ach-steps,1200),end) infinite}
-#achievers .ach-track.rev{animation-direction:reverse}
-#achievers .ach-ribbon:hover .ach-track{animation-play-state:paused}
+#achievers .ach-ribbon{overflow-x:auto;padding:16px 0;scrollbar-width:thin;scrollbar-color:#a77b42 #181512}
+#achievers .ach-track{display:flex;width:max-content}
 #achievers .ach-batch{display:flex;gap:22px;padding-right:22px;flex:none}
-@keyframes achSlide{to{transform:translateX(-50%)}}
+#achievers .ach-controls{display:flex;justify-content:flex-end;gap:8px}
+#achievers .ach-controls button{width:40px;height:40px;border:1px solid #a77b42;border-radius:50%;background:#211a13;color:#ffe5af;font-size:22px;cursor:pointer}
+#achievers .ach-controls button:disabled{opacity:.4;cursor:default}
+#achievers .ach-ribbon:focus-visible,#achievers .ach-controls button:focus-visible{outline:2px solid #ffe5af;outline-offset:2px}
 #achievers .ach-card{flex:0 0 240px;width:240px;padding:4px;border-radius:22px;border:0;overflow:visible;transform:none;
   background:linear-gradient(125deg,#7b542b,#fff0c8 17%,#bb8542 32%,#ebcd8b 58%,#704323 74%,#fff0bd 90%,#d2994c);
   box-shadow:0 0 0 1px rgba(245,203,132,.45),0 0 22px rgba(243,197,93,.18),0 12px 30px rgba(0,0,0,.55)}
@@ -794,7 +795,6 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 #achievers .ach-cap p{margin:0;color:#e8c786;font-size:13.5px;line-height:1.5;overflow-wrap:anywhere}
 @media(max-width:650px){#achievers .ach-grid{gap:30px}#achievers .ach-card{flex-basis:190px;width:190px}#achievers .ach-batch{gap:16px;padding-right:16px}
   #achievers .ach-cap{min-height:80px}#achievers .ach-cap h4{font-size:16px}#achievers .ach-cap p{font-size:12px}#achievers .ach-head p{font-size:13px}}
-@media(prefers-reduced-motion:reduce){#achievers .ach-track{animation:none}#achievers .ach-ribbon{overflow-x:auto;mask-image:none;-webkit-mask-image:none}#achievers .ach-batch[aria-hidden="true"]{display:none}}
 #achievers .ach-cap p.ach-sub2{color:#cbb894;font-size:12.5px}
 #achievers .ach-cap p.ach-job{color:#e8c786;font-weight:700;font-size:14px}
 /* সফল শিক্ষার্থী: দুই ভাগ একই প্যানেলের ভেতরে — শিরোনামের নিচে হালকা দাগ দিয়ে আলাদা */
