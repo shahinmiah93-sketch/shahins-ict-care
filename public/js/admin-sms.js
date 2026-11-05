@@ -53,7 +53,10 @@ window.SICSms = function (X) {
             <div class="sms-f">ব্যাচ <small>(একাধিক বাছা যায়)</small>
               <div class="gl-chips sms-chips">${bs.length ? `<button type="button" data-allb class="${bs.length && bs.every((b) => S.batchIds.includes(b.id)) ? "on" : ""}">সব ব্যাচ</button>${bs.map((b) => `<button type="button" data-b="${esc(b.id)}" class="${S.batchIds.includes(b.id) ? "on" : ""}">${esc(b.name)} <i>${bn(DB().students.filter((s) => s.batchId === b.id && s.status !== "inactive").length)}</i></button>`).join("")}` : '<span class="muted">এই সেশনে কোনো ব্যাচ নেই</span>'}</div></div>
             <label class="sms-check"><input type="checkbox" data-off${S.withOff ? " checked" : ""}> "পড়া বন্ধ" শিক্ষার্থীদেরও রাখুন</label>`
-          : S.by === "achievers" ? `<p>নম্বর দেওয়া সফল শিক্ষার্থীরা নিচের তালিকায় নির্বাচিত থাকবে।</p><a href="#achievers">মোবাইল নম্বর যোগ বা বদলান</a>`
+          : S.by === "achievers" ? `<div class="sms-f"><b>নম্বর দেওয়া সফল শিক্ষার্থী</b>
+              ${(DB().achievers || []).filter(a => a.phone).map(a => `<div><strong>${esc(a.name)}</strong> · <bdi>${esc(a.phone)}</bdi></div>`).join("") || '<small>এখনো কোনো মোবাইল নম্বর সংরক্ষিত নেই।</small>'}
+              <small>বার্তা লিখলে পাঠানোর তালিকা তৈরি হবে।</small>
+              <a href="#achievers">মোবাইল নম্বর যোগ বা বদলান</a></div>`
           : `<label class="sms-f">শিক্ষার্থীর আইডি <small>কমা, স্পেস বা নতুন লাইনে আলাদা করে</small><textarea data-ids rows="4" placeholder="যেমন: 270001, 270002, 280005">${esc(S.idsText)}</textarea></label>`}
           ${S.by === "achievers" ? "" : `<label class="sms-f">কোন নম্বরে<select data-to>${X.opt(TO, S.to)}</select></label>`}
         </section>
