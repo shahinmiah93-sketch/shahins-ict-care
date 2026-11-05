@@ -39,6 +39,7 @@ window.SICAchievers = function (X) {
       suggestions = [...new Set([...values, ...misplaced.filter(v => /^(সমাজবিজ্ঞান|সমাজ বিজ্ঞান|sociology)$/i.test(v.trim()))])].filter(v => !isInstitution(v));
     }
     const query = el.value.trim().toLocaleLowerCase();
+    if (query && suggestions.some(value => value.trim().toLocaleLowerCase() === query)) return;
     const matches = suggestions.filter(v => !query || v.toLocaleLowerCase().includes(query)).slice(0,12);
     if (!matches.length) return;
     const list = document.createElement("div"); list.className = "ac-suggestions"; list.setAttribute("role","listbox"); list.setAttribute("aria-label","আগের লেখা");
