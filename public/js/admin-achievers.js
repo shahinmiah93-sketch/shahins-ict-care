@@ -24,10 +24,10 @@ window.SICAchievers = function (X) {
     history[id] = [...new Set([value,...(history[id] || [])])].slice(0,40);
     try { localStorage.setItem(historyKey,JSON.stringify(history)); } catch {}
   }
-  function suggest(el) {
+  function suggest(el, opening = false) {
     C.querySelectorAll(".ac-suggestions").forEach(n => n.remove());
     const key = el.dataset.k;
-    if (!["name","detail","subject","batch"].includes(key)) return;
+    if (!["name","detail","subject","batch","phone"].includes(key)) return;
     const values = [...new Set([...(remembered()[fieldKey(key)] || []),...all().filter(a => !["detail","subject"].includes(key) || a.group === F.group).map(a => a[key]).filter(Boolean)])];
     const isInstitution = value => /বিশ্ববিদ্যাল|কলেজ|ইনস্টিটিউট|একাডেমি|পলিটেকনিক|ইউনিভার্সিটি|মেডিকেল|university|college|institute|academy|polytechnic|medical/i.test(value);
     let suggestions = values;
@@ -38,7 +38,11 @@ window.SICAchievers = function (X) {
       const misplaced = [...(remembered()["university:detail"] || []), ...inGroup("university").map(a => a.detail || "")];
       suggestions = [...new Set([...values, ...misplaced.filter(v => /^(সমাজবিজ্ঞান|সমাজ বিজ্ঞান|sociology)$/i.test(v.trim()))])].filter(v => !isInstitution(v));
     }
-    const query = el.value.trim().toLocaleLowerCase();
+    if (key === "phone") {
+      const name = C.querySelector('[data-k="name"]')?.value.trim();
+      if (name) suggestions = all().filter(a => a.name?.trim() === name && a.phone).map(a => a.phone);
+    }
+    const query = opening ? "" : el.value.trim().toLocaleLowerCase();
     if (query && suggestions.some(value => value.trim().toLocaleLowerCase() === query)) return;
     const matches = suggestions.filter(v => !query || v.toLocaleLowerCase().includes(query)).slice(0,12);
     if (!matches.length) return;
@@ -80,7 +84,7 @@ window.SICAchievers = function (X) {
   function render() {
     if (!C) return;
     const l = all(), live = l.filter((a) => a.active && a.image), secs = Number(DB().settings.achieverSeconds) || 3.5;
-    C.onfocusin = e => { if (e.target.matches("input[data-k]")) suggest(e.target); };
+    C.onfocusin = e => { if (e.target.matches("input[data-k]")) suggest(e.target, true); };
     C.oninput = e => { if (e.target.matches("input[data-k]")) suggest(e.target); };
     C.onfocusout = e => { if (!e.relatedTarget?.closest(".ac-suggestions")) C.querySelectorAll(".ac-suggestions").forEach(n => n.remove()); };
     C.innerHTML = `<div class="ex-page">
@@ -127,6 +131,7 @@ window.SICAchievers = function (X) {
   }
   function onClick(e) {
     const t = (s) => e.target.closest(s); let el;
+    if ((el = t("input[data-k]"))) return suggest(el, true);
     if ((el = t("[data-ac-new]"))) { F = blank(el.dataset.acNew); file = null; preview = ""; render(); return window.scrollTo({ top: 0, behavior: "smooth" }); }
     if ((el = t("[data-ac-edit]"))) { F = { ...blank(), ...DB().achievers.find((a) => a.id === el.dataset.acEdit) }; file = null; preview = ""; render(); return window.scrollTo({ top: 0, behavior: "smooth" }); }
     if (t("[data-ac-cancel]")) { F = null; file = null; preview = ""; return render(); }
