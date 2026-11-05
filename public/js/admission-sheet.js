@@ -28,8 +28,12 @@
       const text = digits(v).trim(); let m = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
       if (m) parts = m.slice(1).map(Number);
       else if ((m = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/))) parts = [Number(m[3]), Number(m[2]), Number(m[1])];
+      else if ((m = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/))) {
+        const year = Number(m[3]) + (m[3].length === 2 ? 2000 : 0);
+        parts = [year, Number(m[2]), Number(m[1])];
+      }
     }
-    if (!parts) throw new Error("তারিখ YYYY-MM-DD অথবা DD/MM/YYYY আকারে দিন");
+    if (!parts) throw new Error("তারিখ DD.MM.YY, YYYY-MM-DD অথবা DD/MM/YYYY আকারে দিন");
     const [y, m, d] = parts, dt = new Date(Date.UTC(y, m - 1, d));
     if (y < 1900 || y > 2100 || dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) throw new Error("সঠিক তারিখ দিন");
     return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
