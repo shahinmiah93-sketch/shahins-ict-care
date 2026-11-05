@@ -29,7 +29,17 @@ window.SICAchievers = function (X) {
     const key = el.dataset.k;
     if (!["name","detail","subject","batch"].includes(key)) return;
     const values = [...new Set([...(remembered()[fieldKey(key)] || []),...all().filter(a => !["detail","subject"].includes(key) || a.group === F.group).map(a => a[key]).filter(Boolean)])];
-    const query = el.value.trim().toLocaleLowerCase(), matches = values.filter(v => !query || v.toLocaleLowerCase().includes(query)).slice(0,12);
+    const isInstitution = value => /বিশ্ববিদ্যাল|কলেজ|ইনস্টিটিউট|একাডেমি|পলিটেকনিক|ইউনিভার্সিটি|মেডিকেল|university|college|institute|academy|polytechnic|medical/i.test(value);
+    let suggestions = values;
+    if (F.group === "university" && key === "detail") {
+      suggestions = values.filter(isInstitution);
+    }
+    if (F.group === "university" && key === "subject") {
+      const misplaced = [...(remembered()["university:detail"] || []), ...inGroup("university").map(a => a.detail || "")];
+      suggestions = [...new Set([...values, ...misplaced.filter(v => /^(সমাজবিজ্ঞান|সমাজ বিজ্ঞান|sociology)$/i.test(v.trim()))])].filter(v => !isInstitution(v));
+    }
+    const query = el.value.trim().toLocaleLowerCase();
+    const matches = suggestions.filter(v => !query || v.toLocaleLowerCase().includes(query)).slice(0,12);
     if (!matches.length) return;
     const list = document.createElement("div"); list.className = "ac-suggestions"; list.setAttribute("role","listbox"); list.setAttribute("aria-label","আগের লেখা");
     list.innerHTML = matches.map(v => `<button type="button" role="option">${esc(v)}</button>`).join("");
