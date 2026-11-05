@@ -1352,7 +1352,7 @@ const CLEAN = {
   achievers: (b) => {
     const phone = phoneOf(b.phone);
     if (str(b.phone, 20) && !/^01\d{9}$/.test(phone)) throw Error("সঠিক মোবাইল নম্বর দিন।");
-    return { ...(b.phone === undefined ? {} : { phone }), group: b.group === "career" ? "career" : "university", name: str(b.name, 120), detail: str(b.detail, 200), subject: str(b.subject, 120), ...(b.careerSubject === undefined ? {} : { careerSubject: str(b.careerSubject, 120) }), batch: str(b.batch, 40), active: b.active !== false, order: Math.floor(num(b.order)) || 0 };
+    return { ...(b.phone === undefined ? {} : { phone }), group: b.group === "career" ? "career" : "university", name: str(b.name, 120), detail: str(b.detail, 200), subject: str(b.subject, 120), ...(b.careerSubject === undefined ? {} : { careerSubject: str(b.careerSubject, 120) }), ...(b.careerUniversity === undefined ? {} : { careerUniversity: str(b.careerUniversity, 200) }), batch: str(b.batch, 40), active: b.active !== false, order: Math.floor(num(b.order)) || 0 };
   },
   banners: (b) => { const link = str(b.link, 300); return { title: str(b.title, 120), link: /^(https?:\/\/|\/|#)/i.test(link) ? link : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }; },
   // ব্যাচ বন্ধ / ছুটি: কোন ব্যাচ, কবে থেকে কবে, কারণ; reduceFee = বন্ধের ক্লাসের টাকা কমবে কি না (ঈদের ছুটিতে সাধারণত না)
