@@ -1148,7 +1148,7 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 body.free-class-page .ap-hero,
 body.free-class-page #pane {
   background-color:#0c0c0e;
-  background-image:linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px);
+  background-image:linear-gradient(#a784ff18 1px,transparent 1px),linear-gradient(90deg,#a784ff18 1px,transparent 1px);
   background-size:44px 44px;
 }
 .home #free-classes > .wrap {padding-top:clamp(52px,8vw,104px)}
