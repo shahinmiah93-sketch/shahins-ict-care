@@ -5,7 +5,7 @@ window.SICAchievers = function (X) {
   "use strict";
   const { $, $$, esc, bn, api, toast } = U;
   const DB = () => X.DB;
-  const GROUPS = [["university", "University Achievers", "বিশ্ববিদ্যালয়ে পড়ছে", "যেমন: ঢাকা বিশ্ববিদ্যালয়"], ["career", "Career Achievers", "পেশায় প্রতিষ্ঠিত", "যেমন: সফটওয়্যার ইঞ্জিনিয়ার, ঢাকা"]];
+  const GROUPS = [["university", "University Achievers", "বিশ্ববিদ্যালয়ে পড়ছে", "যেমন: ঢাকা বিশ্ববিদ্যালয়"], ["career", "Career Achievers", "পেশায় প্রতিষ্ঠিত", "যেমন: প্রেসিডেন্সি ইউনিভার্সিটি"]];
   let C = null, F = null, file = null, preview = "", busy = false;
 
   const all = () => [...(DB().achievers || [])].sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.createdAt).localeCompare(String(b.createdAt)));
@@ -66,7 +66,7 @@ window.SICAchievers = function (X) {
         <div class="bn-fields">
           <div class="ac-groups">${GROUPS.map(([g, t, s]) => `<label class="hw-pill${f.group === g ? " on" : ""}"><input type="radio" name="acg" value="${g}"${f.group === g ? " checked" : ""}>${t}<small>${s}</small></label>`).join("")}</div>
           <label>শিক্ষার্থীর নাম *<input data-k="name" value="${esc(f.name)}" maxlength="120" placeholder="যেমন: রাফি আহমেদ"></label>
-          <label>${f.group === "career" ? "পেশা ও প্রতিষ্ঠান" : "বিশ্ববিদ্যালয়"}<input data-k="detail" value="${esc(f.detail)}" maxlength="200" placeholder="${esc(G[3])}"></label>
+          <label>${f.group === "career" ? "কর্মস্থল / প্রতিষ্ঠানের নাম" : "বিশ্ববিদ্যালয়"}<input data-k="detail" value="${esc(f.detail)}" maxlength="200" placeholder="${esc(G[3])}"></label>
           <label>${f.group === "career" ? "চাকরির পদবি / Job title (ঐচ্ছিক)" : "বিষয় (ঐচ্ছিক)"}<input data-k="subject" value="${esc(f.subject || "")}" maxlength="120" placeholder="${f.group === "career" ? "যেমন: সহকারী কমিশনার" : "যেমন: কম্পিউটার সায়েন্স অ্যান্ড ইঞ্জিনিয়ারিং"}"></label>
           ${f.group === "career" ? `<label>বিশ্ববিদ্যালয় (ঐচ্ছিক)<input data-k="careerUniversity" value="${esc(f.careerUniversity || "")}" maxlength="200" placeholder="যেমন: ঢাকা বিশ্ববিদ্যালয়"></label>` : ""}
           ${f.group === "career" ? `<label>বিষয় (ঐচ্ছিক)<input data-k="careerSubject" value="${esc(f.careerSubject || "")}" maxlength="120" placeholder="যেমন: ইংরেজি"></label>` : ""}
