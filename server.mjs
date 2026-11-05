@@ -429,8 +429,13 @@ function admitOnline(a) {
 }
 const payView = (a) => (a.pay ? { status: a.pay.status, method: a.pay.method, amount: a.pay.amount } : { status: "unpaid" });
 // ⭐ ওয়েবসাইটের "শিক্ষার্থীদের মতামত": মন্তব্য আছে আর অ্যাডমিন লুকায়নি এমন রেটিং
+const publicReviewHits = new Map();
 function publicReviews() {
   return db.ratings.filter((r) => !r.hidden && str(r.comment, 300)).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 60).map((r) => {
+    if (r.publicSubmission) return {
+      id: r.id, name: r.name, course: [r.affiliation === "alumni" ? "সাবেক শিক্ষার্থী" : "বর্তমান শিক্ষার্থী", r.batch].filter(Boolean).join(" · "),
+      stars: r.stars, text: r.comment, at: r.at,
+    };
     const s = db.students.find((x) => x.id === r.studentId) || {};
     const course = db.enrollments.filter((e) => e.studentId === s.id).map((e) => (db.courses.find((c) => c.id === e.courseId) || {}).name).filter(Boolean)[0] || "";
     return { id: r.id, name: s.nameEn || s.name || "শিক্ষার্থী", course: [course, s.session].filter(Boolean).join(" · "), stars: r.stars, text: r.comment, at: r.at };
@@ -1816,7 +1821,28 @@ async function api(req, res, url) {
   }
 
   // ---- পাবলিক ----
+  if (p === "/api/public/reviews" && m === "POST") {
+    const body = await readBody(req, 4096);
+    if (body?.website) return send(res, 200, { ok: true });
+    const name = str(body?.name, 80), batch = str(body?.batch, 30), comment = str(body?.comment, 300);
+    const stars = Number(body?.stars), affiliation = body?.affiliation;
+    if (!name || !comment || !Number.isInteger(stars) || stars < 1 || stars > 5 || !["current", "alumni"].includes(affiliation)) {
+      return send(res, 400, { error: "নাম, শিক্ষার্থীর ধরন, রেটিং ও মতামত দিন।" });
+    }
+    const now = Date.now(), ip = clientIp(req);
+    for (const [key, expires] of publicReviewHits) if (expires <= now) publicReviewHits.delete(key);
+    if (publicReviewHits.has(ip) || db.ratings.filter(r => r.publicSubmission && Date.parse(r.at) > now - 86400000).length >= 100) {
+      return send(res, 429, { error: "কিছুক্ষণ পরে আবার চেষ্টা করুন।" });
+    }
+    const review = { id: uid("rt"), publicSubmission: true, name, batch, comment, stars, affiliation, hidden: true, at: new Date(now).toISOString() };
+    db.ratings.push(review);
+    try { saveDb(); }
+    catch (error) { db.ratings.pop(); throw error; }
+    publicReviewHits.set(ip, now + 60000);
+    return send(res, 201, { ok: true });
+  }
   if (p === "/api/public" && m === "GET") {
+    const visibleRatings = db.ratings.filter(r => !r.publicSubmission || !r.hidden);
     const settings = Object.fromEntries(SETTINGS_KEYS.map((k) => [k, db.settings[k] || ""]));
     const live = activeSessions();
     const batches = [...db.batches].sort(compareBatchSchedule).filter((b) => live.includes(b.session) && b.active !== false).map((b) => ({
@@ -1833,7 +1859,7 @@ async function api(req, res, url) {
       faqs: db.faqs.filter((f) => f.active !== false && f.q && f.a).sort(byOrder).map(({ id, q, a }) => ({ id, q, a })),
       stats: { students: db.students.filter((s) => s.status !== "inactive").length, courses: db.courses.filter((c) => c.active !== false).length, batches: batches.length },
       mentorPhoto: mentorUrl(), payGateway: gatewayOn(), hasBooks: db.books.some((b) => b.online && b.active !== false),
-      rating: { count: db.ratings.length, avg: db.ratings.length ? db.ratings.reduce((a, r) => a + r.stars, 0) / db.ratings.length : 0 },
+      rating: { count: visibleRatings.length, avg: visibleRatings.length ? visibleRatings.reduce((a, r) => a + r.stars, 0) / visibleRatings.length : 0 },
       reviews: publicReviews(),
     });
   }

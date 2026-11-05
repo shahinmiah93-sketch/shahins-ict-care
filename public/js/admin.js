@@ -851,12 +851,12 @@ ${list.map(receiptHtml).join("")}
     const st = (n) => `<span style="color:#e8a317;letter-spacing:1px">${"★".repeat(n)}<span style="color:#d9d4c7">${"★".repeat(5 - n)}</span></span>`;
     c.innerHTML = `<div class="card"><div class="card-head"><h2>★ শিক্ষার্থীদের মতামত <small style="color:var(--muted);font-weight:400">গড় ${bn(avg.toFixed(1))} · ${bn(L.length)}টি</small></h2>
         <a class="btn line" href="/#reviews" target="_blank">→ ওয়েবসাইটে দেখুন</a></div>
-      <p style="margin:0 0 12px;color:var(--muted)">শিক্ষার্থীরা নিজের প্যানেল থেকে তারা আর মন্তব্য দেয়। মন্তব্যসহ মতামত ওয়েবসাইটে দেখায় — অশোভন বা ভুল কিছু হলে "লুকান" চাপুন।</p>
+      <p style="margin:0 0 12px;color:var(--muted)">ওয়েবসাইটের ফর্ম থেকে আসা মতামত আগে যাচাই করুন। প্রকাশ করতে “দেখান” চাপুন।</p>
       <div class="tbl-wrap"><table><thead><tr><th>শিক্ষার্থী</th><th>রেটিং</th><th>মন্তব্য</th><th>তারিখ</th><th>ওয়েবসাইটে</th><th></th></tr></thead><tbody>
       ${L.map((r) => { const s = DB.students.find((x) => x.id === r.studentId) || {}; return `<tr${r.hidden ? ' class="muted-row"' : ""}>
-        <td><b>${esc(s.name || "—")}</b><small>${esc(r.studentId)}${s.session ? " · " + esc(s.session) : ""}</small></td><td>${st(r.stars)}</td>
+        <td><b>${esc(r.publicSubmission ? r.name : s.name || "—")}</b><small>${esc(r.publicSubmission ? [r.affiliation === "alumni" ? "সাবেক শিক্ষার্থী" : "বর্তমান শিক্ষার্থী", r.batch].filter(Boolean).join(" · ") : r.studentId)}${s.session ? " · " + esc(s.session) : ""}</small></td><td>${st(r.stars)}</td>
         <td style="max-width:420px">${esc(r.comment || "—")}</td><td>${U.date(r.at)}</td>
-        <td>${!r.comment ? '<span class="chip">মন্তব্য নেই</span>' : r.hidden ? '<span class="chip bad">লুকানো</span>' : '<span class="chip ok">দেখাচ্ছে</span>'}</td>
+        <td>${!r.comment ? '<span class="chip">মন্তব্য নেই</span>' : r.hidden ? '<span class="chip bad">প্রকাশিত নয়</span>' : '<span class="chip ok">দেখাচ্ছে</span>'}</td>
         <td class="num" style="white-space:nowrap">${r.comment ? `<button class="btn sm line" data-rh="${r.id}">${r.hidden ? "দেখান" : "লুকান"}</button> ` : ""}<button class="icon-btn" title="মুছুন" data-rd="${r.id}">✕</button></td></tr>`; }).join("")
         || '<tr><td colspan="6" class="empty">এখনো কোনো মতামত আসেনি</td></tr>'}</tbody></table></div></div>`;
     c.onclick = async (e) => {

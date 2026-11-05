@@ -265,6 +265,26 @@
 
   // ⭐ শিক্ষার্থীদের মতামত — দুই সারি উল্টো দিকে ধীরে চলে (মাউস রাখলে থামে); কম হলে স্থির; লম্বা লেখা "…" চাপলে পুরোটা
   const RV = data.reviews || [];
+  $("#reviews").hidden = false;
+  $("#rvAll").hidden = !RV.length;
+  const reviewForm = $("#rvForm");
+  reviewForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const button = reviewForm.querySelector('button[type="submit"]');
+    if (button.disabled) return;
+    const status = $("#rvFormStatus");
+    button.disabled = true;
+    status.textContent = "পাঠানো হচ্ছে…";
+    try {
+      await U.api("/api/public/reviews", { body: Object.fromEntries(new FormData(reviewForm)) });
+      reviewForm.reset();
+      status.textContent = "মতামত পেয়েছি। অনুমোদনের পর প্রকাশ হবে।";
+    } catch (error) {
+      status.textContent = error.message || "মতামত পাঠানো যায়নি। আবার চেষ্টা করুন।";
+    } finally {
+      button.disabled = false;
+    }
+  };
   if (RV.length) {
     const stars = (n) => `<span class="rv-stars" aria-label="${bn(n)} তারা">${"★".repeat(n)}<i>${"★".repeat(5 - n)}</i></span>`;
     const hue = (s) => [...s].reduce((t, ch) => t + ch.charCodeAt(0), 0) % 360; // নাম অনুযায়ী আলাদা রঙের গোল অক্ষর
@@ -280,7 +300,6 @@
     }).join("");
     const avg = RV.reduce((t, r) => t + r.stars, 0) / RV.length;
     $("#rvSum").innerHTML = `<b>${bn(avg.toFixed(1))}</b> ${stars(Math.round(avg))} <span>${bn(RV.length)} জন শিক্ষার্থীর মতামত</span>`;
-    $("#reviews").hidden = false;
     // পপআপ: একটা মতামত পুরো, অথবা সব মতামত
     const pop = (title, html) => {
       const d = document.createElement("div"); d.className = "rv-pop";

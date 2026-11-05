@@ -136,9 +136,23 @@ Shahin's ICT Care | Somvarun Shikkha Poribar</span></p>
 <!-- শিক্ষার্থীদের মতামত: শিক্ষার্থী প্যানেল থেকে দেওয়া রেটিং আর মন্তব্য (অ্যাডমিন → ⭐ শিক্ষার্থীদের মতামত থেকে লুকানো যায়) — দুই সারিতে চলতে থাকে -->
 <section class="sec rv-sec" id="reviews" hidden>
   <div class="wrap">
-    <header class="rv-head reveal"><div><p class="eyebrow">শিক্ষার্থীদের মতামত</p><h2>যারা শিখছে, তারা যা বলে</h2><p class="rv-sum" id="rvSum"></p></div>
+    <header class="rv-head reveal"><div><p class="eyebrow">শিক্ষার্থীদের মতামত</p><h2>বর্তমান ও সাবেক শিক্ষার্থীদের কথা</h2><p class="rv-sum" id="rvSum"></p></div>
       <button type="button" class="rv-all" id="rvAll">সব মতামত <span aria-hidden="true">→</span></button></header>
     <div class="rv-rows" id="rvRows"></div>
+    <details class="rv-submit">
+      <summary>✎ মতামত দিন <small>লগইন লাগবে না</small></summary>
+      <form id="rvForm">
+        <label>নাম <input name="name" maxlength="80" autocomplete="name" required></label>
+        <label>আপনি <select name="affiliation" required><option value="">বেছে নিন</option><option value="current">বর্তমান শিক্ষার্থী</option><option value="alumni">সাবেক শিক্ষার্থী</option></select></label>
+        <label>HSC ব্যাচ <input name="batch" maxlength="30" placeholder="ঐচ্ছিক, যেমন HSC-24"></label>
+        <label>রেটিং <select name="stars" required><option value="">বেছে নিন</option><option value="5">৫ তারা</option><option value="4">৪ তারা</option><option value="3">৩ তারা</option><option value="2">২ তারা</option><option value="1">১ তারা</option></select></label>
+        <label class="rv-comment">মতামত <textarea name="comment" rows="2" maxlength="300" required></textarea></label>
+        <input name="website" hidden tabindex="-1" autocomplete="off" aria-hidden="true">
+        <small class="rv-comment">অনুমোদনের পর আপনার নাম ও মতামত ওয়েবসাইটে দেখা যাবে।</small>
+        <button type="submit" class="btn gold">পাঠান</button>
+        <p class="rv-comment" id="rvFormStatus" role="status"></p>
+      </form>
+    </details>
   </div>
 </section>
 
