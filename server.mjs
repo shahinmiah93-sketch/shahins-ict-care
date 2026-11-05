@@ -1186,7 +1186,7 @@ const liveBanners = () => db.banners.filter((b) => b.active && b.image).sort(byO
 const liveGallery = () => db.gallery.filter((g) => g.active && g.image).sort(byOrder)
   .map((g) => ({ id: g.id, title: g.title, description: g.description || "", album: g.album, date: g.date, img: `/api/gphoto/${g.id}/image?v=${g.image.v}` }));
 const liveAchievers = () => db.achievers.filter((a) => a.active && a.image).sort(byOrder)
-  .map((a) => ({ id: a.id, group: a.group, name: a.name, detail: a.detail, subject: a.subject || "", batch: a.batch, img: `/api/achiever/${a.id}/image?v=${a.image.v}` }));
+  .map((a) => ({ id: a.id, group: a.group, name: a.name, detail: a.detail, subject: a.subject || "", careerUniversity: a.careerUniversity || "", careerSubject: a.careerSubject || "", batch: a.batch, img: `/api/achiever/${a.id}/image?v=${a.image.v}` }));
 
 // ---------- যাচাই (কালেকশন অনুযায়ী) ----------
 const lines = (v) => (Array.isArray(v) ? v : String(v || "").split("\n"));
