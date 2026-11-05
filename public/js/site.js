@@ -185,7 +185,14 @@
     const rows = GROUPS.map(([g, t, sub]) => [
       g, t, sub, ach.filter(a => a.group === g).sort((a, b) => batchYear(a) - batchYear(b)),
     ]).filter(row => row[3].length);
-    const card = (a, dup) => `<article class="ach-card"${dup ? ' aria-hidden="true"' : ""}><div class="ach-in"><div class="ach-photo"><img src="${esc(a.img)}" alt="${dup ? "" : esc(a.name)}" loading="lazy" decoding="async">${a.batch ? `<span class="ach-badge">${esc(a.batch)}</span>` : ""}</div><div class="ach-cap"><h4>${esc(a.name)}</h4>${a.group === "career" ? (a.subject ? `<p class="ach-job">${esc(a.subject)}</p>` : "") + (a.detail ? `<p class="ach-sub2">${esc(a.detail)}</p>` : "") + (a.careerUniversity ? `<p class="ach-sub2">${esc(a.careerUniversity)}</p>` : "") + (a.careerSubject ? `<p class="ach-sub2">${esc(a.careerSubject)}</p>` : "") : (a.detail ? `<p>${esc(a.detail)}</p>` : "") + (a.subject ? `<p class="ach-sub2">${esc(a.subject)}</p>` : "")}</div></div></article>`;
+    const careerInfo = a => {
+      const section = (label, rows) => rows.some(([value]) => value)
+        ? `<div class="ach-info-group"><span class="ach-info-label">${label}</span>${rows.filter(([value]) => value).map(([value, style]) => `<p class="${style}">${esc(value)}</p>`).join("")}</div>`
+        : "";
+      return section("বর্তমান পেশা", [[a.subject, "ach-job"], [a.detail, "ach-sub2"]])
+        + section("শিক্ষাগত তথ্য", [[a.careerUniversity, "ach-sub2"], [a.careerSubject, "ach-sub2"]]);
+    };
+    const card = (a, dup) => `<article class="ach-card"${dup ? ' aria-hidden="true"' : ""}><div class="ach-in"><div class="ach-photo"><img src="${esc(a.img)}" alt="${dup ? "" : esc(a.name)}" loading="lazy" decoding="async">${a.batch ? `<span class="ach-badge">${esc(a.batch)}</span>` : ""}</div><div class="ach-cap"><h4>${esc(a.name)}</h4>${a.group === "career" ? careerInfo(a) : (a.detail ? `<p>${esc(a.detail)}</p>` : "") + (a.subject ? `<p class="ach-sub2">${esc(a.subject)}</p>` : "")}</div></div></article>`;
     $("#achievers").hidden = false;
     const grid = $("#achGrid");
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
