@@ -51,6 +51,7 @@ window.SICAchievers = function (X) {
           <label>${f.group === "career" ? "পেশা ও প্রতিষ্ঠান" : "বিশ্ববিদ্যালয়"}<input data-k="detail" value="${esc(f.detail)}" maxlength="200" placeholder="${esc(G[3])}"></label>
           <label>${f.group === "career" ? "চাকরির পদবি / Job title (ঐচ্ছিক)" : "বিষয় (ঐচ্ছিক)"}<input data-k="subject" value="${esc(f.subject || "")}" maxlength="120" placeholder="${f.group === "career" ? "যেমন: সহকারী কমিশনার" : "যেমন: কম্পিউটার সায়েন্স অ্যান্ড ইঞ্জিনিয়ারিং"}"></label>
           <label>কোন ব্যাচের (ঐচ্ছিক)<input data-k="batch" value="${esc(f.batch)}" maxlength="40" placeholder="যেমন: HSC-24"></label>
+          <label>মোবাইল নম্বর (ঐচ্ছিক)<input type="tel" inputmode="tel" autocomplete="off" data-k="phone" value="${esc(f.phone || "")}" maxlength="20" placeholder="01XXXXXXXXX"><small>শুধু অ্যাডমিন ও SMS প্যানেলে দেখা যাবে।</small></label>
           <label class="bn-chk"><input type="checkbox" data-k="active"${f.active ? " checked" : ""}> <b>ওয়েবসাইটে দেখাবে</b></label>
           <div class="rs-act"><button type="button" class="btn gold" data-ac-save>${f.id ? "✓ সংরক্ষণ করুন" : "✓ যোগ করুন"}</button><button type="button" class="btn line" data-ac-cancel>বাতিল</button></div>
         </div></div></section>`;
@@ -101,7 +102,7 @@ window.SICAchievers = function (X) {
     try {
       const old = F.id && DB().achievers.find((a) => a.id === F.id);
       const order = old && old.group === F.group ? old.order : inGroup(F.group).reduce((m, a) => Math.max(m, a.order || 0), 0) + 10;
-      const r = await X.save("achievers", { group: F.group, name: F.name.trim(), detail: F.detail.trim(), subject: String(F.subject || "").trim(), batch: F.batch.trim(), active: !!F.active, order }, F.id || undefined);
+      const r = await X.save("achievers", { group: F.group, name: F.name.trim(), detail: F.detail.trim(), subject: String(F.subject || "").trim(), batch: F.batch.trim(), phone: F.phone || "", active: !!F.active, order }, F.id || undefined);
       if (file) await upload(r.item.id);
       F = null; file = null; preview = "";
       await X.load(); render(); toast("সংরক্ষণ হয়েছে");

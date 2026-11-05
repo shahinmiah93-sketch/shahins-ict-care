@@ -11,6 +11,8 @@ window.SICSms = function (X) {
     ["ক্লাস বন্ধ", "প্রিয় {নাম}, আগামীকাল {ব্যাচ} ব্যাচের ক্লাস বন্ধ থাকবে। — Shahin Sir"],
     ["পরীক্ষার নোটিশ", "প্রিয় {নাম}, আগামী শনিবার {ব্যাচ} ব্যাচের সাপ্তাহিক পরীক্ষা হবে। প্রস্তুতি নিয়ে আসবে। — Shahin Sir"],
     ["অভিভাবক সভা", "সম্মানিত অভিভাবক, {নাম}-এর অগ্রগতি নিয়ে আলোচনার জন্য আগামী শুক্রবার বিকাল ৪টায় অভিভাবক সভায় আসার অনুরোধ রইল। — {প্রতিষ্ঠান}"],
+    ["শুভেচ্ছা", "প্রিয় {নাম}, তোমার সাফল্যে আন্তরিক অভিনন্দন ও শুভকামনা। — Shahin Sir"],
+    ["দাওয়াত", "প্রিয় {নাম}, আমাদের অনুষ্ঠানে তোমাকে সাদর আমন্ত্রণ। তারিখ: …, সময়: …, স্থান: …। — Shahin Sir"],
   ];
   const TO = [["both", "শিক্ষার্থী ও অভিভাবক দুজনকেই"], ["student", "শুধু শিক্ষার্থী"], ["guardian", "শুধু অভিভাবক"]];
   const S = { by: "batch", sess: "", batchIds: [], idsText: "", withOff: false, to: "both", mode: "custom", text: "", examType: "", examId: "", skipGot: true };
@@ -22,11 +24,12 @@ window.SICSms = function (X) {
   const sessBatches = () => (DB().batches || []).filter((b) => b.session === S.sess);
   const parseIds = () => [...new Set(S.idsText.replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)).split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean))];
   // কাদের তালিকা চাওয়া হবে
-  const wantIds = () => S.by === "ids" ? parseIds()
+  const wantIds = () => S.by === "achievers" ? (DB().achievers || []).map(a => a.id)
+    : S.by === "ids" ? parseIds()
     : DB().students.filter((s) => S.batchIds.includes(s.batchId) && (S.withOff || s.status !== "inactive")).map((s) => s.id);
   const exams = () => [...DB().exams].filter((e) => Object.keys(e.published || {}).length).sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const ready = () => (plan ? plan.rows.filter((r) => !r.skip && !unticked.has(r.id)) : []);
-  const body = () => ({ to: S.to, mode: S.mode, text: S.text, examId: S.examId, skipGot: S.skipGot });
+  const body = () => ({ audience: S.by, to: S.to, mode: S.mode, text: S.text, examId: S.examId, skipGot: S.skipGot });
 
   function render() {
     if (!C) return;
@@ -45,19 +48,20 @@ window.SICSms = function (X) {
 
       <div class="sms-grid">
         <section class="card"><h3>১. কাকে পাঠাবেন</h3>
-          <div class="sms-tabs">${[["batch", "ব্যাচ অনুযায়ী"], ["ids", "আইডি দিয়ে"]].map(([k, t]) => `<button type="button" data-by="${k}" class="${S.by === k ? "on" : ""}">${t}</button>`).join("")}</div>
+          <div class="sms-tabs">${[["batch", "ব্যাচ অনুযায়ী"], ["ids", "আইডি দিয়ে"], ["achievers", "সফল শিক্ষার্থী"]].map(([k, t]) => `<button type="button" data-by="${k}" class="${S.by === k ? "on" : ""}">${t}</button>`).join("")}</div>
           ${S.by === "batch" ? `<label class="sms-f">সেশন<select data-sess>${X.opt(sessions().map((s) => [s, s]), S.sess)}</select></label>
             <div class="sms-f">ব্যাচ <small>(একাধিক বাছা যায়)</small>
               <div class="gl-chips sms-chips">${bs.length ? `<button type="button" data-allb class="${bs.length && bs.every((b) => S.batchIds.includes(b.id)) ? "on" : ""}">সব ব্যাচ</button>${bs.map((b) => `<button type="button" data-b="${esc(b.id)}" class="${S.batchIds.includes(b.id) ? "on" : ""}">${esc(b.name)} <i>${bn(DB().students.filter((s) => s.batchId === b.id && s.status !== "inactive").length)}</i></button>`).join("")}` : '<span class="muted">এই সেশনে কোনো ব্যাচ নেই</span>'}</div></div>
             <label class="sms-check"><input type="checkbox" data-off${S.withOff ? " checked" : ""}> "পড়া বন্ধ" শিক্ষার্থীদেরও রাখুন</label>`
+          : S.by === "achievers" ? `<p>নম্বর দেওয়া সফল শিক্ষার্থীরা নিচের তালিকায় নির্বাচিত থাকবে।</p><a href="#achievers">মোবাইল নম্বর যোগ বা বদলান</a>`
           : `<label class="sms-f">শিক্ষার্থীর আইডি <small>কমা, স্পেস বা নতুন লাইনে আলাদা করে</small><textarea data-ids rows="4" placeholder="যেমন: 270001, 270002, 280005">${esc(S.idsText)}</textarea></label>`}
-          <label class="sms-f">কোন নম্বরে<select data-to>${X.opt(TO, S.to)}</select></label>
+          ${S.by === "achievers" ? "" : `<label class="sms-f">কোন নম্বরে<select data-to>${X.opt(TO, S.to)}</select></label>`}
         </section>
 
         <section class="card"><h3>২. কী পাঠাবেন</h3>
-          <div class="sms-tabs">${[["custom", "নিজের লেখা বার্তা"], ["result", "পরীক্ষার ফলাফল"]].map(([k, t]) => `<button type="button" data-mode="${k}" class="${S.mode === k ? "on" : ""}">${t}</button>`).join("")}</div>
+          <div class="sms-tabs">${[["custom", "নিজের লেখা বার্তা"], ["result", "পরীক্ষার ফলাফল"]].filter(([key]) => S.by !== "achievers" || key === "custom").map(([k, t]) => `<button type="button" data-mode="${k}" class="${S.mode === k ? "on" : ""}">${t}</button>`).join("")}</div>
           ${S.mode === "custom" ? `<div class="sms-f">বার্তা
-              <div class="sms-tags">${TAGS.map(([t, l]) => `<button type="button" data-tag="${t}" title="প্রত্যেকের নিজের ${l} বসবে">＋ ${l}</button>`).join("")}<span class="sms-tpl">নমুনা: ${TEMPLATES.map(([l], i) => `<button type="button" data-tpl="${i}">${l}</button>`).join("")}</span></div>
+              <div class="sms-tags">${TAGS.map(([t, l]) => `<button type="button" data-tag="${t}" title="প্রত্যেকের নিজের ${l} বসবে">＋ ${l}</button>`).join("")}<span class="sms-tpl">নমুনা: ${TEMPLATES.map(([l], i) => (S.by === "achievers" ? i >= 3 : i < 3) ? `<button type="button" data-tpl="${i}">${l}</button>` : "").join("")}</span></div>
               <textarea data-text rows="6" maxlength="1000" placeholder="এখানে আপনার বার্তা লিখুন… যেমন: প্রিয় {নাম}, আগামীকাল ক্লাস বন্ধ থাকবে।">${esc(S.text)}</textarea>
               <small class="sms-count" id="smsCount"></small></div>`
           : `${allEx.length ? `<div class="sms-pair"><label class="sms-f">পরীক্ষা<select data-extype>${X.opt([["", "সব ধরনের পরীক্ষা"], ...types.map((t) => [t, EC.typeName(t)])], S.examType)}</select></label>
@@ -99,8 +103,11 @@ window.SICSms = function (X) {
   // তালিকা সার্ভার থেকে (লেখা বদলালে একটু থেমে)
   function refresh(delay = 350) {
     clearTimeout(timer);
+    const my = ++seq;
+    plan = null;
+    drawList();
     timer = setTimeout(async () => {
-      const ids = wantIds(), my = ++seq;
+      const ids = wantIds();
       if (!ids.length) { plan = null; drawList(); count(); return; }
       try { const r = await api("/api/admin/sms/plan", { body: { ids, ...body() } }); if (my !== seq) return; plan = r; drawList(); count(); }
       catch (e) { toast(e.message, true); }
@@ -122,7 +129,7 @@ window.SICSms = function (X) {
     const all = ok.length && ok.every((r) => !unticked.has(r.id));
     box.innerHTML = `${bad}<div class="tbl-wrap"><table class="exam-entry-table sms-tbl"><thead><tr><th><input type="checkbox" data-tickall${all ? " checked" : ""}${ok.length ? "" : " disabled"} title="সবাই"></th><th>আইডি</th><th>নাম</th><th>ব্যাচ</th><th>মোবাইল</th><th>যা যাবে</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="${r.skip ? "sms-skip" : unticked.has(r.id) ? "sms-un" : ""}"><td><input type="checkbox" data-tick="${esc(r.id)}"${!r.skip && !unticked.has(r.id) ? " checked" : ""}${r.skip ? " disabled" : ""}></td>
-        <td>${esc(r.id)}</td><td><b>${esc(r.name)}</b>${r.off ? ' <span class="chip warn">পড়া বন্ধ</span>' : ""}</td><td>${esc(X.batchName(r.batchId))}</td>
+        <td>${esc(r.id)}</td><td><b>${esc(r.name)}</b>${r.off ? ' <span class="chip warn">পড়া বন্ধ</span>' : ""}</td><td>${esc(r.batch || X.batchName(r.batchId))}</td>
         <td class="sms-ph">${r.phones.map(esc).join("<br>") || "—"}</td>
         <td class="sms-txt">${r.skip ? `<span class="chip bad">বাদ: ${esc(r.skip)}</span>` : `${esc(r.text)} <small>${bn(parts(r.text))}টি SMS × ${bn(r.phones.length)}</small>`}</td></tr>`).join("")}</tbody></table></div>`;
   }
@@ -133,11 +140,12 @@ window.SICSms = function (X) {
     const nums = go.reduce((n, r) => n + r.phones.length, 0), sms = go.reduce((n, r) => n + r.phones.length * parts(r.text), 0);
     const what = S.mode === "result" ? `"${(DB().exams.find((e) => e.id === S.examId) || {}).title}" পরীক্ষার ফলাফল` : "আপনার লেখা বার্তা";
     if (!confirm(`${bn(go.length)} জনকে ${what} ${bn(nums)}টি নম্বরে যাবে — প্রায় ${bn(sms)}টি SMS-এর ব্যালেন্স কাটবে।\n\nপাঠাবেন?`)) return;
+    const payload = body();
     busy = true; btn.disabled = true;
     const failed = []; let ok = 0, inRow = 0, why = "";
     for (const [i, r] of go.entries()) {
       btn.textContent = `পাঠানো হচ্ছে ${bn(i + 1)}/${bn(go.length)}…`;
-      try { await api("/api/admin/sms/send", { body: { id: r.id, ...body() } }); ok++; inRow = 0; }
+      try { await api("/api/admin/sms/send", { body: { id: r.id, ...payload } }); ok++; inRow = 0; }
       catch (e) { failed.push(`${r.name} (${r.id})`); why = e.message; if (++inRow >= 3) break; }
     }
     busy = false;
@@ -158,7 +166,7 @@ window.SICSms = function (X) {
   function onClick(e) {
     const t = (s) => e.target.closest(s);
     let el;
-    if ((el = t("[data-by]"))) { S.by = el.dataset.by; plan = null; return render(); }
+    if ((el = t("[data-by]"))) { S.by = el.dataset.by; if (S.by === "achievers") S.mode = "custom"; unticked.clear(); plan = null; return render(); }
     if ((el = t("[data-mode]"))) { S.mode = el.dataset.mode; return render(); }
     if ((el = t("[data-allb]"))) { const ids = sessBatches().map((b) => b.id), on = ids.every((id) => S.batchIds.includes(id)); S.batchIds = on ? [] : ids; return render(); }
     if ((el = t("[data-b]"))) { const id = el.dataset.b; S.batchIds = S.batchIds.includes(id) ? S.batchIds.filter((x) => x !== id) : [...S.batchIds, id]; return render(); }

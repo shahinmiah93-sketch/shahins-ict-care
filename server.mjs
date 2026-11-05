@@ -842,7 +842,7 @@ const resultPhones = (s) => [...new Set([s.phone, s.guardianPhone].map(phoneOf).
 // SMS প্যানেল: ব্যাচ বা আইডি ধরে বাছা শিক্ষার্থীদের নিজের লেখা বার্তা, নয়তো কোনো পরীক্ষার ফলাফল।
 // কোন নম্বরে: শিক্ষার্থী / অভিভাবক / দুটোতেই। লেখায় {নাম} {আইডি} {ব্যাচ} {সেশন} {প্রতিষ্ঠান} প্রত্যেকের নিজেরটা দিয়ে বদলায়।
 // ফেরত: { text, phones, skip } — skip থাকলে এই শিক্ষার্থীকে পাঠানো হবে না (কারণসহ)
-function smsPanelItem(b, s) {
+function smsPanelItem(b, s, batchOverride) {
   const to = ["student", "guardian"].includes(b.to) ? b.to : "both";
   const phones = [...new Set((to === "student" ? [s.phone] : to === "guardian" ? [s.guardianPhone] : [s.phone, s.guardianPhone]).map(phoneOf).filter((n) => /^01\d{9}$/.test(n)))];
   let text = "", got = false;
@@ -856,7 +856,7 @@ function smsPanelItem(b, s) {
     text = r.text; got = ((ex.resultSms || {})[s.id] || {}).key === r.key;
     if (got && b.skipGot !== false) return { phones, text, got, skip: "আগেই পেয়েছে" };
   } else {
-    const batch = db.batches.find((x) => x.id === s.batchId) || {};
+    const batch = batchOverride || db.batches.find((x) => x.id === s.batchId) || {};
     text = str(b.text, 1000).trim().replace(/\{নাম\}/g, s.name).replace(/\{আইডি\}/g, s.id).replace(/\{ব্যাচ\}/g, batch.name || "").replace(/\{সেশন\}/g, s.session || batch.session || "").replace(/\{প্রতিষ্ঠান\}/g, db.settings.name || smsBrand());
     if (!text) return { phones, skip: "বার্তা লেখা হয়নি" };
   }
@@ -1345,7 +1345,11 @@ const CLEAN = {
   // ব্যানার: ছবি আসে আলাদা আপলোডে; লিংক — /apply, #batches বা http(s)://… (খালি = চাপ দিলে কিছু হয় না)
   // সফল শিক্ষার্থী: group — university (বিশ্ববিদ্যালয়ে পড়ছে) বা career (পেশায় প্রতিষ্ঠিত)
   gallery: (b) => ({ title: str(b.title, 150), description: str(b.description, 3000), album: str(b.album, 60) || "অন্যান্য", date: /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
-  achievers: (b) => ({ group: b.group === "career" ? "career" : "university", name: str(b.name, 120), detail: str(b.detail, 200), subject: str(b.subject, 120), batch: str(b.batch, 40), active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
+  achievers: (b) => {
+    const phone = phoneOf(b.phone);
+    if (str(b.phone, 20) && !/^01\d{9}$/.test(phone)) throw Error("সঠিক মোবাইল নম্বর দিন।");
+    return { ...(b.phone === undefined ? {} : { phone }), group: b.group === "career" ? "career" : "university", name: str(b.name, 120), detail: str(b.detail, 200), subject: str(b.subject, 120), batch: str(b.batch, 40), active: b.active !== false, order: Math.floor(num(b.order)) || 0 };
+  },
   banners: (b) => { const link = str(b.link, 300); return { title: str(b.title, 120), link: /^(https?:\/\/|\/|#)/i.test(link) ? link : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }; },
   // ব্যাচ বন্ধ / ছুটি: কোন ব্যাচ, কবে থেকে কবে, কারণ; reduceFee = বন্ধের ক্লাসের টাকা কমবে কি না (ঈদের ছুটিতে সাধারণত না)
   closures: (b) => ({
@@ -2969,21 +2973,34 @@ async function api(req, res, url) {
   // SMS প্যানেল: আগে তালিকা (কে পাবে, কোন নম্বরে, ঠিক কী লেখা — নয়তো কেন বাদ), তারপর একজন একজন করে পাঠানো
   if (p === "/api/admin/sms/plan" && m === "POST") {
     const b = await readBody(req), ids = (Array.isArray(b.ids) ? b.ids : []).slice(0, 3000).map((x) => str(x, 40));
-    const rows = [], notFound = [];
+    const rows = [], notFound = [], seenPhones = new Set();
+    const alumni = b.audience === "achievers";
+    const recipients = alumni ? db.achievers : db.students;
     for (const id of [...new Set(ids)]) {
-      const s = db.students.find((x) => x.id === id);
+      const s = recipients.find((x) => x.id === id);
       if (!s) { notFound.push(id); continue; }
-      rows.push({ id: s.id, name: s.name, batchId: s.batchId, off: s.status === "inactive", ...smsPanelItem(b, s) });
+      const item = alumni
+        ? smsPanelItem({ ...b, mode: "custom", to: "student" }, s, { name: s.batch, session: s.batch })
+        : smsPanelItem(b, s);
+      if (alumni && !item.skip) {
+        const phone = item.phones[0];
+        if (seenPhones.has(phone)) item.skip = "এই নম্বর তালিকায় আগে আছে";
+        seenPhones.add(phone);
+      }
+      rows.push({ id: s.id, name: s.name, batchId: s.batchId, batch: alumni ? s.batch : undefined, off: s.status === "inactive", ...item });
     }
     return send(res, 200, { ok: true, live: smsOn(), rows, notFound });
   }
   if (p === "/api/admin/sms/send" && m === "POST") {
-    const b = await readBody(req), s = db.students.find((x) => x.id === str(b.id, 40));
+    const b = await readBody(req), alumni = b.audience === "achievers";
+    const s = (alumni ? db.achievers : db.students).find(x => x.id === str(b.id, 40));
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
     if (!smsOn()) return send(res, 400, { error: "SMS সার্ভিস চালু নেই — সেটআপ → সেটিংস থেকে চালু করুন" });
-    const it = smsPanelItem({ ...b, skipGot: false }, s);
+    const it = alumni
+      ? smsPanelItem({ ...b, mode: "custom", to: "student" }, s, { name: s.batch, session: s.batch })
+      : smsPanelItem({ ...b, skipGot: false }, s);
     if (it.skip) return send(res, 400, { error: it.skip });
-    const ex = b.mode === "result" && db.exams.find((e) => e.id === str(b.examId, 60));
+    const ex = !alumni && b.mode === "result" && db.exams.find((e) => e.id === str(b.examId, 60));
     let sent = 0, err = "";
     for (const phone of it.phones) {
       try { await sendSms(phone, it.text, ex ? `ফলাফল — ${s.id} (${phone}), ${ex.title}` : `বার্তা — ${s.id} (${phone}): ${it.text.slice(0, 120)}`, ex ? "Result" : "Panel"); sent++; }
