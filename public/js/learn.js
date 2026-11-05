@@ -40,6 +40,7 @@
 
   // ================= /free-classes =================
   if (path === "/free-classes") {
+    document.body.classList.add("free-class-page");
     const FC = PUB.freeClasses || [], subs = [...new Set(FC.map((c) => c.subject).filter(Boolean))];
     document.title = `ফ্রি ক্লাস — ${SITE.name}`;
     $("#lhEye").textContent = "বিনামূল্যে শেখো"; $("#lhTitle").textContent = "সব ফ্রি ক্লাস";

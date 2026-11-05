@@ -1142,3 +1142,26 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 
 .rv-submit form > small.rv-comment,#rvFormStatus{text-align:center}
 .rv-submit form > button[type="submit"]{grid-column:1/-1;justify-self:center;width:min(100%,224px)}
+
+/* Free classes: a quiet grid behind the heading and lesson cards. */
+.home #free-classes > .wrap,
+body.free-class-page .ap-hero,
+body.free-class-page #pane {
+  background-color:#0c0c0e;
+  background-image:linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px);
+  background-size:44px 44px;
+}
+.home #free-classes > .wrap {padding-top:clamp(52px,8vw,104px)}
+body.free-class-page {background:#0c0c0e}
+body.free-class-page .ap-hero .wrap {text-align:center}
+body.free-class-page .ap-hero .lead {margin-inline:auto}
+body.free-class-page .ap-meta {justify-content:center}
+.home #free-classes .sec-head h2,body.free-class-page #lhTitle {color:#f0eff6}
+.home #free-classes .sec-head .eyebrow,body.free-class-page #lhEye {color:#b493ff}
+.home #free-classes .sec-head h2::after,body.free-class-page #lhTitle::after {
+  content:"";display:block;width:66px;height:3px;margin:12px auto 0;border-radius:999px;background:#a784ff;
+}
+.home #free-classes .sec-head p:last-child,body.free-class-page #lhLead,body.free-class-page #pane .sub {color:#b9b6c4}
+body.free-class-page #pane {border-color:#292530}
+body.free-class-page #pane .ap-tabs button {color:#eee9ff;background:#211b2d;border-color:#514269}
+body.free-class-page #pane .ap-tabs button.on {background:#b493ff;color:#150e22}
