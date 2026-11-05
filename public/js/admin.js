@@ -1580,7 +1580,7 @@ ${list.map(receiptHtml).join("")}
         <td>${esc(s.session || "—")}<small>${esc(batchName(s.batchId))}</small></td>
         <td>${listModules(s.id).map((n) => `<span class="chip" style="margin:1px">${esc(n)}</span>`).join("") || "—"}</td>
         <td>${esc(s.phone || "—")}<small>অভি: ${esc(s.guardianPhone || "—")}</small></td>
-        <td>${balanceChip(s.fees)}</td>
+        <td>${balanceChip(s.fees)}<button type="button" class="btn sm line" style="display:block;margin-top:5px;white-space:nowrap" data-list-pay="${esc(s.id)}">৳ পেমেন্ট নিন</button></td>
         <td>${stToggle(s)}</td>
         <td class="num" style="white-space:nowrap"><button class="icon-btn" title="বিস্তারিত" data-view="${s.id}">দেখুন</button><button class="icon-btn" title="ভর্তি ফর্ম প্রিন্ট" data-print="${s.id}">প্রিন্ট</button><button class="icon-btn" title="বদলান" data-edit="${s.id}">✎</button><button class="icon-btn" title="মুছুন" data-del="${s.id}">✕</button></td></tr>`).join("")
         || `<tr><td colspan="8" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>`;
@@ -1589,6 +1589,8 @@ ${list.map(receiptHtml).join("")}
     $("#fse").onchange = () => { drawBatchSel(); draw(); };
     ["q", "fm", "fs"].forEach((id) => $("#" + id).addEventListener("input", draw));
     $("#rows").onclick = async (e) => {
+      const pay = e.target.closest("[data-list-pay]");
+      if (pay) return paymentForm(pay.dataset.listPay, draw);
       const tg = e.target.closest("[data-status]");
       if (tg) {
         // পড়া চলছে ⇄ পড়া বন্ধ
@@ -1822,8 +1824,8 @@ ${list.map(receiptHtml).join("")}
   }
 
   // ---------- ফি ও পেমেন্ট ----------
-  function paymentForm(studentId) {
-    const studs = activeStudents().map((s) => [s.id, `${s.id} — ${s.name}`]);
+  function paymentForm(studentId, onSaved) {
+    const studs = DB.students.filter(s => s.status !== "inactive" || s.id === studentId).map((s) => [s.id, `${s.id} — ${s.name}`]);
     openForm({
       title: "পেমেন্ট নিন", saveText: "সেভ ও রসিদ প্রিন্ট",
       fields: [
@@ -1841,7 +1843,10 @@ ${list.map(receiptHtml).join("")}
       onSave: async (d) => {
         delete d.idQ;
         const r = await save("payments", d);
-        await load(); if (location.hash.startsWith("#fees")) route(); toast("পেমেন্ট সেভ হয়েছে");
+        await load();
+        if (location.hash.startsWith("#fees")) route();
+        else onSaved?.();
+        toast("পেমেন্ট সেভ হয়েছে");
         printReceipt(DB.payments.find((p) => p.id === r.item.id));
       },
     });
