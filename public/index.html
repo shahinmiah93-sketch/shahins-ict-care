@@ -145,7 +145,16 @@ Shahin's ICT Care | Somvarun Shikkha Poribar</span></p>
         <label>নাম <input name="name" maxlength="80" autocomplete="name" required></label>
         <label>আপনি <select name="affiliation" required><option value="">বেছে নিন</option><option value="current">বর্তমান শিক্ষার্থী</option><option value="alumni">সাবেক শিক্ষার্থী</option></select></label>
         <label>HSC ব্যাচ <input name="batch" maxlength="30" placeholder="ঐচ্ছিক, যেমন HSC-24"></label>
-        <label>রেটিং <select name="stars" required><option value="">বেছে নিন</option><option value="5">৫ তারা</option><option value="4">৪ তারা</option><option value="3">৩ তারা</option><option value="2">২ তারা</option><option value="1">১ তারা</option></select></label>
+        <fieldset class="rv-rating">
+          <legend>রেটিং</legend>
+          <div class="rv-rating-stars">
+            <label><input type="radio" name="stars" value="1" aria-label="১ তারা" required><span aria-hidden="true">★</span></label>
+            <label><input type="radio" name="stars" value="2" aria-label="২ তারা" required><span aria-hidden="true">★</span></label>
+            <label><input type="radio" name="stars" value="3" aria-label="৩ তারা" required><span aria-hidden="true">★</span></label>
+            <label><input type="radio" name="stars" value="4" aria-label="৪ তারা" required><span aria-hidden="true">★</span></label>
+            <label><input type="radio" name="stars" value="5" aria-label="৫ তারা" required><span aria-hidden="true">★</span></label>
+          </div>
+        </fieldset>
         <label class="rv-comment">মতামত <textarea name="comment" rows="2" maxlength="300" required></textarea></label>
         <input name="website" hidden tabindex="-1" autocomplete="off" aria-hidden="true">
         <small class="rv-comment">অনুমোদনের পর আপনার নাম ও মতামত ওয়েবসাইটে দেখা যাবে।</small>
