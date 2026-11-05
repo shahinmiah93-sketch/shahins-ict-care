@@ -19,7 +19,7 @@ window.SICAchievers = function (X) {
   const fieldKey = key => ["detail","subject"].includes(key) ? `${F.group}:${key}` : key;
   function rememberField(el) {
     const key = el.dataset.k, value = el.value.trim();
-    if (!["name","detail","subject","batch"].includes(key) || !value) return;
+    if (!["name","detail","subject","careerSubject","batch"].includes(key) || !value) return;
     const history = remembered(), id = fieldKey(key);
     history[id] = [...new Set([value,...(history[id] || [])])].slice(0,40);
     try { localStorage.setItem(historyKey,JSON.stringify(history)); } catch {}
@@ -27,7 +27,7 @@ window.SICAchievers = function (X) {
   function suggest(el, opening = false) {
     C.querySelectorAll(".ac-suggestions").forEach(n => n.remove());
     const key = el.dataset.k;
-    if (!["name","detail","subject","batch","phone"].includes(key)) return;
+    if (!["name","detail","subject","careerSubject","batch","phone"].includes(key)) return;
     const values = [...new Set([...(remembered()[fieldKey(key)] || []),...all().filter(a => !["detail","subject"].includes(key) || a.group === F.group).map(a => a[key]).filter(Boolean)])];
     const isInstitution = value => /বিশ্ববিদ্যাল|কলেজ|ইনস্টিটিউট|একাডেমি|পলিটেকনিক|ইউনিভার্সিটি|মেডিকেল|university|college|institute|academy|polytechnic|medical/i.test(value);
     let suggestions = values;
@@ -65,6 +65,7 @@ window.SICAchievers = function (X) {
           <label>শিক্ষার্থীর নাম *<input data-k="name" value="${esc(f.name)}" maxlength="120" placeholder="যেমন: রাফি আহমেদ"></label>
           <label>${f.group === "career" ? "পেশা ও প্রতিষ্ঠান" : "বিশ্ববিদ্যালয়"}<input data-k="detail" value="${esc(f.detail)}" maxlength="200" placeholder="${esc(G[3])}"></label>
           <label>${f.group === "career" ? "চাকরির পদবি / Job title (ঐচ্ছিক)" : "বিষয় (ঐচ্ছিক)"}<input data-k="subject" value="${esc(f.subject || "")}" maxlength="120" placeholder="${f.group === "career" ? "যেমন: সহকারী কমিশনার" : "যেমন: কম্পিউটার সায়েন্স অ্যান্ড ইঞ্জিনিয়ারিং"}"></label>
+          ${f.group === "career" ? `<label>বিষয় (ঐচ্ছিক)<input data-k="careerSubject" value="${esc(f.careerSubject || "")}" maxlength="120" placeholder="যেমন: ইংরেজি"></label>` : ""}
           <label>কোন ব্যাচের (ঐচ্ছিক)<input data-k="batch" value="${esc(f.batch)}" maxlength="40" placeholder="যেমন: HSC-24"></label>
           <label>মোবাইল নম্বর (ঐচ্ছিক)<input type="tel" inputmode="tel" autocomplete="off" data-k="phone" value="${esc(f.phone || "")}" maxlength="20" placeholder="01XXXXXXXXX"><small>শুধু অ্যাডমিন ও SMS প্যানেলে দেখা যাবে।</small></label>
           <label class="bn-chk"><input type="checkbox" data-k="active"${f.active ? " checked" : ""}> <b>ওয়েবসাইটে দেখাবে</b></label>
@@ -76,7 +77,7 @@ window.SICAchievers = function (X) {
     return `<section class="card"><div class="qz-head"><h3>${t} <small class="ln-count">${s} · ${bn(l.length)} জন</small></h3><button type="button" class="btn gold sm" data-ac-new="${g}">＋ যোগ করুন</button></div>
       ${l.length ? `<div class="bn-list">${l.map((a, i) => `<div class="bn-item${a.active ? "" : " off"}">
         <div class="bn-thumb">${a.image ? `<img src="${esc(imgOf(a))}" alt="" style="object-position:50% 25%">` : "<span>ছবি নেই</span>"}</div>
-        <div class="bn-info"><span class="chip ${a.active && a.image ? "ok" : ""}">${a.active ? (a.image ? "দেখাচ্ছে" : "ছবি নেই") : "❚❚ বন্ধ"}</span><b>${esc(a.name)}</b>${a.detail || a.subject ? `<small>${esc([a.detail, a.subject].filter(Boolean).join(" · "))}</small>` : ""}${a.batch ? `<small>${esc(a.batch)}</small>` : ""}</div>
+        <div class="bn-info"><span class="chip ${a.active && a.image ? "ok" : ""}">${a.active ? (a.image ? "দেখাচ্ছে" : "ছবি নেই") : "❚❚ বন্ধ"}</span><b>${esc(a.name)}</b>${a.detail || a.subject || a.careerSubject ? `<small>${esc([a.detail, a.subject, a.careerSubject].filter(Boolean).join(" · "))}</small>` : ""}${a.batch ? `<small>${esc(a.batch)}</small>` : ""}</div>
         <div class="bn-acts"><button type="button" class="icon-btn" data-ac-up="${a.id}" title="আগে"${i ? "" : " disabled"}>↑</button><button type="button" class="icon-btn" data-ac-down="${a.id}" title="পরে"${i < l.length - 1 ? "" : " disabled"}>↓</button>
           <button type="button" class="btn line sm" data-ac-toggle="${a.id}">${a.active ? "❚❚ বন্ধ" : "► চালু"}</button><button type="button" class="btn gold sm" data-ac-edit="${a.id}">✎ বদলান</button><button type="button" class="icon-btn" data-ac-del="${a.id}" title="মুছুন">✕</button></div></div>`).join("")}</div>`
       : '<div class="ln-empty">এখনো কেউ নেই — "＋ যোগ করুন" চাপুন। খালি থাকলে ওয়েবসাইটে এই কলাম দেখায় না।</div>'}</section>`;
@@ -117,7 +118,7 @@ window.SICAchievers = function (X) {
     try {
       const old = F.id && DB().achievers.find((a) => a.id === F.id);
       const order = old && old.group === F.group ? old.order : inGroup(F.group).reduce((m, a) => Math.max(m, a.order || 0), 0) + 10;
-      const r = await X.save("achievers", { group: F.group, name: F.name.trim(), detail: F.detail.trim(), subject: String(F.subject || "").trim(), batch: F.batch.trim(), phone: F.phone || "", active: !!F.active, order }, F.id || undefined);
+      const r = await X.save("achievers", { group: F.group, name: F.name.trim(), detail: F.detail.trim(), subject: String(F.subject || "").trim(), careerSubject: String(F.careerSubject || "").trim(), batch: F.batch.trim(), phone: F.phone || "", active: !!F.active, order }, F.id || undefined);
       if (file) await upload(r.item.id);
       F = null; file = null; preview = "";
       await X.load(); render(); toast("সংরক্ষণ হয়েছে");
