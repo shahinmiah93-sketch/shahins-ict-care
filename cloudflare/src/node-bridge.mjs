@@ -34,6 +34,12 @@ export function nodeResponse() {
     else headers.set(k, String(v));
   };
   res.writeHead = (code, values = {}) => { status = code; for (const [k,v] of Object.entries(values)) res.setHeader(k,v); res.headersSent = true; return res; };
+  res.sendStream = stream => {
+    res.headersSent = true;
+    resolve(new Response(Readable.toWeb(stream, {
+      strategy: { highWaterMark: 256 * 1024, size: chunk => chunk.byteLength },
+    }), { status, headers }));
+  };
   res.on("finish", () => {
     res.headersSent = true;
     const body = status === 204 || status === 304 ? null : Buffer.concat(chunks);

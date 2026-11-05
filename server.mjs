@@ -64,6 +64,10 @@ const EBOOK_PDFS = path.join(DATA, "ebook-pdfs"); // ই-বুকের PDF (<i
 fs.mkdirSync(EBOOK_IMG, { recursive: true }); fs.mkdirSync(EBOOK_PDFS, { recursive: true });
 const BOOK_IMG = path.join(DATA, "book-covers"); // ছাপা বই ও শিটের কভার ছবি (<id>.jpg …)
 fs.mkdirSync(BOOK_IMG, { recursive: true });
+function streamEbookPdf(res, ebook) {
+  const stream = fs.createReadStream(ebookPdf(ebook));
+  return res.sendStream ? res.sendStream(stream) : stream.pipe(res);
+}
 const ebookPdf = (e) => path.join(EBOOK_PDFS, `${String(e.id).replace(/[^\w-]/g, "")}.pdf`);
 const QNA = path.join(DATA, "qna"); // প্রশ্নোত্তর বক্সের ফাইল: <id>-q-image / q-audio (প্রশ্নকারীর), a-image / a-audio / a-video (শিক্ষকের উত্তর)
 fs.mkdirSync(QNA, { recursive: true });
@@ -1002,9 +1006,9 @@ function saveUpload(req, file, limit) {
     const tmp = file + ".part", out = fs.createWriteStream(tmp); let size = 0, bad = false;
     req.on("data", (c) => { size += c.length; if (size > limit && !bad) { bad = true; req.unpipe(out); out.destroy(); dropFile(tmp); reject(new Error("too large")); } });
     req.pipe(out);
-    out.on("finish", () => { if (bad) return; try { fs.renameSync(tmp, file); resolve(size); } catch (e) { reject(e); } });
+    out.on("finish", () => { if (bad) return; try { fs.renameSync(tmp, file); resolve(size); } catch (e) { dropFile(tmp); reject(e); } });
     out.on("error", (e) => { dropFile(tmp); reject(e); });
-    req.on("error", (e) => { dropFile(tmp); reject(e); });
+    req.on("error", (e) => { bad = true; req.unpipe(out); out.destroy(); dropFile(tmp); reject(e); });
   });
 }
 // ভিডিও পাঠানো (Range সহ — সামনে-পিছনে টানা যায়)
@@ -1995,7 +1999,7 @@ async function api(req, res, url) {
     if (!ebookOpen(phone, e, true)) return send(res, 403, { error: "এই ই-বুকটি কেনা নেই" });
     res.writeHead(200, { "Content-Type": "application/pdf", "Content-Length": fs.statSync(ebookPdf(e)).size, "Cache-Control": "private, no-store",
       "Content-Disposition": `${url.searchParams.get("download") === "1" ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent((e.title || "ebook").replace(/[\\/:*?"<>|]/g, " ") + ".pdf")}` });
-    return fs.createReadStream(ebookPdf(e)).pipe(res);
+    return streamEbookPdf(res, e);
   }
   // ---- প্রতিদিন শিখি: তালিকা আর একটা পোস্ট (কুইজসহ) — লগইন লাগে না ----
   if (p === "/api/daily" && m === "GET") {
@@ -2571,7 +2575,7 @@ async function api(req, res, url) {
   if (aem) {
     const e = db.ebooks.find((x) => x.id === aem[1]);
     if (!e) return send(res, 404, { error: "ই-বুক পাওয়া যায়নি" });
-    if (m === "GET") { if (!e.pdf || !fs.existsSync(ebookPdf(e))) { res.writeHead(404); return res.end(); } res.writeHead(200, { "Content-Type": "application/pdf", "Cache-Control": "private, no-store" }); return fs.createReadStream(ebookPdf(e)).pipe(res); }
+    if (m === "GET") { if (!e.pdf || !fs.existsSync(ebookPdf(e))) { res.writeHead(404); return res.end(); } res.writeHead(200, { "Content-Type": "application/pdf", "Cache-Control": "private, no-store" }); return streamEbookPdf(res, e); }
     if (m === "DELETE") { dropFile(ebookPdf(e)); delete e.pdf; saveDb(); return send(res, 200, { ok: true, item: e }); }
     if (m === "POST") {
       if (!/pdf/i.test(String(req.headers["content-type"] || ""))) return send(res, 400, { error: "শুধু PDF ফাইল দিন" });

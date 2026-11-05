@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import { Readable, Writable } from "node:stream";
 
 export const MAX_UPLOAD = 20 * 1024 * 1024;
+export const MAX_EBOOK_UPLOAD = 80 * 1024 * 1024;
 const CHUNK = 128 * 1024;
 // Reserve space below the Free plan's per-object limit for DB growth and indexes.
 const MAX_STORAGE = 700 * 1024 * 1024;
@@ -86,6 +87,7 @@ export class SQLiteFS {
     });
   }
   createWriteStream(file) {
+    if (/^\/data\/ebook-pdfs\/[\w-]+\.pdf\.part$/.test(file)) return this.createEbookWriteStream(file);
     const chunks = []; let size = 0; const self = this;
     return new Writable({
       write(chunk, encoding, cb) {
@@ -94,6 +96,41 @@ export class SQLiteFS {
         chunks.push(Buffer.from(chunk)); cb();
       },
       final(cb) { try { self.writeFileSync(file, Buffer.concat(chunks)); cb(); } catch (e) { cb(e); } }
+    });
+  }
+  createEbookWriteStream(file) {
+    const key = this.key(file);
+    const available = MAX_STORAGE - this.rows("SELECT coalesce(sum(size), 0) AS total FROM files WHERE path <> ?", key)[0].total;
+    this.writeFileSync(key, Buffer.alloc(0));
+    const fs = this, buffer = Buffer.alloc(CHUNK);
+    let used = 0, size = 0, part = 0;
+    const flush = () => {
+      fs.sql.exec("INSERT INTO chunks(path,part,data) VALUES (?,?,?)", key, part++, buffer.subarray(0, used));
+      used = 0;
+    };
+    return new Writable({
+      write(chunk, encoding, callback) {
+        size += chunk.length;
+        if (size > MAX_EBOOK_UPLOAD) return callback(new Error("too large"));
+        if (size > available) return callback(new Error("Storage limit reached"));
+        try {
+          for (let offset = 0; offset < chunk.length;) {
+            const count = Math.min(CHUNK - used, chunk.length - offset);
+            buffer.set(chunk.subarray(offset, offset + count), used);
+            offset += count;
+            used += count;
+            if (used === CHUNK) flush();
+          }
+          callback();
+        } catch (error) { callback(error); }
+      },
+      final(callback) {
+        try {
+          if (used) flush();
+          fs.sql.exec("UPDATE files SET size = ? WHERE path = ?", size, key);
+          callback();
+        } catch (error) { callback(error); }
+      },
     });
   }
   createReadStream(file, range = {}) {

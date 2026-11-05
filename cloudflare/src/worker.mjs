@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import crypto from "node:crypto";
-import { SQLiteFS, MAX_UPLOAD } from "./sqlite-fs.mjs";
+import { SQLiteFS, MAX_UPLOAD, MAX_EBOOK_UPLOAD } from "./sqlite-fs.mjs";
 import { createApplication } from "./application.mjs";
 import { nodeRequest, nodeResponse } from "./node-bridge.mjs";
 
@@ -58,7 +58,9 @@ export class School extends DurableObject {
       if (url.pathname === "/api/health") return json({ ok: true, app: "shahins-ict-care", storage: "cloudflare-sqlite", migrated: this.ready() });
       if (!this.ready()) return json({ error: "ডেটা স্থানান্তর চলছে — কিছুক্ষণ পরে চেষ্টা করুন" }, 503);
       const length = Number(request.headers.get("content-length") || 0);
-      if (length > MAX_UPLOAD) return json({ error: "Cloudflare-এ সর্বোচ্চ ২০ MB; বড় ভিডিওর জন্য YouTube লিংক দিন" }, 413);
+      const ebookUpload = request.method === "POST" && /^\/api\/admin\/ebooks\/[\w-]+\/pdf$/.test(url.pathname);
+      const uploadLimit = ebookUpload ? MAX_EBOOK_UPLOAD : MAX_UPLOAD;
+      if (length > uploadLimit) return json({ error: ebookUpload ? "PDF ৮০ MB-এর মধ্যে দিন" : "Cloudflare-এ সর্বোচ্চ ২০ MB; বড় ভিডিওর জন্য YouTube লিংক দিন" }, 413);
       const { res, completed } = nodeResponse();
       try {
         this.app ||= createApplication(this.fs, this.env);
