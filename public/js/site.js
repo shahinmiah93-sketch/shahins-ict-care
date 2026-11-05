@@ -176,7 +176,15 @@
   const ach = data.achievers || [];
   if (ach.length) {
     const GROUPS = [["university", "University Achievers", "দেশের বিভিন্ন বিশ্ববিদ্যালয়ে অধ্যয়নরত সাবেক শিক্ষার্থীরা"], ["career", "Career Achievers", "বিভিন্ন পেশায় প্রতিষ্ঠিত সাবেক শিক্ষার্থীরা"]];
-    const rows = GROUPS.map(([g, t, sub]) => [g, t, sub, ach.filter((a) => a.group === g)]).filter((r) => r[3].length);
+    const batchYear = ({ batch }) => {
+      const digits = String(batch || "").replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit));
+      const year = digits.match(/(?:^|[^0-9])([0-9]{4}|[0-9]{2})(?![0-9])/);
+      if (!year) return Infinity;
+      return year[1].length === 2 ? 2000 + Number(year[1]) : Number(year[1]);
+    };
+    const rows = GROUPS.map(([g, t, sub]) => [
+      g, t, sub, ach.filter(a => a.group === g).sort((a, b) => batchYear(a) - batchYear(b)),
+    ]).filter(row => row[3].length);
     const card = (a, dup) => `<article class="ach-card"${dup ? ' aria-hidden="true"' : ""}><div class="ach-in"><div class="ach-photo"><img src="${esc(a.img)}" alt="${dup ? "" : esc(a.name)}" loading="lazy" decoding="async">${a.batch ? `<span class="ach-badge">${esc(a.batch)}</span>` : ""}</div><div class="ach-cap"><h4>${esc(a.name)}</h4>${a.group === "career" ? (a.subject ? `<p class="ach-job">${esc(a.subject)}</p>` : "") + (a.detail ? `<p class="ach-sub2">${esc(a.detail)}</p>` : "") : (a.detail ? `<p>${esc(a.detail)}</p>` : "") + (a.subject ? `<p class="ach-sub2">${esc(a.subject)}</p>` : "")}</div></div></article>`;
     $("#achievers").hidden = false;
     const grid = $("#achGrid");
