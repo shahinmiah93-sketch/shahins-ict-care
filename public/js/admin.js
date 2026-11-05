@@ -468,7 +468,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
           <div class="c amt"><small>টাকার পরিমাণ</small><b>${money(p.amount)}</b></div>
           <div class="c ${due ? "unpaid" : "paid"}"><small>পেমেন্ট স্ট্যাটাস</small><b>${due ? `আংশিক পরিশোধ — বকেয়া ${money(due)}` : "পরিশোধিত (Paid)"}</b></div>
         </div>
-        <div class="sg"><span>গ্রহণকারীর স্বাক্ষর</span><span>প্রদানকারীর স্বাক্ষর</span></div></section>`;
+        <div class="sg"><span><img class="receipt-signature" src="${location.origin}/images/signature.png" alt="শাহিন স্যারের স্বাক্ষর">গ্রহণকারীর স্বাক্ষর</span><span>প্রদানকারীর স্বাক্ষর</span></div></section>`;
   }
   function printReceipts(list) {
     list = list.filter(Boolean);
@@ -490,8 +490,9 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
       .g{display:grid;grid-template-columns:1fr 1fr;border:1px solid #cfd8d4;border-top:0}
       .c{padding:1.6mm 4mm;border-top:1px solid #cfd8d4;min-height:10.5mm}.c:nth-child(odd){border-right:1px solid #cfd8d4}
       .c small{display:block;color:#6a7a76;font-size:11.5px}.c b{display:block;font-size:14px;font-weight:600;line-height:1.35}.c i{display:block;font-style:normal;font-size:11.5px;color:#55625f}
-      .cov{grid-column:1/-1;border-right:0!important;background:#f3fbf6}.cov b{font-size:13.5px;color:#0b5c3c}@media print{.cov{min-height:0!important;padding:.6mm 4mm!important}.cov b{font-size:12px;line-height:1.3}.r:has(.cov) .sg{padding-top:4mm!important}.r:has(.cov) .hd{padding-bottom:1.2mm!important}.r:has(.cov) .bar{margin-top:2mm!important}.r:has(.cov) .c{min-height:8mm!important;padding:.8mm 4mm!important}}.amt b{font-size:18px;color:#0b3b36}.paid b{color:#0b7a4b}.unpaid b{color:#b4233c}
-      .sg{margin-top:auto;padding-top:9mm;display:flex;justify-content:space-between}.sg span{width:52mm;border-top:1.4px solid #1d2b28;padding-top:1.5mm;text-align:center;font-size:12.5px;font-weight:600}
+      .cov{grid-column:1/-1;border-right:0!important;background:#f3fbf6}.cov b{font-size:13.5px;color:#0b5c3c}@media print{.cov{min-height:0!important;padding:.6mm 4mm!important}.cov b{font-size:12px;line-height:1.3}.r:has(.cov) .sg{padding-top:8mm!important}.r:has(.cov) .hd{padding-bottom:1.2mm!important}.r:has(.cov) .bar{margin-top:2mm!important}.r:has(.cov) .c{min-height:8mm!important;padding:.8mm 4mm!important}}.amt b{font-size:18px;color:#0b3b36}.paid b{color:#0b7a4b}.unpaid b{color:#b4233c}
+      .sg{margin-top:auto;padding-top:9mm;display:flex;justify-content:space-between}.sg span{position:relative;width:36mm;border-top:1.4px solid #1d2b28;padding-top:1.5mm;text-align:center;font-size:12.5px;font-weight:600}
+      .receipt-signature{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:29mm;height:7mm;object-fit:contain}
       .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
       @media print{body{background:#fff}.pb{display:none}.r{break-inside:avoid}.r+.r{break-before:page}.r{margin:0 auto;min-height:0;padding:5mm 8mm 5mm}.hd{padding-bottom:2mm}.bar{margin-top:3mm}.c{padding:1.1mm 4mm;min-height:9mm}.sg{padding-top:8mm}}</style></head><body>
       <div class="pb"><b style="color:#fff;margin-right:10px;font-family:Hind Siliguri,sans-serif">প্রিন্ট প্রিভিউ${list.length > 1 ? ` — ${bn(list.length)}টি রসিদ, প্রতিটা আলাদা পাতায়` : ""}</b><button onclick="print()">প্রিন্ট / PDF</button> <button onclick="close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>
@@ -2026,7 +2027,8 @@ ${list.map(receiptHtml).join("")}
         tfoot td{background:#f1f5f3;font-weight:700}
         .sg{display:flex;justify-content:space-between;margin-top:26mm}.sg span{width:60mm;border-top:1.3px solid #1d2b28;padding-top:4px;text-align:center;font-weight:600}
         .ft{margin-top:8px;color:#6a7a76;font-size:11px;text-align:right}
-        .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px;z-index:2}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
+        .receipt-signature{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:29mm;height:7mm;object-fit:contain}
+      .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px;z-index:2}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
         thead{display:table-header-group}tr{break-inside:avoid}
         @media print{body{background:#fff}.pb{display:none}.pg{width:auto;margin:0;padding:0;box-shadow:none}}</style></head><body>
         <div class="pb"><b style="margin-right:10px">পেমেন্ট শিট — ${bn(rows.length)} জন</b><button onclick="print()">প্রিন্ট / PDF</button> <button onclick="close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>
@@ -2112,7 +2114,8 @@ ${list.map(receiptHtml).join("")}
         .due{color:#b4233c;font-weight:700}.ok{color:#0b6b45;font-weight:700}
         .ft{display:flex;align-items:flex-end;justify-content:flex-end}
         .sg{width:38mm;border-top:.6px solid #1d2b28;padding-top:.8mm;text-align:center;font-size:9.5px;font-weight:600}
-        .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px;z-index:2}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
+        .receipt-signature{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:29mm;height:7mm;object-fit:contain}
+      .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px;z-index:2}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
         @media print{body{background:#fff}.pb{display:none}.pg{margin:0 auto;box-shadow:none;break-after:page}.pg:last-child{break-after:auto}}</style></head><body>
         <div class="pb"><b style="margin-right:10px">বেতন কার্ড — ${bn(cards.length)} জন · ${bn(pages.length)} পাতা (প্রতি পাতায় ৩টি)</b><button onclick="print()">প্রিন্ট / PDF</button> <button onclick="close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>
         ${pages.map((pg) => `<div class="pg">${pg.join("")}</div>`).join("")}
