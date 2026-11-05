@@ -8,6 +8,7 @@ const base = process.env.CF_TEST_URL;
 const token = "local-test-only";
 const hash = (pw, salt) => crypto.scryptSync(pw, salt, 64).toString("hex");
 const fixture = seedDatabase();
+fixture.ebooks = [{ id: "test-large-ebook", title: "Large PDF fixture", kind: "free", active: true }];
 const student = fixture.students.find(s => s.status !== "inactive");
 fixture.quizzes = [{ id: "test_quiz", title: "Cloud quiz test", live: true, open: true, questions: [{ id: "q1", text: "Q", options: ["A", "B"], correct: 0 }], session: "", batchIds: [], duration: 1, mark: 1, negative: false, attemptsAllowed: 2, showAnswers: true, attempts: { [student.id]: [{ no: 1, startedMs: 1, order: ["q1"] }] } }];
 const auth = { email: "test@example.invalid", salt: "fixture-password-salt", pinSalt: "fixture-pin-salt", hash: hash("fixture-password", "fixture-password-salt"), pinHash: hash("123456", "fixture-pin-salt") };
@@ -51,6 +52,18 @@ test("Real Cloudflare runtime: import, static assets, auth, file upload, records
   const pin = await call("/api/admin/pin", { pin: "123456" });
   assert.equal(pin.status, 200);
   assert.equal((await call("/api/admin/login", { ticket: pin.data.ticket, email: auth.email, password: "fixture-password" })).status, 200);
+  const ebookRoute = "/api/admin/ebooks/test-large-ebook/pdf";
+  const pdf = Buffer.alloc(80 * 1024 * 1024, 65);
+  pdf.write("%PDF-1.7");
+  const ebookUploaded = await call(ebookRoute, undefined, { method: "POST", body: pdf, headers: { "content-type": "application/pdf" } });
+  assert.equal(ebookUploaded.status, 200);
+  assert.equal(ebookUploaded.data.item.pdf.size, pdf.length);
+  const ebookDownload = await fetch(base + ebookRoute, { headers: { cookie } });
+  assert.equal(ebookDownload.status, 200);
+  const digest = crypto.createHash("sha256");
+  for await (const chunk of ebookDownload.body) digest.update(chunk);
+  assert.equal(digest.digest("hex"), crypto.createHash("sha256").update(pdf).digest("hex"));
+  assert.equal((await call(ebookRoute, undefined, { method: "DELETE" })).status, 200);
   const admin = await call("/api/admin/db");
   assert.equal(admin.status, 200);
   // Sparse Excel admission uses the original fee engine and is all-or-nothing.
