@@ -1139,3 +1139,6 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 .rv-rating-stars span{display:grid;place-items:center;min-width:20px;min-height:30px;font-size:clamp(18px,5vw,25px);line-height:1;color:#8c8791;border-radius:4px}
 .rv-rating-stars label:has(input:checked) span,.rv-rating-stars label:has(~ label input:checked) span{color:#f3c55d}
 .rv-rating-stars input:focus-visible+span{outline:2px solid #ffe5af}
+
+.rv-submit form > small.rv-comment,#rvFormStatus{text-align:center}
+.rv-submit form > button[type="submit"]{grid-column:1/-1;justify-self:center;width:min(100%,224px)}
