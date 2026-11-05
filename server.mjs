@@ -2970,17 +2970,22 @@ async function api(req, res, url) {
     saveDb();
     return sent ? send(res, 200, { ok: true, sent, error: err }) : send(res, 502, { error: err || "মোবাইল নম্বর নেই" });
   }
+  const smsRecipient = (audience, id) => {
+    if (audience !== "achievers") return db.students.find(student => student.id === id);
+    if (!id.startsWith("tel:")) return db.achievers.find(student => student.id === id);
+    const phone = phoneOf(id.slice(4));
+    return /^01\d{9}$/.test(phone) ? { id, name: "হাতে দেওয়া নম্বর", phone } : null;
+  };
   // SMS প্যানেল: আগে তালিকা (কে পাবে, কোন নম্বরে, ঠিক কী লেখা — নয়তো কেন বাদ), তারপর একজন একজন করে পাঠানো
   if (p === "/api/admin/sms/plan" && m === "POST") {
     const b = await readBody(req), ids = (Array.isArray(b.ids) ? b.ids : []).slice(0, 3000).map((x) => str(x, 40));
     const rows = [], notFound = [], seenPhones = new Set();
     const alumni = b.audience === "achievers";
-    const recipients = alumni ? db.achievers : db.students;
     for (const id of [...new Set(ids)]) {
-      const s = recipients.find((x) => x.id === id);
+      const s = smsRecipient(b.audience, id);
       if (!s) { notFound.push(id); continue; }
       const item = alumni
-        ? smsPanelItem({ ...b, mode: "custom", to: "student" }, s, { name: s.batch, session: s.batch })
+        ? smsPanelItem({ ...b, mode: "custom", to: "student" }, s, { name: s.batch || "", session: s.batch || "" })
         : smsPanelItem(b, s);
       if (alumni && !item.skip) {
         const phone = item.phones[0];
@@ -2993,11 +2998,11 @@ async function api(req, res, url) {
   }
   if (p === "/api/admin/sms/send" && m === "POST") {
     const b = await readBody(req), alumni = b.audience === "achievers";
-    const s = (alumni ? db.achievers : db.students).find(x => x.id === str(b.id, 40));
+    const s = smsRecipient(b.audience, str(b.id, 40));
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
     if (!smsOn()) return send(res, 400, { error: "SMS সার্ভিস চালু নেই — সেটআপ → সেটিংস থেকে চালু করুন" });
     const it = alumni
-      ? smsPanelItem({ ...b, mode: "custom", to: "student" }, s, { name: s.batch, session: s.batch })
+      ? smsPanelItem({ ...b, mode: "custom", to: "student" }, s, { name: s.batch || "", session: s.batch || "" })
       : smsPanelItem({ ...b, skipGot: false }, s);
     if (it.skip) return send(res, 400, { error: it.skip });
     const ex = !alumni && b.mode === "result" && db.exams.find((e) => e.id === str(b.examId, 60));

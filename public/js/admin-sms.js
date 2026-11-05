@@ -15,7 +15,7 @@ window.SICSms = function (X) {
     ["দাওয়াত", "প্রিয় {নাম}, আমাদের অনুষ্ঠানে তোমাকে সাদর আমন্ত্রণ। তারিখ: …, সময়: …, স্থান: …। — Shahin Sir"],
   ];
   const TO = [["both", "শিক্ষার্থী ও অভিভাবক দুজনকেই"], ["student", "শুধু শিক্ষার্থী"], ["guardian", "শুধু অভিভাবক"]];
-  const S = { by: "batch", sess: "", batchIds: [], idsText: "", withOff: false, to: "both", mode: "custom", text: "", examType: "", examId: "", skipGot: true };
+  const S = { by: "batch", sess: "", batchIds: [], idsText: "", manualPhones: "", withOff: false, to: "both", mode: "custom", text: "", examType: "", examId: "", skipGot: true };
   let C = null, plan = null, unticked = new Set(), timer = 0, seq = 0, busy = false;
 
   // SMS-এর ভাগ: বাংলা (ইউনিকোড) ৭০ অক্ষরে ১টা, বড় হলে প্রতি ৬৭-তে ১টা; শুধু ইংরেজি ১৬০ / ১৫৩
@@ -24,7 +24,7 @@ window.SICSms = function (X) {
   const sessBatches = () => (DB().batches || []).filter((b) => b.session === S.sess);
   const parseIds = () => [...new Set(S.idsText.replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)).split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean))];
   // কাদের তালিকা চাওয়া হবে
-  const wantIds = () => S.by === "achievers" ? (DB().achievers || []).map(a => a.id)
+  const wantIds = () => S.by === "achievers" ? [...(DB().achievers || []).map(a => a.id), ...S.manualPhones.split(/[,，،\n]+/).map(n => n.trim()).filter(Boolean).map(n => "tel:" + n)]
     : S.by === "ids" ? parseIds()
     : DB().students.filter((s) => S.batchIds.includes(s.batchId) && (S.withOff || s.status !== "inactive")).map((s) => s.id);
   const exams = () => [...DB().exams].filter((e) => Object.keys(e.published || {}).length).sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -53,10 +53,8 @@ window.SICSms = function (X) {
             <div class="sms-f">ব্যাচ <small>(একাধিক বাছা যায়)</small>
               <div class="gl-chips sms-chips">${bs.length ? `<button type="button" data-allb class="${bs.length && bs.every((b) => S.batchIds.includes(b.id)) ? "on" : ""}">সব ব্যাচ</button>${bs.map((b) => `<button type="button" data-b="${esc(b.id)}" class="${S.batchIds.includes(b.id) ? "on" : ""}">${esc(b.name)} <i>${bn(DB().students.filter((s) => s.batchId === b.id && s.status !== "inactive").length)}</i></button>`).join("")}` : '<span class="muted">এই সেশনে কোনো ব্যাচ নেই</span>'}</div></div>
             <label class="sms-check"><input type="checkbox" data-off${S.withOff ? " checked" : ""}> "পড়া বন্ধ" শিক্ষার্থীদেরও রাখুন</label>`
-          : S.by === "achievers" ? `<div class="sms-f"><b>নম্বর দেওয়া সফল শিক্ষার্থী</b>
-              ${(DB().achievers || []).filter(a => a.phone).map(a => `<div><strong>${esc(a.name)}</strong> · <bdi>${esc(a.phone)}</bdi></div>`).join("") || '<small>এখনো কোনো মোবাইল নম্বর সংরক্ষিত নেই।</small>'}
-              <small>বার্তা লিখলে পাঠানোর তালিকা তৈরি হবে।</small>
-              <a href="#achievers">মোবাইল নম্বর যোগ বা বদলান</a></div>`
+          : S.by === "achievers" ? `<label class="sms-f">অতিরিক্ত মোবাইল নম্বর <small>কমা দিয়ে আলাদা করুন</small>
+            <textarea data-manual-phones rows="2" placeholder="017XXXXXXXX, 018XXXXXXXX">${esc(S.manualPhones)}</textarea></label>`
           : `<label class="sms-f">শিক্ষার্থীর আইডি <small>কমা, স্পেস বা নতুন লাইনে আলাদা করে</small><textarea data-ids rows="4" placeholder="যেমন: 270001, 270002, 280005">${esc(S.idsText)}</textarea></label>`}
           ${S.by === "achievers" ? "" : `<label class="sms-f">কোন নম্বরে<select data-to>${X.opt(TO, S.to)}</select></label>`}
         </section>
@@ -132,7 +130,7 @@ window.SICSms = function (X) {
     const all = ok.length && ok.every((r) => !unticked.has(r.id));
     box.innerHTML = `${bad}<div class="tbl-wrap"><table class="exam-entry-table sms-tbl"><thead><tr><th><input type="checkbox" data-tickall${all ? " checked" : ""}${ok.length ? "" : " disabled"} title="সবাই"></th><th>আইডি</th><th>নাম</th><th>ব্যাচ</th><th>মোবাইল</th><th>যা যাবে</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="${r.skip ? "sms-skip" : unticked.has(r.id) ? "sms-un" : ""}"><td><input type="checkbox" data-tick="${esc(r.id)}"${!r.skip && !unticked.has(r.id) ? " checked" : ""}${r.skip ? " disabled" : ""}></td>
-        <td>${esc(r.id)}</td><td><b>${esc(r.name)}</b>${r.off ? ' <span class="chip warn">পড়া বন্ধ</span>' : ""}</td><td>${esc(r.batch || X.batchName(r.batchId))}</td>
+        <td>${r.id.startsWith("tel:") ? "—" : esc(r.id)}</td><td><b>${esc(r.name)}</b>${r.off ? ' <span class="chip warn">পড়া বন্ধ</span>' : ""}</td><td>${esc(r.batch || X.batchName(r.batchId))}</td>
         <td class="sms-ph">${r.phones.map(esc).join("<br>") || "—"}</td>
         <td class="sms-txt">${r.skip ? `<span class="chip bad">বাদ: ${esc(r.skip)}</span>` : `${esc(r.text)} <small>${bn(parts(r.text))}টি SMS × ${bn(r.phones.length)}</small>`}</td></tr>`).join("")}</tbody></table></div>`;
   }
@@ -192,6 +190,7 @@ window.SICSms = function (X) {
   function onInput(e) {
     const d = e.target.dataset;
     if ("text" in d) { S.text = e.target.value; count(); return refresh(); }
+    if ("manualPhones" in d) { S.manualPhones = e.target.value; return refresh(); }
     if ("ids" in d) { S.idsText = e.target.value; return refresh(); }
   }
 
