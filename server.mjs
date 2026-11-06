@@ -2877,7 +2877,23 @@ async function api(req, res, url) {
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
     const v = validateEnrollment(b.enrollment || {});
     if (v.error) return send(res, 400, { error: v.error });
-    if (v.course.feeType !== "chapter" && db.enrollments.some((e) => e.studentId === s.id && e.courseId === v.course.id && e.status === "active")) return send(res, 400, { error: "এই মডিউলে আগেই ভর্তি আছে" });
+    const old = b.replaceId && db.enrollments.find(e => e.id === b.replaceId && e.studentId === s.id && e.status === "active");
+    if (b.replaceId && (!old || old.startDate > today())) return send(res, 409, { error: "বদলানোর জন্য চালু মডিউল পাওয়া যায়নি" });
+    if ((old || v.course.feeType !== "chapter") && db.enrollments.some((e) => e.studentId === s.id && e.courseId === v.course.id && e.status === "active")) return send(res, 400, { error: "এই মডিউলে আগেই ভর্তি আছে" });
+    if (old) {
+      const original = JSON.stringify(db);
+      try {
+        const enr = createEnrollment(s.id, v, today(), b.enrollment.planEnd);
+        const pay = createPayment(s.id, enr.id, b.payment, `${v.course.name} — ভর্তির সময় জমা`);
+        Object.assign(old, { status: "ended", endDate: today(), updatedAt: new Date().toISOString() });
+        saveDb();
+        return send(res, 200, { ok: true, enrollment: enr, payment: pay });
+      } catch (error) {
+        db = JSON.parse(original);
+        writeJsonAtomic(DB_FILE, db);
+        throw error;
+      }
+    }
     const enr = createEnrollment(s.id, v, str(b.enrollment.startDate, 10) || today(), b.enrollment.planEnd);
     const pay = createPayment(s.id, enr.id, b.payment, `${v.course.name} — ভর্তির সময় জমা`);
     saveDb();
