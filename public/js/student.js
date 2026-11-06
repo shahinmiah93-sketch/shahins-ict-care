@@ -223,39 +223,37 @@ ${inner}
   function classMomentsCard() {
     const photos = D.classMoments || [];
     return `<section class="card class-moments" id="classMoments"><h2>ক্লাসের ক্যানভাস</h2>
-      ${photos.length ? `<figure><div class="class-moments-stage"><img class="class-moments-backdrop" alt="" aria-hidden="true"><img class="class-moments-photo" alt=""></div><figcaption></figcaption></figure>
-        ${photos.length > 1 ? '<div class="class-moments-controls"><button type="button" class="btn line sm" data-step="-1" aria-label="আগের ছবি">‹</button><span data-position></span><button type="button" class="btn line sm" data-step="1" aria-label="পরের ছবি">›</button><button type="button" class="btn line sm" data-pause>বিরতি</button></div>' : ""}`
+      ${photos.length ? `<figure><div class="class-moments-stage"><img class="class-moments-photo" alt=""></div><figcaption></figcaption></figure>
+        ${photos.length > 1 ? `<div class="class-moments-track" role="group" aria-label="ছবি বেছে নাও">${photos.map((_, i) => `<button type="button" data-slide="${i}" aria-label="ছবি ${bn(i + 1)}"></button>`).join("")}</div>` : ""}`
         : '<p class="empty">ক্লাসের ছবি যোগ হলে এখানে দেখা যাবে।</p>'}</section>`;
   }
   function bindClassMoments() {
     clearInterval(classMomentTimer);
     const card = $("#classMoments"), photos = D.classMoments || [];
     if (!card || !photos.length) return;
-    const img = $(".class-moments-photo", card), backdrop = $(".class-moments-backdrop", card);
-    const caption = $("figcaption", card), position = $("[data-position]", card);
+    const img = $(".class-moments-photo", card), caption = $("figcaption", card);
+    const slides = $$("[data-slide]", card);
     let index = 0;
-    function showPhoto(step) {
-      index = (index + step + photos.length) % photos.length;
+    function showPhoto(next) {
+      index = next % photos.length;
       const photo = photos[index];
       img.alt = photo.title || "ক্লাসের ছবি";
       img.src = photo.img;
-      backdrop.src = photo.img;
       caption.textContent = [photo.title, photo.date && U.date(photo.date)].filter(Boolean).join(" · ");
       caption.hidden = !caption.textContent;
-      if (position) position.textContent = `${bn(index + 1)} / ${bn(photos.length)}`;
+      slides.forEach((slide, i) => slide.setAttribute("aria-current", i === index ? "true" : "false"));
     }
     showPhoto(0);
-    if (!position) return;
-    const pause = $("[data-pause]", card);
-    let paused = matchMedia("(prefers-reduced-motion: reduce)").matches;
     function updateRotation() {
       clearInterval(classMomentTimer);
-      pause.textContent = paused ? "চালু করো" : "বিরতি";
-      if (!paused) classMomentTimer = setInterval(() => { if (!document.hidden) showPhoto(1); }, 5000);
+      if (slides.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        classMomentTimer = setInterval(() => {
+          if (!document.hidden && !card.matches(":hover, :focus-within")) showPhoto(index + 1);
+        }, 5000);
+      }
     }
-    pause.onclick = () => { paused = !paused; updateRotation(); };
-    $$("[data-step]", card).forEach((button) => {
-      button.onclick = () => { showPhoto(Number(button.dataset.step)); updateRotation(); };
+    slides.forEach((button) => {
+      button.onclick = () => { showPhoto(Number(button.dataset.slide)); updateRotation(); };
     });
     updateRotation();
   }
