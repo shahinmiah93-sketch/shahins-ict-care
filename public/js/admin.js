@@ -1158,6 +1158,7 @@ ${list.map(receiptHtml).join("")}
 
     const form = $("#admForm"), q = (n) => form.querySelector(`[name="${n}"]`);
     $$("[data-combo]", form).forEach((el) => U.combo(el, () => U.optList(el.dataset.combo)));
+    U.combo(q("college"), U.MADARIPUR_INSTITUTIONS || []);
     const previousExam = q("sscExam"), previousGroup = q("sscGroup");
     if (previousExam && previousGroup) {
       const dakhilGroups = ["সাধারণ", "বিজ্ঞান", "মুজাবিদ", "হিফজুল কুরআন"];

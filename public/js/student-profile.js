@@ -11,71 +11,12 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
     ['ভর্তির উৎস ও রেফারেন্স', [['source','আমাদের সম্পর্কে কোথা থেকে জেনেছো?',U.SOURCES],['refName','রেফারেন্সকারীর নাম'],['refPhone','রেফারেন্সকারীর মোবাইল','tel'],['refOccupation','রেফারেন্সকারীর পেশা',U.OCCUPATIONS]]]
   ];
   const esc = U.esc;
-  // Madaripur institutions from the Dhaka Board XI and Madrasah Board Alim admission lists.
-  const madaripurInstitutions = [
-    "Abck Syed Abul Hossain College",
-    "Asmot Ali Khan Public School And College",
-    "Baheratola Adarsha Mahabidyalaya Shibchar",
-    "Beer Muktijoddha Shajahan Khan College",
-    "Charmugria College",
-    "D.K. Ideal Sayed Atahar Ali Academy And College",
-    "Dr. Md. Mozammel Haque Khan College",
-    "Elias Ahmed Chowdhury College",
-    "Govt. Barhamganj College",
-    "Govt. Chilarchar Balikandi Sheikh Fazilatunnesa Mujib College",
-    "Govt. Rajoir College",
-    "Govt. Rajoir Gopalgonj K. J. S. Pilot Model Institution & College",
-    "Govt. Shaikh Hasina Academy & Women College",
-    "Kabirajpur Saifuddin College",
-    "Kadambari Union Mahabidyalaya",
-    "Kalkini Pilot Girls School And College",
-    "Kalkini Syed Abul Hossain College",
-    "Khasherhat Sayed Abul Hossain School & College",
-    "Madaripur Govt. College",
-    "Madaripur Govt. Sufia Mohila College",
-    "Madra High School And College",
-    "Nurul Amin College Shibchar",
-    "Rizia Begum Mohila College",
-    "Shahebrampur Kabi Nazrul Islam College",
-    "Shahid Sardar Sajahan Girls School And College",
-    "Shahid Smriti College Shashikar",
-    "Sheikh Rasel Govt. College",
-    "Shireen Jahan Memorial School & College",
-    "Syed Abul Hossain College",
-    "Takerhat Popular High School And College",
-    "Al Bitul Mamur Alim Madrasah",
-    "Anderchar Fazil Madrasah",
-    "Bahadurpur Sariatia Kamil Madrasah",
-    "Barail Bari Sultania Alim Madrasah",
-    "Char Gobindopur Senior Alim Madrasah",
-    "Char Nachna Fazil Madrasah",
-    "Dakkhin Para Nesa. Alim Madrasah",
-    "Dhoji Hamidia Fazil Madrasah",
-    "Dicrir Char Fazil Madrasah",
-    "Dorir Char Laxmipur Fazil Madrasah",
-    "Hazrat Shah Madar Dargah Sharif Alim Madrasah",
-    "Kalkini Fazil Madrasah",
-    "Kashimpur Hossainia Alim Madrasah",
-    "Kathalbari Senior Alim Madrasah",
-    "Khamarbari Nesa. Fazil Madrasah",
-    "Krokir Char Islamia Mohila Alim Madrasah",
-    "Madaripur Ahammadia Kamil Madrasah",
-    "Mirjar Char Alim Madrasah",
-    "Mollarhat Darus Sunnat Fazil Madrasah",
-    "Munshi Kadirpur Alim Madrasah",
-    "Pashchim Math Islamia Alim Madrasah",
-    "Shiruail Alim Madrasah",
-    "Sikar Mongal Rashidia Alim Madrasah",
-    "Snan Ghata Islamia Fazil Madrasah",
-    "Swarmongal Tekerhat Rashidia Fazil Madrasah",
-    "Uttar Romjanpur Fazil Madrasah",
-  ];
   const field = ([key,label,type]) => {
     const value = values[key] ?? '', req = required.has(key) ? ' required' : '';
     if (type === 'checkbox') return `<label class="sp-check"><input type="checkbox" name="${key}"${value ? ' checked' : ''}>${label}</label>`;
     let input;
     if (key === 'college') {
-      input = `<input name="college" list="sp-colleges" value="${esc(value)}" maxlength="300" placeholder="তালিকা থেকে বেছে নাও বা নাম লেখো"${req}><datalist id="sp-colleges">${madaripurInstitutions.map(name => `<option value="${esc(name)}"></option>`).join('')}</datalist><small>তালিকায় নাম না থাকলে নিজে লিখতে পারবে।</small>`;
+      input = `<input name="college" list="sp-colleges" value="${esc(value)}" maxlength="300" placeholder="তালিকা থেকে বেছে নাও বা নাম লেখো"${req}><datalist id="sp-colleges">${(U.MADARIPUR_INSTITUTIONS || []).map(name => `<option value="${esc(name)}"></option>`).join('')}</datalist><small>তালিকায় নাম না থাকলে নিজে লিখতে পারবে।</small>`;
     } else if (Array.isArray(type)) {
       const options = type.map(x=>{const [text,val]=x.split('|');return [val||text,text];});
       if (value && !options.some(([v])=>v===value)) options.push([value,value]);
