@@ -502,3 +502,12 @@ body.dash-dark .side a.nav-item[href="#bloodbank"] i{color:#ff7a7a}
 .sd-card{padding-bottom:56px;transition:box-shadow .2s,border-color .2s,transform .2s,filter .2s}.sd-card:not(.selected){filter:saturate(.7);box-shadow:none}.sd-card.selected{border:3px solid #ffe174;box-shadow:0 0 0 4px #ffdc6c40,0 12px 26px #06173166;transform:translateY(-3px);padding:19px 17px 55px}.sd-card.selected:hover{border-color:#ffe174}.sd-card-state{position:absolute;right:15px;bottom:13px;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#ffffffc9}.sd-card.selected .sd-card-state{background:#ffe174;color:#17284b;border-radius:999px;padding:5px 12px;box-shadow:0 2px 8px #06173130}.sd-card.selected .sd-card-state>span{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#17284b;color:#ffe174;font-size:13px}.sd-card:not(.selected):hover{filter:saturate(1);border-color:#ffffffa6}@media(max-width:1100px){.sd-card.selected{padding:16px 16px 55px}}@media(max-width:600px){.sd-card.selected{padding:13px 11px 55px}.sd-card-state{right:11px}}
 
 .ac-suggestions{position:absolute;top:100%;left:0;right:0;z-index:30;background:#fff;border:1px solid #b9c9db;border-radius:10px;box-shadow:0 8px 24px #12274626;max-height:220px;overflow:auto;padding:5px}.ac-suggestions>button{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:6px;padding:9px 11px;color:#123c3b;font:inherit;cursor:pointer}.ac-suggestions>button:hover,.ac-suggestions>button:focus-visible{background:#eaf2ff;color:#174ba3}
+.photo-approval-queue{display:grid;gap:10px}
+.photo-approval-queue h3{margin:4px 0}
+.photo-approval-queue [data-photo-list]{justify-self:start}
+.photo-approval-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+.photo-approval-row input{width:18px;height:18px;margin:0;cursor:pointer}
+.photo-approval-row button{justify-content:flex-start;gap:12px;text-align:left;white-space:normal}
+.photo-approval-row img{width:52px;height:62px;object-fit:contain;border-radius:8px}
+.photo-approval-row small{display:block}
+.photo-approval-preview{display:block;width:100%;height:min(50vh,380px);object-fit:contain;background:#eef3f7;border-radius:12px}

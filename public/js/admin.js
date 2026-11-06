@@ -1451,6 +1451,102 @@ ${list.map(receiptHtml).join("")}
     openModal({title:"তথ্য সংশোধনের অনুমোদন",wide:true,saveText:"✓ সংশোধন অনুমোদন করুন",onSave:()=>decide("approve"),body:`<p><b>${esc(student.name)}</b> · রোল ${esc(student.id)}</p><p class="muted">নিচের আগের তথ্যগুলো এখনো চালু আছে। অনুমোদন দিলে নতুন তথ্য বসবে।</p><div class="tbl-wrap"><table class="profile-change-table"><thead><tr><th>তথ্য</th><th>আগের তথ্য</th><th>নতুন তথ্য</th></tr></thead><tbody>${Object.entries(pending.changes).map(([key,change])=>`<tr><td><b>${esc(change.label || key)}</b></td><td>${esc(value(change.from))}</td><td><strong>${esc(value(change.to))}</strong></td></tr>`).join("")}</tbody></table></div><p><button type="button" class="btn line" id="rejectProfileChanges">অনুমোদন না দিন</button></p>`});
     $("#rejectProfileChanges").onclick=()=>decide("reject").catch(error=>toast(error.message,true));
   }
+  function reviewStudentPhotos(scopeIds) {
+    const pending = () => DB.students.filter(s => scopeIds.has(s.id) && s.pendingPhoto);
+    const selected = new Map();
+    const photoUrl = s => "/api/admin/photo/p/" + encodeURIComponent(s.id) + "?v=" + encodeURIComponent(s.pendingPhoto.version);
+
+    function render(id) {
+      const queue = pending(), student = queue.find(s => s.id === id);
+      for (const [sid, version] of selected) {
+        if (!queue.some(s => s.id === sid && s.pendingPhoto.version === version)) selected.delete(sid);
+      }
+      openModal({
+        title: "ছবি অনুমোদন (" + bn(queue.length) + ")",
+        body: '<div class="photo-approval-queue"></div>',
+      });
+      const panel = $(".photo-approval-queue");
+      if (!queue.length) {
+        panel.innerHTML = '<p class="empty">অনুমোদনের অপেক্ষায় কোনো ছবি নেই।</p>';
+        return;
+      }
+      if (student) {
+        panel.innerHTML = '<button type="button" class="btn line" data-photo-list>‹ ছবির তালিকা</button>'
+          + '<h3>' + esc(student.name) + ' · ' + esc(student.id) + '</h3>'
+          + '<img class="photo-approval-preview" src="' + photoUrl(student) + '" alt="শিক্ষার্থীর পাঠানো ছবি">'
+          + '<div class="toolbar"><button type="button" class="btn gold" data-decision="approve">✓ অনুমোদন করুন</button>'
+          + '<button type="button" class="btn line" data-decision="reject">অনুমোদন না দিন</button></div>';
+        $("[data-photo-list]", panel).onclick = () => render();
+        $$("[data-decision]", panel).forEach(button => {
+          button.onclick = () => {
+            const action = button.dataset.decision;
+            if (action === "reject" && !confirm("এই ছবিটি অনুমোদন না দিয়ে ফেরত দেবেন?")) return;
+            const index = queue.indexOf(student);
+            decide(panel, [student], action, queue.slice(index + 1).concat(queue.slice(0, index)).map(s => s.id));
+          };
+        });
+        return;
+      }
+      panel.innerHTML = '<div class="toolbar"><button type="button" class="btn gold" data-bulk-photo>নির্বাচিত ছবি অনুমোদন</button></div>'
+        + queue.map(s => '<div class="photo-approval-row"><input type="checkbox" aria-label="' + esc(s.name + " · " + s.id + " নির্বাচন") + '">'
+          + '<button type="button" class="btn line"><img src="' + photoUrl(s) + '" alt=""><span>' + esc(s.name) + ' · ' + esc(s.id)
+          + '<small>ছবিটি দেখে সিদ্ধান্ত দিন →</small></span></button></div>').join("");
+      const approve = $("[data-bulk-photo]", panel);
+      const updateCount = () => {
+        approve.disabled = !selected.size;
+        approve.textContent = "নির্বাচিত ছবি অনুমোদন (" + bn(selected.size) + ")";
+      };
+      $$(".photo-approval-row", panel).forEach((row, index) => {
+        const s = queue[index], checkbox = $("input", row);
+        checkbox.checked = selected.has(s.id);
+        checkbox.onchange = () => {
+          if (checkbox.checked) selected.set(s.id, s.pendingPhoto.version);
+          else selected.delete(s.id);
+          updateCount();
+        };
+        $("button", row).onclick = () => render(s.id);
+      });
+      approve.onclick = () => {
+        const targets = queue.filter(s => selected.has(s.id));
+        if (targets.length && confirm(bn(targets.length) + "টি নির্বাচিত ছবি অনুমোদন করবেন?")) {
+          decide(panel, targets, "approve");
+        }
+      };
+      updateCount();
+    }
+
+    async function decide(panel, targets, action, nextIds = []) {
+      $$("button,input", panel).forEach(control => control.disabled = true);
+      let completed = 0;
+      const errors = [];
+      for (const s of targets) {
+        try {
+          const version = s.pendingPhoto.version;
+          await api("/api/admin/student-photo-review", { body: { id: s.id, version, action } });
+          delete s.pendingPhoto;
+          selected.delete(s.id);
+          completed++;
+        } catch (error) {
+          errors.push(s.id + " · " + error.message);
+        }
+      }
+      try { await load(); } catch (error) { errors.push(error.message); }
+      if (completed) toast(bn(completed) + "টি ছবির সিদ্ধান্ত সংরক্ষিত হয়েছে");
+      const queue = pending(), button = $("#reviewStudentPhotos");
+      if (button) {
+        button.hidden = !queue.length;
+        button.textContent = "ছবি অনুমোদন (" + bn(queue.length) + ")";
+      }
+      if (!modal.open || !panel.isConnected) return;
+      const next = errors.length ? targets.find(s => queue.some(item => item.id === s.id))?.id
+        : nextIds.find(id => queue.some(s => s.id === id));
+      render(next);
+      if (errors.length) $("#modalErr").textContent = errors.join(" | ");
+    }
+
+    render();
+  }
+
   function viewStudent(id) {
     const s = studentById(id);
     if (!s) return;
@@ -1565,11 +1661,7 @@ ${list.map(receiptHtml).join("")}
       openModal({title:`তথ্য সংশোধনের অনুরোধ (${bn(pending.length)})`,body:pending.length ? `<div style="display:grid;gap:10px">${pending.map(s=>`<button type="button" class="btn line" data-review-profile="${esc(s.id)}">${esc(s.name)} · ${esc(s.id)} · ${bn(Object.keys(s.pendingProfile.changes).length)}টি সংশোধন →</button>`).join("")}</div>` : '<p class="empty">এখন কোনো সংশোধন অনুমোদনের অপেক্ষায় নেই।</p>'});
       $$("#modalBody [data-review-profile]").forEach(b=>b.onclick=()=>reviewProfileChanges(b.dataset.reviewProfile));
     };
-    $("#reviewStudentPhotos").onclick = () => {
-      const pending = DB.students.filter(s => scopeIds.has(s.id) && s.pendingPhoto);
-      openModal({ title: `ছবি অনুমোদন (${bn(pending.length)})`, body: `<div style="display:grid;gap:12px">${pending.map(s => `<button type="button" class="btn line" data-review-student="${esc(s.id)}" style="justify-content:flex-start;gap:12px"><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="" style="width:52px;height:62px;object-fit:contain;border-radius:8px"><span>${esc(s.name)} · ${esc(s.id)}<small style="display:block">ছবিটি দেখে সিদ্ধান্ত দিন →</small></span></button>`).join("")}</div>` });
-      $$("#modalBody [data-review-student]").forEach(b => b.onclick = () => viewStudent(b.dataset.reviewStudent));
-    };
+    $("#reviewStudentPhotos").onclick = () => reviewStudentPhotos(scopeIds);
     const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
     const list = () => {
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
