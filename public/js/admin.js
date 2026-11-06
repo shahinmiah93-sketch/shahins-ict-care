@@ -1158,6 +1158,20 @@ ${list.map(receiptHtml).join("")}
 
     const form = $("#admForm"), q = (n) => form.querySelector(`[name="${n}"]`);
     $$("[data-combo]", form).forEach((el) => U.combo(el, () => U.optList(el.dataset.combo)));
+    const previousExam = q("sscExam"), previousGroup = q("sscGroup");
+    if (previousExam && previousGroup) {
+      const dakhilGroups = ["সাধারণ", "বিজ্ঞান", "মুজাবিদ", "হিফজুল কুরআন"];
+      const updatePreviousGroups = (keepSaved) => {
+        const isDakhil = /^(দাখিল|dakhil)$/i.test(previousExam.value.trim());
+        const current = keepSaved ? vals.sscGroup || previousGroup.value : previousGroup.value;
+        const options = isDakhil ? [["", "বেছে নিন"], ...dakhilGroups.map(group => [group, group])] : [...GROUPS];
+        if (keepSaved && current && !options.some(([value]) => value === current)) options.push([current, current]);
+        previousGroup.replaceChildren(...options.map(([value, label]) => new Option(label, value)));
+        previousGroup.value = options.some(([value]) => value === current) ? current : "";
+      };
+      previousExam.addEventListener("change", () => updatePreviousGroups(false));
+      updatePreviousGroups(true);
+    }
     const curBatch = () => (q("batchId") ? batchById(q("batchId").value) : s ? batchById(s.batchId) : null);
     const info = () => {
       if (!$("#admInfo") || !showPerson) return;
