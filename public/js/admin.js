@@ -273,7 +273,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     if (!s) return;
     const soon = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
     const paused = s.status === "inactive" || !!soon;
-    const ask = soon ? `"${s.name}"-এর পড়া ${U.date(soon.from)} থেকে বন্ধ হওয়ার কথা।\n\nবন্ধ বাতিল করতে ${soon.from} বা আগের তারিখ দিন; অথবা কবে আবার চালু হবে সেই তারিখ দিন (YYYY-MM-DD)` : paused ? `"${s.name}"-এর পড়া আবার চালু করবেন?\n\nকোন তারিখ থেকে চালু? (YYYY-MM-DD)` : `"${s.name}"-এর পড়া বন্ধ রাখবেন?\nহাজিরা, ফলাফল আর শিক্ষার্থী প্যানেলে আর দেখাবে না; বন্ধের মাসের পুরো ফি শূন্য হবে। বন্ধ থাকা পরের মাসগুলোর ফিও ধরা হবে না। পরে আবার চালু করা যাবে।\n\nকোন তারিখ থেকে বন্ধ? (YYYY-MM-DD)`;
+    const ask = soon ? `"${s.name}"-এর পড়া ${U.date(soon.from)} থেকে বন্ধ হওয়ার কথা।\n\nবন্ধ বাতিল করতে ${soon.from} বা আগের তারিখ দিন; অথবা কবে আবার চালু হবে সেই তারিখ দিন (YYYY-MM-DD)` : paused ? `"${s.name}"-এর পড়া আবার চালু করবেন?\n\nকোন তারিখ থেকে চালু? (YYYY-MM-DD)` : `"${s.name}"-এর পড়া বন্ধ রাখবেন?\nহাজিরা, ফলাফল আর শিক্ষার্থী প্যানেলে আর দেখাবে না; বন্ধের মাসে একদিনও উপস্থিত না থাকলে ফি শূন্য। উপস্থিত থাকলে বন্ধের তারিখ পর্যন্ত ক্লাসের ফি ধরা হবে। পরে আবার চালু করা যাবে।\n\nকোন তারিখ থেকে বন্ধ? (YYYY-MM-DD)`;
     const date = prompt(ask, soon ? soon.from : U.today()); if (date === null) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) return toast("তারিখ এভাবে লিখুন: 2026-10-26", true);
     const reason = paused ? "" : prompt("কেন বন্ধ? (না লিখলেও চলবে)", ""); if (reason === null) return;

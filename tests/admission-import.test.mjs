@@ -19,14 +19,19 @@ function app() {
   return {ctx,stats:()=>({writes,backups}),fail:()=>{failSave=true},call:body=>ctx.admissionImportAction({body},{})};
 }
 const defaults={session:'HSC-27',batchId:'b1',courseId:'c1',admissionDate:'2026-11-04',discount:'0',chapters:''};
-test('Monthly fees are zero for the entire effective pause month and resume the next active month', () => {
+test('Pause-month fees require attendance and count all scheduled classes through the pause date', () => {
   const {ctx} = app();
   ctx.today = () => '2026-12-10';
   const student = {id:'student', batchId:'b1', pauses:[{from:'2026-11-09', to:'2026-12-01'}]};
   const enrollment = {studentId:student.id, courseId:'c1', fee:1000, startDate:'2026-11-01'};
+  ctx.db.attendance = {'2026-11-02|b1':{student:'A'}, '2026-11-11|b1':{student:'P'}};
   const fee = ctx.enrollmentDue(enrollment, {student});
   assert.equal(fee.breakdown[0].fee, 0);
   assert.equal(fee.breakdown[1].fee, 1000);
+  ctx.db.attendance['2026-11-04|b1'] = {student:'P'};
+  const attended = ctx.enrollmentDue(enrollment, {student});
+  assert.equal(attended.breakdown[0].got, 4);
+  assert.equal(attended.breakdown[0].fee, 300);
 });
 test('Sparse rows accept missing phones and personal fields; admission date drives fee preview and saved ledger', async()=>{
   const a=app(),input={defaults,rows:[{row:2,name:'Sparse',admissionDate:'2026-08-15'},{row:3,nameEn:'English Only'}]};
