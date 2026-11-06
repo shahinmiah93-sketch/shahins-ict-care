@@ -783,11 +783,12 @@ let smsCfg = readJson(SMS_FILE, null) || { apiKey: "", senderId: "", enabled: fa
 const smsOn = () => !!(smsCfg.enabled && smsCfg.apiKey && smsCfg.senderId);
 const SMS_BASE = process.env.SMS_BASE || "https://bulksmsbd.net/api"; // পরীক্ষার সময় নকল সার্ভারে পাঠাতে
 const SMS_CODES = { 1001: "নম্বর ঠিক নেই", 1002: "Sender ID ঠিক নেই বা চালু হয়নি", 1003: "সব তথ্য দেওয়া হয়নি", 1005: "BulkSMSBD-এর ভেতরের সমস্যা", 1006: "ব্যালেন্সের মেয়াদ শেষ", 1007: "ব্যালেন্স নেই — রিচার্জ করুন", 1011: "API key ঠিক নেই", 1031: "অ্যাকাউন্ট এখনো যাচাই হয়নি", 1032: "এই কম্পিউটারের IP BulkSMSBD-তে whitelist করা নেই" };
-async function sendSms(phone, message, logText, filter = "OTP") {
+async function sendSms(phone, message, logText, filter = "OTP", canSend = () => true) {
   if (!smsOn()) throw new Error("SMS সার্ভিস চালু নেই");
   const q = new URLSearchParams({ api_key: smsCfg.apiKey, type: "text", number: "88" + phone, senderid: smsCfg.senderId, message });
   // POST avoids cached GET acknowledgements; never put API keys or login PINs in URLs.
   for (let attempt = 1; attempt <= 2; attempt++) {
+    if (!canSend()) return { status: "skipped" };
     const log = { id: uid("sms"), date: today(), at: new Date().toISOString(), text: logText || message.replace(/\d{6}/, "••••••"), filter, leadIds: [], count: 1, phone, attempt, ok: false, status: "unknown", code: null };
     let r, j;
     try {
@@ -2746,9 +2747,6 @@ async function api(req, res, url) {
       }
     }
     saveDb();
-    for (const [sid, status] of Object.entries(marks)) {
-      if (status === "P") await sendAttendanceCorrection(date, sid);
-    }
     return send(res, 200, { ok: true });
   }
   // আইডি / মোবাইল আর PIN আবার SMS-এ
@@ -3585,27 +3583,12 @@ birthdayTick(); setInterval(birthdayTick, 60e3).unref();
 // প্রতিদিন সন্ধ্যা ৭টা থেকে রাত ১০টার মধ্যে: আজকের হাজিরায় অনুপস্থিত সক্রিয় শিক্ষার্থীর অভিভাবককে, দিনে একবার (হাজিরা দেরিতে দিলে বা সার্ভার দেরিতে চালু হলে তখনই যায়)
 const ABSENT_FROM = 19, ABSENT_UNTIL = 22;
 let absentBusy = false;
-const correctionsInFlight = new Set();
-const attendanceSmsDate = (day) => new Date(day + "T00:00").toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
-const presentOn = (day, sid) => Object.entries(db.attendance).some(([key, marks]) => key.startsWith(day + "|") && marks[sid] === "P");
-
-async function sendAttendanceCorrection(day, sid) {
-  const logText = `হাজিরা সংশোধন — ${sid}, ${day}`;
-  if (!smsOn() || correctionsInFlight.has(logText) || !presentOn(day, sid)) return;
-  const original = db.smsLog.findLast((log) => log.filter === "Absent" && log.text === `অনুপস্থিত — ${sid}, ${day}` && log.ok);
+function absentStudent(day, sid) {
   const student = db.students.find((s) => s.id === sid);
-  if (!original || !student || !/^01\d{9}$/.test(original.phone)) return;
-  if (db.smsLog.some((log) => log.filter === "Absent" && log.text === logText && log.status !== "rejected")) return;
-
-  correctionsInFlight.add(logText);
-  try {
-    await sendSms(original.phone, `সম্মানিত অভিভাবক, আগের SMS-এর সংশোধন: ${student.name} ${attendanceSmsDate(day)} ক্লাসে উপস্থিত ছিল। — Shahin Sir`, logText, "Absent");
-  } catch (e) {
-    console.error("হাজিরা সংশোধনের SMS:", sid, e.message);
-  } finally {
-    correctionsInFlight.delete(logText);
-    saveDb();
-  }
+  if (!student?.batchId || student.status === "inactive") return;
+  if (db.attendance[day + "|" + student.batchId]?.[sid] !== "A") return;
+  const present = Object.entries(db.attendance).some(([key, marks]) => key.startsWith(day + "|") && marks[sid] === "P");
+  if (!present) return student;
 }
 
 async function sendAbsentSms() {
@@ -3613,20 +3596,19 @@ async function sendAbsentSms() {
   if (absentBusy || hour < ABSENT_FROM || hour >= ABSENT_UNTIL || !smsOn()) return;
   const day = today(), sent = (db.absentSent || {})[day] || [], ids = new Set();
   for (const [key, marks] of Object.entries(db.attendance)) if (key.startsWith(day + "|")) for (const [sid, st] of Object.entries(marks)) if (st === "A" && !sent.includes(sid)) ids.add(sid);
-  const list = [...ids].map((id) => db.students.find((s) => s.id === id)).filter((s) => s && s.status !== "inactive");
-  if (!list.length) return;
+  if (!ids.size) return;
   absentBusy = true;
   try {
-    const date = attendanceSmsDate(day);
+    const date = new Date(day + "T00:00").toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
     db.absentSent = { [day]: sent }; // আগের দিনগুলোর হিসাব রাখার দরকার নেই
-    for (const s of list) {
-      if (presentOn(day, s.id) || !Object.entries(db.attendance).some(([key, marks]) => key.startsWith(day + "|") && marks[s.id] === "A")) continue;
+    for (const sid of ids) {
+      const s = absentStudent(day, sid);
+      if (!s) continue;
       sent.push(s.id); // আগে চিহ্ন, যাতে পরের মিনিটে আবার না যায়
       const phone = [s.guardianPhone, s.fatherPhone, s.motherPhone].map(phoneOf).find((n) => /^01\d{9}$/.test(n));
       if (!phone) { console.error("অনুপস্থিতির SMS: অভিভাবকের নম্বর নেই", s.id); continue; }
-      try { await sendSms(phone, `সম্মানিত অভিভাবক, ${s.name} আজ ${date} ক্লাসে অনুপস্থিত ছিল। — Shahin Sir`, `অনুপস্থিত — ${s.id}, ${day}`, "Absent"); }
+      try { await sendSms(phone, `সম্মানিত অভিভাবক, ${s.name} আজ ${date} ক্লাসে অনুপস্থিত ছিল। — Shahin Sir`, `অনুপস্থিত — ${s.id}, ${day}`, "Absent", () => !!absentStudent(day, sid)); }
       catch (e) { console.error("অনুপস্থিতির SMS:", s.id, e.message); }
-      await sendAttendanceCorrection(day, s.id);
     }
     saveDb();
   } finally { absentBusy = false; }

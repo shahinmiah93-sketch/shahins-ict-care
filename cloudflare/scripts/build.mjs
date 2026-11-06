@@ -23,7 +23,7 @@ replace('const PORT = Number(process.env.PORT) || 8090;', 'const PORT = 8090;');
 replace('const SMS_BASE = process.env.SMS_BASE || "https://bulksmsbd.net/api";', 'const SMS_BASE = env.SMS_BASE || "https://bulksmsbd.net/api";');
 for (const name of ["birthdayTick", "absentTick", "monthlyTick", "feeTick"]) replace(`${name}(); setInterval(${name},`, `setInterval(${name},`);
 replace('syncPauses(); setInterval(syncPauses,', 'setInterval(syncPauses,');
-replace('async function sendSms(phone, message, logText, filter = "OTP") {', 'async function doSendSms(phone, message, logText, filter = "OTP") {');
+replace('async function sendSms(phone, message, logText, filter = "OTP", canSend = () => true) {', 'async function doSendSms(phone, message, logText, filter = "OTP", canSend = () => true) {');
 // This deployment buffers uploads for atomic SQLite writes. Keep within isolate memory.
 replace('function readRaw(req, limit) {', 'function readRaw(req, limit) {\n  limit = Math.min(limit, MAX_UPLOAD);');
 replace('function readBody(req, limit = 10 * 1024 * 1024) {', 'function readBody(req, limit = 10 * 1024 * 1024) {\n  limit = Math.min(limit, MAX_UPLOAD);');
