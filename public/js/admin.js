@@ -1090,6 +1090,13 @@ ${list.map(receiptHtml).join("")}
     const s = mode === "edit" || mode === "enroll" ? studentById(arg.split("/")[1]) : null;
     const a = mode === "app" ? DB.applications.find((x) => x.id === arg.slice(4) && x.status !== "approved") : null;
     if ((mode === "edit" || mode === "enroll") && !s) { c.innerHTML = '<div class="card"><p class="empty">শিক্ষার্থী পাওয়া যায়নি। <a href="#students">তালিকায় ফিরুন</a></p></div>'; return; }
+    const replaceId = mode === "enroll" ? arg.split("/")[2] : "";
+    const currentModules = s ? enrollmentsOf(s.id).filter(e => e.status === "active") : [];
+    const replacing = replaceId && currentModules.find(e => e.id === replaceId);
+    if (replaceId && !replacing) {
+      c.innerHTML = `<div class="card"><p>সক্রিয় মডিউল পাওয়া যায়নি। <a href="#admission/edit/${esc(s.id)}">শিক্ষার্থীর Edit ফর্মে ফিরুন</a></p></div>`;
+      return;
+    }
     if (mode === "app" && !a) { c.innerHTML = '<div class="card"><p class="empty">আবেদনটি পাওয়া যায়নি বা আগেই ভর্তি হয়েছে। <a href="#applications">আবেদনের তালিকা</a></p></div>'; return; }
     const prefill = admissionPrefill; admissionPrefill = null;
     const showPerson = mode !== "enroll", showModule = mode !== "edit";
@@ -1108,11 +1115,11 @@ ${list.map(receiptHtml).join("")}
     const head = {
       new: ["নতুন শিক্ষার্থী ভর্তি", "ভর্তি ফর্ম", "শুধু নাম, ক্লাস ব্যাচ আর মডিউল দিলেই ভর্তি নেওয়া যাবে — বাকি তথ্য পরেও দেওয়া যাবে। সেভ করলে আইডি আর PIN তৈরি হয়ে মোবাইলে SMS-এ চলে যাবে।"],
       app: [`অনলাইন আবেদন ${a ? a.appNo : ""} থেকে ভর্তি`, "ভর্তি ফর্ম", "আবেদনের তথ্য বসানো আছে — দেখে, দরকার হলে বদলে সেভ করুন।"],
-      edit: ["তথ্য সম্পাদনা", s ? `${s.name} — ${s.id}` : "", "তথ্য বদলে সেভ করুন। মডিউল বা ফি বদলাতে প্রোফাইল থেকে \"নতুন মডিউলে ভর্তি\" ব্যবহার করুন।"],
-      enroll: ["আগের শিক্ষার্থী", s ? `${s.name} — ${s.id}` : "", "এই শিক্ষার্থীকে আরেকটি মডিউলে ভর্তি করুন। আইডি একই থাকবে।"],
+      edit: ["তথ্য সম্পাদনা", s ? `${s.name} — ${s.id}` : "", "তথ্য বদলে সেভ করুন। মডিউল বদলানোর অপশন নিচে আছে।"],
+      enroll: ["আগের শিক্ষার্থী", s ? `${s.name} — ${s.id}` : "", replacing ? `মডিউল বদলান। সেভ করলে ${courseById(replacing.courseId)?.name || "পুরোনো মডিউল"} শেষ হবে এবং নতুনটি চালু হবে। আগের ফি ও পেমেন্টের হিসাব থাকবে।` : "এই শিক্ষার্থীকে আরেকটি মডিউলে ভর্তি করুন। আইডি একই থাকবে।"],
     }[mode];
 
-    const moduleCards = DB.courses.map((m) => `<label class="mod-card${m.active === false ? " off" : ""}"><input type="radio" name="courseId" value="${m.id}"${pick.courseId === m.id ? " checked" : ""}><span class="code">${esc(m.code || m.icon || "")}</span><span><b>${esc(m.name)}</b><small>${feeText(m)}</small></span></label>`).join("");
+    const moduleCards = DB.courses.filter(m => !replacing || (m.active !== false && !currentModules.some(e => e.courseId === m.id))).map((m) => `<label class="mod-card${m.active === false ? " off" : ""}"><input type="radio" name="courseId" value="${m.id}"${pick.courseId === m.id ? " checked" : ""}><span class="code">${esc(m.code || m.icon || "")}</span><span><b>${esc(m.name)}</b><small>${feeText(m)}</small></span></label>`).join("");
 
     c.innerHTML = `
       <div class="card adm-head">
@@ -1135,11 +1142,14 @@ ${list.map(receiptHtml).join("")}
           <label>ক্লাসের দিন ও সময় (ব্যাচ) *<span id="batchWrap">${batchSelectHtml("batchId", vals.batchId || "", "ব্যাচ বেছে নিন", firstSession, true)}</span></label>
           <label>ভর্তির তারিখ<input type="date" name="admissionDate" value="${esc(vals.admissionDate || U.today())}"></label>
         </div></section>` : ""}
+        ${mode === "edit" ? `<section class="adm-sec"><h3>৩. মডিউল</h3>
+          ${currentModules.map(e => `<div class="toolbar"><b>${esc(courseById(e.courseId)?.name || "মডিউল")}</b><a class="btn line" href="#admission/enroll/${esc(s.id)}/${esc(e.id)}">মডিউল বদলান</a></div>`).join("") || "<p>কোনো সক্রিয় মডিউল নেই।</p>"}
+          <a class="btn line" href="#admission/enroll/${esc(s.id)}">＋ নতুন মডিউলে ভর্তি</a></section>` : ""}
         ${showModule ? `<section class="adm-sec"><h3>${mode === "enroll" ? "মডিউল ও ফি" : "৩. মডিউল ও ফি"}</h3>
           <div class="mod-cards">${moduleCards}</div>
           <div id="chapterBox" class="chapter-box" hidden></div>
           <div class="fgrid adm-grid" style="margin-top:14px">
-            <label>কোর্স শুরুর তারিখ${mode !== "enroll" ? ' <small>(ভর্তির তারিখ অনুযায়ী)</small>' : ""}<input type="date" name="startDate" value="${esc(mode === "enroll" ? U.today() : vals.admissionDate || U.today())}"${mode !== "enroll" ? " readonly" : ""}></label>
+            <label>কোর্স শুরুর তারিখ${mode !== "enroll" ? ' <small>(ভর্তির তারিখ অনুযায়ী)</small>' : ""}<input type="date" name="startDate" value="${esc(mode === "enroll" ? U.today() : vals.admissionDate || U.today())}"${mode !== "enroll" || replacing ? " readonly" : ""}></label>
             <label>কোর্স শেষ হওয়ার তারিখ <small style="color:var(--muted);font-weight:400">(ঐচ্ছিক)</small><input type="date" name="planEnd"></label>
             <label>ডিসকাউন্ট (৳)<input type="number" name="discount" min="0" value="0"></label>
             <label>এখন জমা (৳)<input type="number" name="paid" min="0" value="0"></label>
@@ -1346,7 +1356,7 @@ ${list.map(receiptHtml).join("")}
         const enrollment = { courseId: pick.courseId, chapters: pick.chapters, discount: k.discount, startDate: q("startDate") ? q("startDate").value : "", planEnd: q("planEnd") ? q("planEnd").value : "" };
         const payment = { amount: k.paid, method: q("method") ? q("method").value : "" };
         if (mode === "edit") stu = (await save("students", { ...s, ...d }, s.id)).item;
-        else if (mode === "enroll") { const r = await api("/api/admin/enroll", { body: { studentId: s.id, enrollment, payment } }); stu = s; enr = r.enrollment; pay = r.payment; }
+        else if (mode === "enroll") { const r = await api("/api/admin/enroll", { body: { studentId: s.id, enrollment, payment, replaceId } }); stu = s; enr = r.enrollment; pay = r.payment; }
         else {
           const r = await api("/api/admin/admit", { body: { student: d, enrollment, payment, applicationId: a ? a.id : "", enquiryId: prefill && prefill._enquiryId, leadId: prefill && prefill._leadId } });
           stu = r.student; enr = r.enrollment; pay = r.payment;
@@ -1359,6 +1369,7 @@ ${list.map(receiptHtml).join("")}
         if (pay) pay = DB.payments.find((x) => x.id === pay.id);
         if (print) printAdmission(stu, formExtra(stu, enr, pay), enr);
         if (mode === "edit") { toast("সেভ হয়েছে"); location.hash = editBack || "students"; editBack = null; return; }
+        if (replacing) { toast("মডিউল বদলানো হয়েছে"); location.hash = `admission/edit/${s.id}`; return; }
         admissionDone(c, stu, enr, pay, mode === "enroll");
       } catch (er) { err(er.message); $$(".adm-actions .btn").forEach((b) => (b.disabled = false)); }
     };
