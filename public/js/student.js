@@ -223,7 +223,7 @@ ${inner}
   function classMomentsCard() {
     const photos = D.classMoments || [];
     return `<section class="card class-moments" id="classMoments"><h2>ক্লাসের ক্যানভাস</h2>
-      ${photos.length ? `<figure><img alt=""><figcaption></figcaption></figure>
+      ${photos.length ? `<figure><div class="class-moments-stage"><img class="class-moments-backdrop" alt="" aria-hidden="true"><img class="class-moments-photo" alt=""></div><figcaption></figcaption></figure>
         ${photos.length > 1 ? '<div class="class-moments-controls"><button type="button" class="btn line sm" data-step="-1" aria-label="আগের ছবি">‹</button><span data-position></span><button type="button" class="btn line sm" data-step="1" aria-label="পরের ছবি">›</button><button type="button" class="btn line sm" data-pause>বিরতি</button></div>' : ""}`
         : '<p class="empty">ক্লাসের ছবি যোগ হলে এখানে দেখা যাবে।</p>'}</section>`;
   }
@@ -231,13 +231,15 @@ ${inner}
     clearInterval(classMomentTimer);
     const card = $("#classMoments"), photos = D.classMoments || [];
     if (!card || !photos.length) return;
-    const img = $("img", card), caption = $("figcaption", card), position = $("[data-position]", card);
+    const img = $(".class-moments-photo", card), backdrop = $(".class-moments-backdrop", card);
+    const caption = $("figcaption", card), position = $("[data-position]", card);
     let index = 0;
     function showPhoto(step) {
       index = (index + step + photos.length) % photos.length;
       const photo = photos[index];
       img.alt = photo.title || "ক্লাসের ছবি";
       img.src = photo.img;
+      backdrop.src = photo.img;
       caption.textContent = [photo.title, photo.date && U.date(photo.date)].filter(Boolean).join(" · ");
       caption.hidden = !caption.textContent;
       if (position) position.textContent = `${bn(index + 1)} / ${bn(photos.length)}`;
