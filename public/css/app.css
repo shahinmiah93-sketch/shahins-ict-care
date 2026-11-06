@@ -640,8 +640,9 @@ html.embed .tabs :is(button,a).tab-eval.on{color:#3a2a00}
 .class-moments-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
 .class-moments-row .rate-card{margin-top:0}
 .class-moments{min-width:0;background:linear-gradient(160deg,#fff 35%,#eff8f5);border-top:3px solid #258c7d}
-.class-moments figure{margin:12px 0 0}
-.class-moments-stage{overflow:hidden;aspect-ratio:4/3;max-height:320px;border-radius:14px;background:#edf6f3}
+.class-moments figure,.class-moments-track{width:min(100%,426px);margin-inline:auto}
+.class-moments figure{margin-top:12px;margin-bottom:0}
+.class-moments-stage{overflow:hidden;aspect-ratio:4/3;border-radius:14px;background:#edf6f3}
 .class-moments-stage img{display:block;width:100%;height:100%;object-fit:cover}
 .class-moments figcaption{padding:10px 2px 0;font-weight:600;color:#19443e;overflow-wrap:anywhere}
 .class-moments-track{display:flex;gap:4px;margin-top:6px;overflow-x:auto}
