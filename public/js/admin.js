@@ -1109,7 +1109,10 @@ ${list.map(receiptHtml).join("")}
     let photoData = "", photoGone = false, reminded = false;
     let pick = { courseId: a ? a.courseId : "", chapters: a ? [...(a.chapters || [])] : [] };
     const oldPhoto = s && s.photo ? photoUrl("s", s.id) : a && a.photo ? photoUrl("a", a.id) : "";
-    const firstSession = (s && s.session) || (a && a.session) || (liveSessions()[0] || {}).name || "";
+    const listFilters = new URLSearchParams(arg.startsWith("new?") ? arg.slice(4) : "");
+    const listBatch = batchById(listFilters.get("batch"));
+    const listSession = liveSessions().find(session => session.name === listFilters.get("session"));
+    const firstSession = vals.session || listBatch?.session || listSession?.name || liveSessions()[0]?.name || "";
     $("#pageTitle").textContent = mode === "edit" ? "শিক্ষার্থীর তথ্য বদলান" : mode === "enroll" ? "নতুন মডিউলে ভর্তি" : "ভর্তি ফর্ম";
 
     const head = {
@@ -1139,7 +1142,7 @@ ${list.map(receiptHtml).join("")}
         ${sections.slice(0, 1).map(([title, fl, g]) => `<section class="adm-sec"><h3>${title}</h3><div class="fgrid adm-grid ${g || ""}">${fl.map((f) => field(f, vals[f.name])).join("")}</div></section>`).join("")}
         ${mode !== "enroll" ? `<section class="adm-sec"><h3>২. একাডেমিক সেশন ও ক্লাসের সময়সূচি</h3><div class="fgrid adm-grid">
           <label>এইচএসসি/আলিম *<select name="session" id="sessionSel">${opt(sessionOptions(), firstSession)}</select></label>
-          <label>ক্লাসের দিন ও সময় (ব্যাচ) *<span id="batchWrap">${batchSelectHtml("batchId", vals.batchId || "", "ব্যাচ বেছে নিন", firstSession, true)}</span></label>
+          <label>ক্লাসের দিন ও সময় (ব্যাচ) *<span id="batchWrap">${batchSelectHtml("batchId", vals.batchId || listBatch?.id || "", "ব্যাচ বেছে নিন", firstSession, true)}</span></label>
           <label>ভর্তির তারিখ<input type="date" name="admissionDate" value="${esc(vals.admissionDate || U.today())}"></label>
         </div></section>` : ""}
         ${mode === "edit" ? `<section class="adm-sec">
@@ -1694,7 +1697,7 @@ ${list.map(receiptHtml).join("")}
         <select id="fs">${opt([["", "সবাই"], ["active", "শুধু সক্রিয় (পড়ছে)"], ["inactive", "শুধু পড়া বন্ধ"]], "")}</select>
       </div>
       <div class="toolbar">
-        <a class="btn gold" href="${mode === "online" ? "#onlineApps" : "#admission"}">＋ ${mode === "online" ? "অনলাইন " : "নতুন "}ভর্তি</a>
+        <a class="btn gold" id="sdNewAdmission" href="${mode === "online" ? "#onlineApps" : "#admission"}">＋ ${mode === "online" ? "অনলাইন " : "নতুন "}ভর্তি</a>
         <button type="button" class="btn line" id="reviewStudentPhotos"${DB.students.some(s => scopeIds.has(s.id) && s.pendingPhoto) ? "" : " hidden"}>ছবি অনুমোদন (${bn(DB.students.filter(s => scopeIds.has(s.id) && s.pendingPhoto).length)})</button>
         <button type="button" class="btn line" id="reviewStudentProfiles">তথ্য সংশোধন (${bn(DB.students.filter(s => scopeIds.has(s.id) && s.pendingProfile).length)})</button>
         <button class="btn line" id="csv">↓ Excel</button>
@@ -1737,6 +1740,10 @@ ${list.map(receiptHtml).join("")}
       const filter = { session: $("#fse").value, batch: $("#fbSel").value };
       studentBatchFilters.set(filterKey, filter);
       studentBatchFilters.set(mode, filter);
+      if (mode === "offline") {
+        const params = new URLSearchParams(Object.entries(filter).filter(([, value]) => value));
+        $("#sdNewAdmission").href = params.size ? "#admission/new?" + params : "#admission";
+      }
       draw();
     };
     drawBatchSel(preBatch); rememberAndDraw();
