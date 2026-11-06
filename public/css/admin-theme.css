@@ -512,3 +512,6 @@ body.dash-dark .side a.nav-item[href="#bloodbank"] i{color:#ff7a7a}
 .photo-approval-row img{width:52px;height:62px;object-fit:contain;border-radius:8px}
 .photo-approval-row small{display:block}
 .photo-approval-preview{display:block;width:100%;height:min(50vh,380px);object-fit:contain;background:#eef3f7;border-radius:12px}
+.btn.ai-file-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:9px 18px;border-radius:10px;font-size:15px;font-weight:800;box-shadow:0 3px 9px #9a67002e}
+.btn.ai-file-button svg{flex:none}
+.btn.ai-file-button:focus-visible{outline:2px solid #8a5b00;outline-offset:3px}

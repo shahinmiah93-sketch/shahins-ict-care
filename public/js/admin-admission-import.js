@@ -14,7 +14,7 @@ window.SICAdmissionImport = function (X) {
       <label>বিকল্প অধ্যায়ের আইডি <small>(অধ্যায়ভিত্তিক মডিউলের জন্য)</small><input data-ai-chapters placeholder="যেমন: 1, 2"></label>
     </div>
     <p class="muted">বেতন Joining Date থেকে হিসাব হবে। বর্তমান নিয়ম: মাসিক মডিউলে ১–৬ তারিখে ভর্তি হলে পুরো মাস, পরে হলে অবশিষ্ট ক্লাস অনুযায়ী প্রথম মাসের ফি। পরের মাসগুলো স্বাভাবিক ফি; ব্যাচ বন্ধের নিয়মও প্রযোজ্য।</p>
-    <div class="toolbar"><a class="btn line" href="/templates/Admission-Import-Demo.xlsx" download>নমুনা Excel ডাউনলোড</a><label class="btn gold">Excel বাছুন<input type="file" accept=".xlsx,.xls,.csv" data-ai-file hidden></label><span data-ai-filename></span></div>
+    <div class="toolbar"><button type="button" class="btn gold ai-file-button" data-ai-pick><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Excel বাছুন</button><input type="file" accept=".xlsx,.xls,.csv" data-ai-file hidden><a class="btn line" href="/templates/Admission-Import-Demo.xlsx" download>নমুনা Excel ডাউনলোড</a><span data-ai-filename aria-live="polite"></span></div>
     <label data-ai-sheet-wrap hidden>কোন শিট আমদানি করবেন?<select data-ai-sheet></select></label>
     <p class="muted">Students শিটে লিখুন। সর্বোচ্চ ৫০০ শিক্ষার্থী / ৫ MB। অপ্রয়োজনীয় কলাম মুছে ফেলতে বা খালি রাখতে পারেন। তারিখ: YYYY-MM-DD অথবা DD/MM/YYYY। মোবাইল নম্বরের ঘর Text রাখুন। কোনো SMS পাঠানো হবে না। ছবি পরে প্রোফাইলে যোগ করা যাবে।</p>
     <div class="toolbar"><button type="button" class="btn gold" data-ai-check disabled>প্রিভিউ ও বেতন যাচাই</button><button type="button" class="btn line" data-ai-close>বন্ধ করুন</button></div>
@@ -77,6 +77,7 @@ window.SICAdmissionImport = function (X) {
   };
   root.onclick = async e => {
     const button = e.target.closest("button"); if (!button || busy) return;
+    if (button.matches("[data-ai-pick]")) return q("[data-ai-file]").click();
     if (button.matches("[data-ai-close]")) return X.closeModal();
     if (button.matches("[data-ai-check]")) {
       if (!parsed || parsed.errors.length) return;
