@@ -2109,12 +2109,27 @@ ${list.map(receiptHtml).join("")}
         <label>তারিখ<input type="date" id="bpD" value="${U.today()}"></label>
         <button type="button" class="btn line bp-pdf" id="bpPdf" title="এই ব্যাচের পুরো পেমেন্ট শিট — প্রিন্ট বা PDF">পেমেন্ট শিট (PDF)</button>
         <button type="button" class="btn line bp-pdf" id="bpCard" title="প্রত্যেকের বেতন কার্ড — A4-এ ৩টি করে, কেটে রসিদের মতো দেওয়ার জন্য">বেতন কার্ড (PDF)</button>
+        <button type="button" class="btn gold bp-pdf" id="bpDues">ব্যাচের বকেয়া দেখুন</button>
         <button type="button" class="btn line bp-pdf" id="bpRemind" title="বকেয়া আছে যাদের — WhatsApp বা Bulk SMS (Excel)">বকেয়ার তাগাদা</button>
       </div>
+      <p class="bp-due-summary" id="bpDueSummary" aria-live="polite"></p>
       <p class="bp-hint">যে টাকা দিচ্ছে তার Pay ঘরে টাকা লিখুন — শুধু তাদেরই পেমেন্ট সেভ হবে। Due = মোট বকেয়া থেকে Pay বাদে বাকি।</p>
       <div class="tbl-wrap"><table class="bp-tbl"><thead id="bpHead"></thead><tbody id="bpRows"></tbody></table></div>
       <div class="bp-foot"><span id="bpSum"></span><button type="button" class="btn gold" id="bpSave">সেভ করুন</button></div>`;
     const studs = () => activeStudents().filter((s) => (bpBatch === "*" ? sessBatches().some((b) => b.id === s.batchId) : s.batchId === bpBatch)).sort((a, b) => a.id.localeCompare(b.id));
+    const overdue = (students) => students.filter(s => s.fees.balance > 0);
+    const dueTotal = (students) => students.reduce((total, s) => total + s.fees.balance, 0);
+    $("#bpDues").onclick = () => {
+      const due = overdue(studs());
+      const batch = bpBatch === "*" ? "সব ব্যাচ" : batchName(bpBatch);
+      openModal({
+        title: `বকেয়া তালিকা · ${bpSess} · ${batch}`,
+        body: due.length ? `<p><b>${bn(due.length)} জনের মোট বকেয়া ${money(dueTotal(due))}</b></p>
+          <div class="tbl-wrap"><table><thead><tr><th>আইডি</th><th>শিক্ষার্থী</th><th>ব্যাচ</th><th class="num">বকেয়া</th></tr></thead>
+          <tbody>${due.map(s => `<tr><td>${esc(s.id)}</td><td>${esc(s.name)}</td><td>${esc(batchName(s.batchId))}</td><td class="num">${money(s.fees.balance)}</td></tr>`).join("")}</tbody></table></div>`
+          : '<p class="empty">বাছাই করা ব্যাচে সক্রিয় শিক্ষার্থীদের কোনো বকেয়া নেই।</p>',
+      });
+    };
     const itemOf = (s, enr) => s.fees.items.find((i) => i.enrollmentId === enr);
     // বাছাই করা মাসসহ শেষ ৩ মাস (পুরনো থেকে নতুন)
     const last3 = () => { const [Y, M] = ($("#bpM").value || thisMonth()).split("-").map(Number); return [2, 1, 0].map((k) => { const d = new Date(Y, M - 1 - k, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }); };
@@ -2142,9 +2157,11 @@ ${list.map(receiptHtml).join("")}
     const left = (s, pay) => s.fees.balance - (Number(pay) || 0);
     const leftCell = (s, pay) => { const v = left(s, pay); return v > 0 ? `<b class="bp-due">${money(v)}</b>` : v < 0 ? `<b class="bp-adv">অগ্রিম ${money(-v)}</b>` : '<b class="bp-ok">০</b>'; };
     const draw = () => {
+      const students = studs(), due = overdue(students);
+      $("#bpDueSummary").textContent = `বর্তমান মোট বকেয়া ${money(dueTotal(due))} · বকেয়া আছে ${bn(due.length)} জনের`;
       $("#bpHead").innerHTML = `<tr><th rowspan="2">শিক্ষার্থী</th><th rowspan="2">মডিউল</th><th rowspan="2" class="c">মাসিক ফি</th><th colspan="3" class="c bp-grp">বকেয়া (শেষ ৩ মাস)</th><th rowspan="2" class="num">মোট বকেয়া</th><th rowspan="2" class="num">Pay</th><th rowspan="2" class="num">Due</th></tr>
         <tr>${last3().map((mk, i) => `<th class="c bp-m${i}">${U.month(mk)}</th>`).join("")}</tr>`;
-      $("#bpRows").innerHTML = studs().map((s) => {
+      $("#bpRows").innerHTML = students.map((s) => {
         const items = s.fees.items.filter((i) => i.status === "active"), it = items[0];
         return `<tr data-sid="${s.id}">
           <td class="bp-who"><b>${esc(s.name)}</b><small>${esc(s.id)}${bpBatch === "*" ? " · " + esc(batchName(s.batchId)) : ""}</small></td>
