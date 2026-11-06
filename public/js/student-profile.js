@@ -5,10 +5,10 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   const required = new Set(['name','nameEn','dob','gender','phone','guardianName','guardianPhone','address','permanentAddress','college','klass','group']);
   const groups = [
     ['শিক্ষার্থীর তথ্য', [['name','নাম (বাংলা)'],['nameEn','নাম (ইংরেজি)'],['dob','জন্ম তারিখ','date'],['gender','লিঙ্গ',['ছেলে|M','মেয়ে|F','অন্যান্য|O']],['bloodGroup','রক্তের গ্রুপ',U.BLOOD_GROUPS],['religion','ধর্ম',U.RELIGIONS],['nationality','জাতীয়তা'],['phone','শিক্ষার্থীর মোবাইল','tel'],['phone2','অতিরিক্ত মোবাইল','tel'],['whatsapp','হোয়াটসঅ্যাপ','tel'],['email','ইমেইল','email']]],
-    ['অভিভাবক ও ঠিকানা', [['fatherName','বাবার নাম'],['fatherOccupation','বাবার পেশা'],['fatherPhone','বাবার মোবাইল','tel'],['motherName','মায়ের নাম'],['motherOccupation','মায়ের পেশা'],['motherPhone','মায়ের মোবাইল','tel'],['guardianName','অভিভাবকের নাম'],['guardianRelation','অভিভাবকের সাথে সম্পর্ক'],['guardianOccupation','অভিভাবকের পেশা'],['guardianPhone','অভিভাবকের মোবাইল','tel'],['address','বর্তমান ঠিকানা','textarea'],['sameAddress','বর্তমান ঠিকানাই স্থায়ী ঠিকানা','checkbox'],['permanentAddress','স্থায়ী ঠিকানা','textarea']]],
-    ['শিক্ষাগত যোগ্যতা', [['sscExam','পরীক্ষা',U.EXAMS],['sscSchool','SSC প্রতিষ্ঠান'],['sscBoard','SSC বোর্ড'],['sscGroup','বিভাগ',[]],['sscYear','SSC পাসের সাল'],['sscGpa','SSC GPA'],['sscRoll','SSC রোল']]],
+    ['অভিভাবক ও ঠিকানা', [['fatherName','বাবার নাম'],['fatherOccupation','বাবার পেশা',U.OCCUPATIONS],['fatherPhone','বাবার মোবাইল','tel'],['motherName','মায়ের নাম'],['motherOccupation','মায়ের পেশা',U.OCCUPATIONS],['motherPhone','মায়ের মোবাইল','tel'],['guardianName','অভিভাবকের নাম'],['guardianRelation','অভিভাবকের সাথে সম্পর্ক',U.RELATIONS],['guardianOccupation','অভিভাবকের পেশা',U.OCCUPATIONS],['guardianPhone','অভিভাবকের মোবাইল','tel'],['address','বর্তমান ঠিকানা','textarea'],['sameAddress','বর্তমান ঠিকানাই স্থায়ী ঠিকানা','checkbox'],['permanentAddress','স্থায়ী ঠিকানা','textarea']]],
+    ['শিক্ষাগত যোগ্যতা', [['sscExam','পরীক্ষা',U.EXAMS],['sscSchool','SSC প্রতিষ্ঠান'],['sscBoard','SSC বোর্ড',[]],['sscGroup','বিভাগ',[]],['sscYear','SSC পাসের সাল'],['sscGpa','SSC GPA'],['sscRoll','SSC রোল']]],
     ['একাডেমিক তথ্য', [['college','কলেজ'],['collegeRoll','কলেজ রোল'],['klass','শ্রেণি',['একাদশ','দ্বাদশ','সেকেন্ড টাইমার']],['group','বিভাগ',['বিজ্ঞান','মানবিক','ব্যবসায় শিক্ষা']],['subject1','বিষয়–১',[]],['subject2','বিষয়–২',[]],['subject3','বিষয়–৩',[]],['subject4','৪র্থ বিষয়',[]],['groupSubjects','অন্যান্য গ্রুপ বিষয়'],['fourthSubject','৪র্থ বিষয়ের অতিরিক্ত তথ্য']]],
-    ['ভর্তির উৎস ও রেফারেন্স', [['source','আমাদের সম্পর্কে কোথা থেকে জেনেছো?',U.SOURCES],['refName','রেফারেন্সকারীর নাম'],['refPhone','রেফারেন্সকারীর মোবাইল','tel'],['refOccupation','রেফারেন্সকারীর পেশা']]]
+    ['ভর্তির উৎস ও রেফারেন্স', [['source','আমাদের সম্পর্কে কোথা থেকে জেনেছো?',U.SOURCES],['refName','রেফারেন্সকারীর নাম'],['refPhone','রেফারেন্সকারীর মোবাইল','tel'],['refOccupation','রেফারেন্সকারীর পেশা',U.OCCUPATIONS]]]
   ];
   const esc = U.esc;
   const field = ([key,label,type]) => {
@@ -40,19 +40,31 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
     'o level': [],
     'অন্যান্য': ['অন্যান্য'],
   };
-  function fillPreviousGroups(keepSaved) {
+  const previousBoard = form.elements.namedItem('sscBoard');
+  const examBoards = {
+    ssc: ['ঢাকা', 'রাজশাহী', 'চট্টগ্রাম', 'যশোর', 'কুমিল্লা', 'সিলেট', 'বরিশাল', 'দিনাজপুর', 'ময়মনসিংহ'],
+    'দাখিল': ['মাদ্রাসা'],
+    'ssc (ভোকেশনাল)': ['কারিগরি'],
+    'o level': ['Cambridge', 'Pearson Edexcel', 'অন্যান্য'],
+    'অন্যান্য': ['অন্যান্য'],
+  };
+  function fillPreviousExamOptions(keepSaved) {
     const exam = previousExam.value.trim().toLowerCase();
     const key = exam === 'dakhil' ? 'দাখিল' : exam;
-    const options = Object.hasOwn(examGroups, key) ? [...examGroups[key]] : [];
-    const current = previousGroup.value;
-    if (keepSaved && current && !options.includes(current)) options.push(current);
-    const placeholder = !exam ? 'আগে পরীক্ষা বেছে নিন' : options.length ? 'বিভাগ বেছে নিন' : 'প্রযোজ্য নয়';
-    previousGroup.replaceChildren(new Option(placeholder, ''));
-    options.forEach(value => previousGroup.add(new Option(value, value)));
-    previousGroup.value = options.includes(current) ? current : '';
+    const fill = (select, catalog, label) => {
+      const options = Object.hasOwn(catalog, key) ? [...catalog[key]] : [];
+      const current = select.value;
+      if (keepSaved && current && !options.includes(current)) options.push(current);
+      const placeholder = !exam ? 'আগে পরীক্ষা বেছে নিন' : options.length ? label : 'প্রযোজ্য নয়';
+      select.replaceChildren(new Option(placeholder, ''));
+      options.forEach(value => select.add(new Option(value, value)));
+      select.value = options.includes(current) ? current : '';
+    };
+    fill(previousGroup, examGroups, 'বিভাগ বেছে নিন');
+    fill(previousBoard, examBoards, 'বোর্ড বেছে নিন');
   }
-  previousExam.addEventListener('change', () => fillPreviousGroups(false));
-  fillPreviousGroups(true);
+  previousExam.addEventListener('change', () => fillPreviousExamOptions(false));
+  fillPreviousExamOptions(true);
   const group = form.elements.namedItem('group');
   const subjects = ['subject1', 'subject2', 'subject3', 'subject4'].map(key => form.elements.namedItem(key));
   function fillSubjects(keepSaved) {
