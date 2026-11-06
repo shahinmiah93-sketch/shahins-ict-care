@@ -219,6 +219,44 @@ ${inner}
         <textarea name="comment" class="field" rows="2" maxlength="300" placeholder="কিছু বলতে চাইলে লেখো (না লিখলেও চলবে)">${esc((TABS._comment ?? r?.comment) || "")}</textarea>
         <p class="rate-msg" id="rateMsg"></p><button class="btn gold">${r ? "রেটিং বদলাও" : "রেটিং জমা দাও"}</button></form></div>`;
   }
+  let classMomentTimer;
+  function classMomentsCard() {
+    const photos = D.classMoments || [];
+    return `<section class="card class-moments" id="classMoments"><h2>ক্লাসের ঝলক</h2>
+      ${photos.length ? `<figure><img alt=""><figcaption></figcaption></figure>
+        ${photos.length > 1 ? '<div class="class-moments-controls"><button type="button" class="btn line sm" data-step="-1" aria-label="আগের ছবি">‹</button><span data-position></span><button type="button" class="btn line sm" data-step="1" aria-label="পরের ছবি">›</button><button type="button" class="btn line sm" data-pause>বিরতি</button></div>' : ""}`
+        : '<p class="empty">ক্লাসের ছবি যোগ হলে এখানে দেখা যাবে।</p>'}</section>`;
+  }
+  function bindClassMoments() {
+    clearInterval(classMomentTimer);
+    const card = $("#classMoments"), photos = D.classMoments || [];
+    if (!card || !photos.length) return;
+    const img = $("img", card), caption = $("figcaption", card), position = $("[data-position]", card);
+    let index = 0;
+    function showPhoto(step) {
+      index = (index + step + photos.length) % photos.length;
+      const photo = photos[index];
+      img.alt = photo.title || "ক্লাসের ছবি";
+      img.src = photo.img;
+      caption.textContent = [photo.title, photo.date && U.date(photo.date)].filter(Boolean).join(" · ");
+      caption.hidden = !caption.textContent;
+      if (position) position.textContent = `${bn(index + 1)} / ${bn(photos.length)}`;
+    }
+    showPhoto(0);
+    if (!position) return;
+    const pause = $("[data-pause]", card);
+    let paused = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function updateRotation() {
+      clearInterval(classMomentTimer);
+      pause.textContent = paused ? "চালু করো" : "বিরতি";
+      if (!paused) classMomentTimer = setInterval(() => { if (!document.hidden) showPhoto(1); }, 5000);
+    }
+    pause.onclick = () => { paused = !paused; updateRotation(); };
+    $$("[data-step]", card).forEach((button) => {
+      button.onclick = () => { showPhoto(Number(button.dataset.step)); updateRotation(); };
+    });
+    updateRotation();
+  }
   function bindRate() {
     const f = $("#rateForm"); if (!f) return;
     f.onclick = (e) => { const b = e.target.closest("[data-star]"); if (!b) return; TABS._stars = Number(b.dataset.star); TABS._comment = f.comment.value; show("home"); };
@@ -290,7 +328,7 @@ ${inner}
             ${(D.closures || []).map((c) => `<p class="chip ${c.from <= U.today() ? "bad" : "warn"}" style="margin-top:10px;white-space:normal">⏸ ${c.from <= U.today() ? "এখন বন্ধ" : "বন্ধ থাকবে"}: ${U.date(c.from)} – ${U.date(c.to)}${c.reason ? ` (${esc(c.reason)})` : ""}</p>`).join("")}</div>
           <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${esc(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
         </div>
-        ${rateCard()}`;
+        <div class="class-moments-row">${rateCard()}${classMomentsCard()}</div>`;
     },
     results() {
       if (!D.results.length) return '<div class="card"><p class="empty">এখনো কোনো পরীক্ষা নেই</p></div>';
@@ -445,6 +483,7 @@ ${inner}
     const ms = $("#mSel");
     if (ms) ms.onchange = () => { TABS._month = ms.value; show("att"); };
     bindRate();
+    bindClassMoments();
   }
   $("#tabs").onclick = (e) => { const b = e.target.closest("button[data-t]"); if (b) show(b.dataset.t); };
   // প্রিন্ট: এই ট্যাবটা নতুন উইন্ডোতে প্রিন্ট প্রিভিউ হিসেবে (বোতাম ছাড়া)

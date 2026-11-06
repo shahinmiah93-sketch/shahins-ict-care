@@ -1,7 +1,8 @@
 // অ্যাডমিন → ফটো গ্যালারি — পাবলিক সাইটের গ্যালারির ছবি
 // একসাথে অনেক ছবি তোলা যায় (অ্যালবাম + তারিখ বেছে), প্রতিটা ছবির শিরোনাম / অ্যালবাম বদল, দেখানো / লুকানো, মোছা।
-window.SICGallery = function (X) {
+window.SICGallery = function (X, studentOnly) {
   "use strict";
+  studentOnly = studentOnly === true;
   const { $, $$, esc, bn, toast } = U;
   const DB = () => X.DB;
   const SUGGEST = ["ক্লাসরুম", "অনুষ্ঠান", "পুরস্কার বিতরণ", "পরীক্ষা", "শিক্ষা সফর", "অন্যান্য"];
@@ -9,7 +10,7 @@ window.SICGallery = function (X) {
   const selected = new Set();
 
   // নতুন ছবি আগে (বড় order আগে)
-  const list = () => [...(DB().gallery || [])].sort((a, b) => (b.order || 0) - (a.order || 0) || String(b.createdAt).localeCompare(String(a.createdAt)));
+  const list = () => (DB().gallery || []).filter((g) => !!g.studentOnly === studentOnly).sort((a, b) => (b.order || 0) - (a.order || 0) || String(b.createdAt).localeCompare(String(a.createdAt)));
   const imgOf = (g) => (g.image ? `/api/gphoto/${g.id}/image?v=${g.image.v}` : "");
   const albums = () => [...new Set([...list().map((g) => g.album).filter(Boolean), ...SUGGEST])];
 
@@ -19,10 +20,10 @@ window.SICGallery = function (X) {
     const used = [...new Set(l.map((g) => g.album).filter(Boolean))];
     for (const id of selected) if (!view.some(g => g.id === id)) selected.delete(id);
     C.innerHTML = `<div class="ex-page">
-      <section class="ln-banner"><div><span class="eyebrow">পাবলিক ওয়েবসাইট</span><h2>আমাদের দিনলিপি</h2>
-        <p>কোচিংয়ের ক্লাস, অনুষ্ঠান, পুরস্কার বিতরণের ছবি। অ্যালবাম ধরে ওয়েবসাইটের গ্যালারিতে দেখায়, ছবিতে চাপলে বড় হয়।</p>
+      <section class="ln-banner"><div><span class="eyebrow">${studentOnly ? "শিক্ষার্থী প্যানেল" : "পাবলিক ওয়েবসাইট"}</span><h2>${studentOnly ? "ক্লাসের ঝলক" : "আমাদের দিনলিপি"}</h2>
+        <p>${studentOnly ? "প্রতিদিনের ক্লাসের ছবি যোগ করুন। শিক্ষার্থী প্যানেলে রেটিংয়ের পাশে ছবিগুলো একে একে দেখাবে।" : "কোচিংয়ের ক্লাস, অনুষ্ঠান, পুরস্কার বিতরণের ছবি। অ্যালবাম ধরে ওয়েবসাইটের গ্যালারিতে দেখায়, ছবিতে চাপলে বড় হয়।"}</p>
         <div class="ln-nums"><span><b>${bn(l.length)}</b>মোট ছবি</span><span><b>${bn(shown.length)}</b>দেখাচ্ছে</span><span><b>${bn(used.length)}</b>অ্যালবাম</span></div></div>
-        <span class="rs-btns"><a class="btn line" href="/#gallery" target="_blank">→ ওয়েবসাইটে দেখুন</a></span></section>
+        ${studentOnly ? "" : '<span class="rs-btns"><a class="btn line" href="/#gallery" target="_blank">→ ওয়েবসাইটে দেখুন</a></span>'}</section>
 
       <section class="card gl-up"><h3>＋ নতুন ছবি যোগ করুন <small class="ln-count">একসাথে অনেকগুলো বেছে নেওয়া যায়</small></h3>
         <div class="gl-up-grid">
@@ -96,7 +97,7 @@ ${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div cla
       for (const [i, f] of files.entries()) {
         prog.textContent = `↑ তোলা হচ্ছে… ${bn(i + 1)} / ${bn(files.length)}`;
         top += 10;
-        const r = await X.save("gallery", { title: (f.title || "").trim(), description: (f.description || "").trim(), album: al, date, active: true, order: top });
+        const r = await X.save("gallery", { title: (f.title || "").trim(), description: (f.description || "").trim(), album: al, date, active: true, studentOnly, order: top });
         await sendImg(r.item.id, f.file); ok++;
       }
       files.forEach((f) => URL.revokeObjectURL(f.url)); files = []; album = al; newAlbum = ""; filter = "";

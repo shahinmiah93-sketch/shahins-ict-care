@@ -1184,7 +1184,7 @@ const liveBanners = () => db.banners.filter((b) => b.active && b.image).sort(byO
   .map((b) => ({ id: b.id, title: b.title, link: b.link, img: `/api/banner/${b.id}/image?v=${b.image.v}` }));
 // ---------- সফল শিক্ষার্থী (বিশ্ববিদ্যালয় / পেশা) — মূল পাতায় দুই কলামে পালা করে ----------
 // ---------- ফটো গ্যালারি — পাবলিক সাইটে অ্যালবাম অনুযায়ী ----------
-const liveGallery = () => db.gallery.filter((g) => g.active && g.image).sort(byOrder)
+const liveGallery = (studentOnly = false) => db.gallery.filter((g) => g.active && g.image && !!g.studentOnly === studentOnly).sort(byOrder)
   .map((g) => ({ id: g.id, title: g.title, description: g.description || "", album: g.album, date: g.date, img: `/api/gphoto/${g.id}/image?v=${g.image.v}` }));
 const liveAchievers = () => db.achievers.filter((a) => a.active && a.image).sort(byOrder)
   .map((a) => ({ id: a.id, group: a.group, name: a.name, detail: a.detail, subject: a.subject || "", careerUniversity: a.careerUniversity || "", careerSubject: a.careerSubject || "", batch: a.batch, img: `/api/achiever/${a.id}/image?v=${a.image.v}` }));
@@ -1349,7 +1349,7 @@ const CLEAN = {
   teachers: (b) => ({ name: str(b.name, 120), subject: str(b.subject, 120), bio: str(b.bio, 600), photo: str(b.photo, 300) }),
   // ব্যানার: ছবি আসে আলাদা আপলোডে; লিংক — /apply, #batches বা http(s)://… (খালি = চাপ দিলে কিছু হয় না)
   // সফল শিক্ষার্থী: group — university (বিশ্ববিদ্যালয়ে পড়ছে) বা career (পেশায় প্রতিষ্ঠিত)
-  gallery: (b) => ({ title: str(b.title, 150), description: str(b.description, 3000), album: str(b.album, 60) || "অন্যান্য", date: /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : "", active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
+  gallery: (b) => ({ title: str(b.title, 150), description: str(b.description, 3000), album: str(b.album, 60) || "অন্যান্য", date: /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : "", active: b.active !== false, studentOnly: b.studentOnly === true, order: Math.floor(num(b.order)) || 0 }),
   achievers: (b) => {
     const phone = phoneOf(b.phone);
     if (str(b.phone, 20) && !/^01\d{9}$/.test(phone)) throw Error("সঠিক মোবাইল নম্বর দিন।");
@@ -1818,7 +1818,14 @@ async function api(req, res, url) {
   if (bim && m === "GET") {
     const col = IMG_URL2COL[bim[1]], b = db[col].find((x) => x.id === bim[2]), f = imgFile(col, b);
     if (!f || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
-    res.writeHead(200, { "Content-Type": IMG_TYPES[b.image.ext] || "application/octet-stream", "Cache-Control": "public, max-age=86400" });
+    const privatePhoto = col === "gallery" && b.studentOnly;
+    if (privatePhoto && ADMIN_LOCK && !getLogin(req, "admin")) {
+      const session = getLogin(req, "student");
+      if (!b.active || !session || !db.students.some((s) => s.id === session.sid && s.status !== "inactive")) {
+        res.writeHead(404, { "Cache-Control": "no-store" }); return res.end();
+      }
+    }
+    res.writeHead(200, { "Content-Type": IMG_TYPES[b.image.ext] || "application/octet-stream", "Cache-Control": privatePhoto ? "private, no-store" : "public, max-age=86400" });
     return fs.createReadStream(f).pipe(res);
   }
 
@@ -2494,6 +2501,7 @@ async function api(req, res, url) {
     return send(res, 200, {
       profile, profileCompletion: studentProfileCompletion(s), batch, courses: fees.items.filter((i) => i.status === "active").map((i) => i.course),
       attendance: attendanceFor(s.id), results: resultsFor(s), schedule: scheduleFor(s),
+      classMoments: liveGallery(true).sort((a, b) => (b.date || "").localeCompare(a.date || "")),
       examRoutines: db.examRoutines.filter((r) => routineForStudent(r, s)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ id, title, type, pdf, createdAt }) => ({ id, title, type, pdf, createdAt })),
       payments: db.payments.filter((x) => x.studentId === s.id).sort((a, b) => b.date.localeCompare(a.date)),
       fees, books: studentBookAccount(s.id), notices: activeNotices(false).filter((n) => (n.studentIds ? n.studentIds.includes(s.id) : !(n.batchIds || []).length || n.batchIds.includes(s.batchId))),

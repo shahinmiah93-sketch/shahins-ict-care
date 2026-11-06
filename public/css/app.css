@@ -637,6 +637,14 @@ html.embed .tabs :is(button,a).tab-eval.on{color:#3a2a00}
 
 /* ⭐ শিক্ষার্থী প্যানেল — রেটিং কার্ড */
 .rate-card{margin-top:18px}
+.class-moments-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+.class-moments-row .rate-card{margin-top:0}
+.class-moments{min-width:0}
+.class-moments figure{margin:12px 0 0}
+.class-moments img{display:block;width:100%;height:clamp(170px,25vw,250px);object-fit:contain;border-radius:12px;background:var(--bg,#f3f5f8)}
+.class-moments figcaption{padding-top:6px;overflow-wrap:anywhere}
+.class-moments-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+@media(max-width:700px){.class-moments-row{grid-template-columns:minmax(0,1fr)}}
 .rate-sub{margin:4px 0 12px;color:var(--muted);font-size:14.5px}
 .rate-card form{display:grid;gap:10px;max-width:520px}
 .rate-stars{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0}
