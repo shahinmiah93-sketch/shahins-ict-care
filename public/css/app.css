@@ -820,10 +820,9 @@ html.stu-live .stu-hero{margin-top:18px}html.stu-live .stu-hero h1{font-size:28p
 
 #tabs{justify-content:space-between}#tabs>button{flex:1 0 auto;text-align:center;padding-left:12px;padding-right:12px}
 .sp-grid label>small.sp-pending{display:block;margin-top:6px;font-size:11px;line-height:1.5;color:#8b581b;background:#fff4de;border-radius:6px;padding:5px 7px;overflow-wrap:anywhere}.sp-pending-banner{display:block;margin-top:10px;padding:10px 12px;border:1px solid #e9c98c;border-radius:9px;background:#fff7e7;color:#8b581b;font-weight:600;font-size:13px}
-.sp-date-field{display:flex;align-items:center;gap:6px;margin-top:5px}
-.sp-grid .sp-date-field input[type=date]{margin:0;appearance:none}
-.sp-date-field input[type=date]::-webkit-calendar-picker-indicator{display:none;-webkit-appearance:none}
-.sp-date-toggle{flex:none;min-width:40px;padding:8px;font-size:17px}
+.sp-date-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px;margin-top:5px;padding:10px 12px;border:1px solid #cfdce8;border-radius:9px;background:#fff;color:#193d51;font:inherit;text-align:left;cursor:pointer}
+.sp-date-toggle::after{content:"▦";color:#36536a;font-size:17px}
+.sp-date-toggle:focus-visible{outline:2px solid #4774bf;outline-offset:2px}
 .sp-calendar{grid-column:1/-1;width:min(100%,320px);padding:12px;border:1px solid #cfdce8;border-radius:14px;background:#fff;box-shadow:0 8px 24px #173d421a}
 .sp-calendar-nav{display:grid;grid-template-columns:32px minmax(0,1fr) minmax(0,1fr) 32px;gap:5px;align-items:center}
 .sp-grid .sp-calendar select{margin:0;padding:6px;font-size:13px}

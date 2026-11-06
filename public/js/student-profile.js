@@ -22,7 +22,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
       if (value && !options.some(([v])=>v===value)) options.push([value,value]);
       input = `<select name="${key}"${req}><option value="">বেছে নিন</option>${options.map(([v,t])=>`<option value="${esc(v)}"${v===value?' selected':''}>${esc(t)}</option>`).join('')}</select>`;
     } else if (key === 'dob') {
-      input = `<span class="sp-date-field"><input name="dob" type="date" value="${esc(value)}" max="${U.today()}"${req}><button type="button" class="btn line sp-date-toggle" aria-label="জন্মতারিখের ক্যালেন্ডার খুলুন" aria-expanded="false">▦</button></span>`;
+      input = `<input name="dob" type="hidden" value="${esc(value)}"><button type="button" class="sp-date-toggle" aria-label="জন্মতারিখের ক্যালেন্ডার খুলুন" aria-expanded="false"></button>`;
     } else if(type==='textarea') input=`<textarea name="${key}" rows="2" maxlength="300"${req}>${esc(value)}</textarea>`;
     else input=`<input name="${key}" type="${type||'text'}" value="${esc(value)}" maxlength="${/phone|whatsapp/i.test(key)?16:300}"${type==='date'?` max="${U.today()}"`:''}${req}>`;
     return `<label>${esc(label)}${required.has(key)?' <em>*</em>':' <small>ঐচ্ছিক</small>'}${input}${changes[key] ? `<small class="sp-pending">অনুমোদনের অপেক্ষায় · আগে: ${esc(String(changes[key].from || 'খালি'))}</small>` : ''}</label>`;
@@ -36,6 +36,12 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   const close=()=>{if(!busy)dialog.close();};dialog.querySelector('.sp-close').onclick=close;dialog.querySelector('[data-cancel]').onclick=close;dialog.oncancel=e=>{if(busy)e.preventDefault();};dialog.onclose=()=>dialog.remove();
   const same=form.elements.namedItem('sameAddress'),address=form.elements.namedItem('address'),permanent=form.elements.namedItem('permanentAddress');
   const dob = form.elements.namedItem('dob'), dateToggle = form.querySelector('.sp-date-toggle');
+  function updateDateLabel() {
+    const [year, month, day] = dob.value.split('-');
+    dateToggle.textContent = day ? `${day} / ${month} / ${year}` : 'জন্মতারিখ বেছে নিন';
+    dateToggle.setAttribute('aria-label', `জন্ম তারিখ · ${dateToggle.textContent}`);
+  }
+  updateDateLabel();
   const calendar = document.createElement('div');
   calendar.className = 'sp-calendar';
   calendar.hidden = true;
@@ -93,6 +99,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
       drawCalendar(`[data-move="${button.dataset.move}"]`);
     } else {
       dob.value = button.dataset.date || '';
+      updateDateLabel();
       hideCalendar();
       dateToggle.focus();
     }
@@ -153,6 +160,6 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   }
   group.addEventListener('change', () => fillSubjects(false));
   fillSubjects(true);
-  form.onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;save.disabled=true;error.textContent='';try{const data=Object.fromEntries(new FormData(form));data.sameAddress=same.checked;data.profileBase=profile;for(const key of ['phone','phone2','whatsapp','fatherPhone','motherPhone','guardianPhone','refPhone','sscYear','sscGpa','sscRoll','collegeRoll'])data[key]=String(data[key]||'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));await U.api('/api/student/profile',{body:data});await onSaved();dialog.close();}catch(er){error.textContent=er.message;error.scrollIntoView({block:'nearest'});}finally{busy=false;save.disabled=false;}};
+  form.onsubmit=async e=>{e.preventDefault();if(busy)return;if(!dob.value || dob.value > today){error.textContent='সঠিক জন্মতারিখ বেছে নিন।';dateToggle.focus();return;}busy=true;save.disabled=true;error.textContent='';try{const data=Object.fromEntries(new FormData(form));data.sameAddress=same.checked;data.profileBase=profile;for(const key of ['phone','phone2','whatsapp','fatherPhone','motherPhone','guardianPhone','refPhone','sscYear','sscGpa','sscRoll','collegeRoll'])data[key]=String(data[key]||'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));await U.api('/api/student/profile',{body:data});await onSaved();dialog.close();}catch(er){error.textContent=er.message;error.scrollIntoView({block:'nearest'});}finally{busy=false;save.disabled=false;}};
   dialog.showModal();
 };
