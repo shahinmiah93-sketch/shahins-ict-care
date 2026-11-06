@@ -63,7 +63,7 @@
   };
   $("#stats").innerHTML = [
     // এ পর্যন্ত মোট শিক্ষার্থী অ্যাডমিন → সেটিংস থেকে (বর্তমান ভর্তি শুধু সিস্টেমে থাকা শিক্ষার্থী গোনে)
-    [S.studentsTotal || "৬+", "হাজার শিক্ষার্থী", "users"],
+    [S.studentsTotal || "৬০০০+", "শিক্ষার্থী", "users"],
     [S.experience || "১০+", "বছরের অভিজ্ঞতা", "award"],
     // শিক্ষার্থীরা প্যানেল থেকে যে রেটিং দেয় তার গড়; কেউ না দেওয়া পর্যন্ত আগের মতো ক্লাস ব্যাচ
     data.rating && data.rating.count ? [bn(data.rating.avg.toFixed(1)) + "★", `রেটিং · ${bn(data.rating.count)} জন`, "star"] : [bn(data.batches.length), "ক্লাস ব্যাচ", "cal"],
