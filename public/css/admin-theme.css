@@ -504,6 +504,7 @@ body.dash-dark .side a.nav-item[href="#bloodbank"] i{color:#ff7a7a}
 .ac-suggestions{position:absolute;top:100%;left:0;right:0;z-index:30;background:#fff;border:1px solid #b9c9db;border-radius:10px;box-shadow:0 8px 24px #12274626;max-height:220px;overflow:auto;padding:5px}.ac-suggestions>button{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:6px;padding:9px 11px;color:#123c3b;font:inherit;cursor:pointer}.ac-suggestions>button:hover,.ac-suggestions>button:focus-visible{background:#eaf2ff;color:#174ba3}
 .photo-approval-queue{display:grid;gap:10px}
 .photo-approval-queue h3{margin:4px 0}
+.photo-approval-all{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .photo-approval-queue [data-photo-list]{justify-self:start}
 .photo-approval-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
 .photo-approval-row input{width:18px;height:18px;margin:0;cursor:pointer}

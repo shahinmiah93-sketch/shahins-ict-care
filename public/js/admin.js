@@ -1487,16 +1487,29 @@ ${list.map(receiptHtml).join("")}
         });
         return;
       }
-      panel.innerHTML = '<div class="toolbar"><button type="button" class="btn gold" data-bulk-photo>নির্বাচিত ছবি অনুমোদন</button></div>'
+      panel.innerHTML = '<div class="toolbar"><label class="photo-approval-all"><input type="checkbox" data-photo-all> সব নির্বাচন</label><button type="button" class="btn gold" data-bulk-photo>নির্বাচিত ছবি অনুমোদন</button></div>'
         + queue.map(s => '<div class="photo-approval-row"><input type="checkbox" aria-label="' + esc(s.name + " · " + s.id + " নির্বাচন") + '">'
           + '<button type="button" class="btn line"><img src="' + photoUrl(s) + '" alt=""><span>' + esc(s.name) + ' · ' + esc(s.id)
           + '<small>ছবিটি দেখে সিদ্ধান্ত দিন →</small></span></button></div>').join("");
       const approve = $("[data-bulk-photo]", panel);
+      const selectAll = $("[data-photo-all]", panel);
+      const rows = $$(".photo-approval-row", panel);
       const updateCount = () => {
+        selectAll.checked = selected.size === queue.length;
+        selectAll.indeterminate = selected.size > 0 && !selectAll.checked;
         approve.disabled = !selected.size;
         approve.textContent = "নির্বাচিত ছবি অনুমোদন (" + bn(selected.size) + ")";
       };
-      $$(".photo-approval-row", panel).forEach((row, index) => {
+      selectAll.onchange = () => {
+        rows.forEach((row) => {
+          const checkbox = $("input", row);
+          checkbox.checked = selectAll.checked;
+        });
+        selected.clear();
+        if (selectAll.checked) queue.forEach(s => selected.set(s.id, s.pendingPhoto.version));
+        updateCount();
+      };
+      rows.forEach((row, index) => {
         const s = queue[index], checkbox = $("input", row);
         checkbox.checked = selected.has(s.id);
         checkbox.onchange = () => {
