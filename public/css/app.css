@@ -820,3 +820,15 @@ html.stu-live .stu-hero{margin-top:18px}html.stu-live .stu-hero h1{font-size:28p
 
 #tabs{justify-content:space-between}#tabs>button{flex:1 0 auto;text-align:center;padding-left:12px;padding-right:12px}
 .sp-grid label>small.sp-pending{display:block;margin-top:6px;font-size:11px;line-height:1.5;color:#8b581b;background:#fff4de;border-radius:6px;padding:5px 7px;overflow-wrap:anywhere}.sp-pending-banner{display:block;margin-top:10px;padding:10px 12px;border:1px solid #e9c98c;border-radius:9px;background:#fff7e7;color:#8b581b;font-weight:600;font-size:13px}
+.sp-date-field{display:flex;align-items:center;gap:6px;margin-top:5px}
+.sp-grid .sp-date-field input{margin:0}
+.sp-date-field input::-webkit-calendar-picker-indicator{display:none}
+.sp-date-toggle{flex:none;min-width:40px;padding:8px;font-size:17px}
+.sp-calendar{grid-column:1/-1;width:min(100%,320px);padding:12px;border:1px solid #cfdce8;border-radius:14px;background:#fff;box-shadow:0 8px 24px #173d421a}
+.sp-calendar-nav{display:grid;grid-template-columns:32px minmax(0,1fr) minmax(0,1fr) 32px;gap:5px;align-items:center}
+.sp-grid .sp-calendar select{margin:0;padding:6px;font-size:13px}
+.sp-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin:10px 0;text-align:center}
+.sp-calendar-days small{font-size:10px;color:#61758b}
+.sp-calendar button{min-height:30px;padding:3px 6px;border:0;border-radius:6px;background:#edf3fa;color:#193d51;cursor:pointer}
+.sp-calendar button[aria-pressed="true"]{background:#1858ad;color:white}
+.sp-calendar button:disabled{opacity:.4;cursor:default}

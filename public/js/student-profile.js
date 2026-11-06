@@ -21,6 +21,8 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
       const options = type.map(x=>{const [text,val]=x.split('|');return [val||text,text];});
       if (value && !options.some(([v])=>v===value)) options.push([value,value]);
       input = `<select name="${key}"${req}><option value="">বেছে নিন</option>${options.map(([v,t])=>`<option value="${esc(v)}"${v===value?' selected':''}>${esc(t)}</option>`).join('')}</select>`;
+    } else if (key === 'dob') {
+      input = `<span class="sp-date-field"><input name="dob" type="date" value="${esc(value)}" max="${U.today()}"${req}><button type="button" class="btn line sp-date-toggle" aria-label="জন্মতারিখের ক্যালেন্ডার খুলুন" aria-expanded="false">▦</button></span>`;
     } else if(type==='textarea') input=`<textarea name="${key}" rows="2" maxlength="300"${req}>${esc(value)}</textarea>`;
     else input=`<input name="${key}" type="${type||'text'}" value="${esc(value)}" maxlength="${/phone|whatsapp/i.test(key)?16:300}"${type==='date'?` max="${U.today()}"`:''}${req}>`;
     return `<label>${esc(label)}${required.has(key)?' <em>*</em>':' <small>ঐচ্ছিক</small>'}${input}${changes[key] ? `<small class="sp-pending">অনুমোদনের অপেক্ষায় · আগে: ${esc(String(changes[key].from || 'খালি'))}</small>` : ''}</label>`;
@@ -33,6 +35,75 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   save.textContent = 'সংরক্ষণ / সংশোধন পাঠান';
   const close=()=>{if(!busy)dialog.close();};dialog.querySelector('.sp-close').onclick=close;dialog.querySelector('[data-cancel]').onclick=close;dialog.oncancel=e=>{if(busy)e.preventDefault();};dialog.onclose=()=>dialog.remove();
   const same=form.elements.namedItem('sameAddress'),address=form.elements.namedItem('address'),permanent=form.elements.namedItem('permanentAddress');
+  const dob = form.elements.namedItem('dob'), dateToggle = form.querySelector('.sp-date-toggle');
+  const calendar = document.createElement('div');
+  calendar.className = 'sp-calendar';
+  calendar.hidden = true;
+  dateToggle.closest('label').after(calendar);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const today = U.today(), [currentYear, currentMonth] = today.split('-').map(Number);
+  const firstYear = Math.min(1900, Number(dob.value.slice(0, 4)) || 1900);
+  let year, month;
+  function hideCalendar() {
+    calendar.hidden = true;
+    dateToggle.setAttribute('aria-expanded', 'false');
+  }
+  function drawCalendar(focus) {
+    const lastMonth = year === currentYear ? currentMonth : 12;
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const days = new Date(year, month, 0).getDate();
+    const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+    calendar.innerHTML = `<div class="sp-calendar-nav">
+      <button type="button" data-move="-1" aria-label="আগের মাস"${year === firstYear && month === 1 ? ' disabled' : ''}>‹</button>
+      <select aria-label="মাস" data-month>${months.map((name, i) => `<option value="${i + 1}"${month === i + 1 ? ' selected' : ''}${i >= lastMonth ? ' disabled' : ''}>${name} (${i + 1})</option>`).join('')}</select>
+      <select aria-label="বছর" data-year>${Array.from({length: currentYear - firstYear + 1}, (_, i) => currentYear - i).map(y => `<option${year === y ? ' selected' : ''}>${y}</option>`).join('')}</select>
+      <button type="button" data-move="1" aria-label="পরের মাস"${year === currentYear && month === currentMonth ? ' disabled' : ''}>›</button></div>
+      <div class="sp-calendar-days">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<small>${day}</small>`).join('')}
+      ${'<span></span>'.repeat(firstDay)}${Array.from({length: days}, (_, i) => {
+        const date = prefix + String(i + 1).padStart(2, '0');
+        return `<button type="button" data-date="${date}" aria-pressed="${date === dob.value}"${date > today ? ' disabled' : ''}>${i + 1}</button>`;
+      }).join('')}</div>
+      <button type="button" data-clear>মুছুন</button>`;
+    if (focus) (calendar.querySelector(focus + ':not(:disabled)') || calendar.querySelector('[data-month]')).focus();
+  }
+  dateToggle.onclick = () => {
+    if (!calendar.hidden) return hideCalendar();
+    [year, month] = (dob.value && dob.value <= today ? dob.value : today).split('-').map(Number);
+    calendar.hidden = false;
+    dateToggle.setAttribute('aria-expanded', 'true');
+    drawCalendar('[data-month]');
+  };
+  calendar.onchange = (event) => {
+    if (event.target.matches('[data-year]')) {
+      year = Number(event.target.value);
+      if (year === currentYear) month = Math.min(month, currentMonth);
+      drawCalendar('[data-year]');
+    } else {
+      month = Number(event.target.value);
+      drawCalendar('[data-month]');
+    }
+  };
+  calendar.onclick = (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.move) {
+      const next = new Date(year, month - 1 + Number(button.dataset.move), 1);
+      year = next.getFullYear();
+      month = next.getMonth() + 1;
+      drawCalendar(`[data-move="${button.dataset.move}"]`);
+    } else {
+      dob.value = button.dataset.date || '';
+      hideCalendar();
+      dateToggle.focus();
+    }
+  };
+  calendar.onkeydown = (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    hideCalendar();
+    dateToggle.focus();
+  };
   const syncAddress=()=>{permanent.readOnly=same.checked;if(same.checked)permanent.value=address.value;};same.onchange=syncAddress;address.oninput=syncAddress;syncAddress();
   const previousExam = form.elements.namedItem('sscExam'), previousGroup = form.elements.namedItem('sscGroup');
   const examGroups = {
