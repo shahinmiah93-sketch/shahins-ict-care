@@ -1142,9 +1142,15 @@ ${list.map(receiptHtml).join("")}
           <label>ক্লাসের দিন ও সময় (ব্যাচ) *<span id="batchWrap">${batchSelectHtml("batchId", vals.batchId || "", "ব্যাচ বেছে নিন", firstSession, true)}</span></label>
           <label>ভর্তির তারিখ<input type="date" name="admissionDate" value="${esc(vals.admissionDate || U.today())}"></label>
         </div></section>` : ""}
-        ${mode === "edit" ? `<section class="adm-sec"><h3>৩. মডিউল</h3>
-          ${currentModules.map(e => `<div class="toolbar"><b>${esc(courseById(e.courseId)?.name || "মডিউল")}</b><a class="btn line" href="#admission/enroll/${esc(s.id)}/${esc(e.id)}">মডিউল বদলান</a></div>`).join("") || "<p>কোনো সক্রিয় মডিউল নেই।</p>"}
-          <a class="btn line" href="#admission/enroll/${esc(s.id)}">＋ নতুন মডিউলে ভর্তি</a></section>` : ""}
+        ${mode === "edit" ? `<section class="adm-sec">
+          <div class="adm-module-head"><div><h3>৩. মডিউল</h3><p>এই শিক্ষার্থীর চালু মডিউল</p></div>
+            <a class="btn line" href="#admission/enroll/${esc(s.id)}">＋ নতুন মডিউলে ভর্তি</a></div>
+          <div class="adm-module-list">${currentModules.map(e => {
+            const course = courseById(e.courseId);
+            return `<div class="adm-module-item">
+              <div><span class="chip ok">সক্রিয়</span><strong>${esc(course?.name || "মডিউল")}</strong>${e.startDate ? `<small>শুরু ${esc(U.date(e.startDate))}</small>` : ""}</div>
+              <a class="btn gold" href="#admission/enroll/${esc(s.id)}/${esc(e.id)}">মডিউল বদলান →</a></div>`;
+          }).join("") || '<p class="empty">কোনো সক্রিয় মডিউল নেই।</p>'}</div></section>` : ""}
         ${showModule ? `<section class="adm-sec"><h3>${mode === "enroll" ? "মডিউল ও ফি" : "৩. মডিউল ও ফি"}</h3>
           <div class="mod-cards">${moduleCards}</div>
           <div id="chapterBox" class="chapter-box" hidden></div>
