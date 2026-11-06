@@ -1131,7 +1131,7 @@ ${list.map(receiptHtml).join("")}
         </div>` : `<div class="adm-top"><div>${avatar(s.photo, "s", s.id, s.name, 70, s.gender)}</div><div class="adm-info"><b>${esc(s.name)}</b><span>${esc(s.id)} · ${esc(s.session || "")} · ${esc(batchName(s.batchId))}</span><span>এখন ভর্তি আছে: ${esc(modulesOf(s.id).join(", ") || "—")}</span></div></div>`}
         ${sections.slice(0, 1).map(([title, fl, g]) => `<section class="adm-sec"><h3>${title}</h3><div class="fgrid adm-grid ${g || ""}">${fl.map((f) => field(f, vals[f.name])).join("")}</div></section>`).join("")}
         ${mode !== "enroll" ? `<section class="adm-sec"><h3>২. একাডেমিক সেশন ও ক্লাসের সময়সূচি</h3><div class="fgrid adm-grid">
-          <label>এইচএসসি ব্যাচ *<select name="session" id="sessionSel">${opt(sessionOptions(), firstSession)}</select></label>
+          <label>এইচএসসি/আলিম *<select name="session" id="sessionSel">${opt(sessionOptions(), firstSession)}</select></label>
           <label>ক্লাসের দিন ও সময় (ব্যাচ) *<span id="batchWrap">${batchSelectHtml("batchId", vals.batchId || "", "ব্যাচ বেছে নিন", firstSession, true)}</span></label>
           <label>ভর্তির তারিখ<input type="date" name="admissionDate" value="${esc(vals.admissionDate || U.today())}"></label>
         </div></section>` : ""}
