@@ -1078,6 +1078,10 @@ ${list.map(receiptHtml).join("")}
     // সক্রিয় / নিষ্ক্রিয় এখানে না — শিক্ষার্থীর মূল তালিকা থেকে বদলানো হয়
   ];
   let admissionPrefill = null;
+  function newAdmissionHref(filters) {
+    const params = new URLSearchParams(Object.entries(filters).filter(([, value]) => value));
+    return params.size ? "#admission/new?" + params : "#admission";
+  }
   function studentForm(s, prefill) {
     if (modal.open) closeModal();
     admissionPrefill = prefill || null;
@@ -1427,7 +1431,7 @@ ${list.map(receiptHtml).join("")}
         <button type="button" class="btn line" id="dnForm">ভর্তি ফর্ম</button>
         <button type="button" class="btn line" id="dnCard">আইডি কার্ড</button>
         <button type="button" class="btn line" id="dnView">প্রোফাইল</button>
-        <a class="btn line" href="#admission" id="dnNew">+ আরেকজন ভর্তি</a>
+        <a class="btn line" href="${esc(newAdmissionHref({ session: s.session, batch: s.batchId }))}" id="dnNew">+ আরেকজন ভর্তি</a>
       </div></div>`;
     const rec = $("#dnRec"); if (rec) rec.onclick = () => printReceipt(pay);
     const dp = $("#dnPay"); if (dp) dp.onclick = () => paymentForm(s.id);
@@ -1435,7 +1439,11 @@ ${list.map(receiptHtml).join("")}
     $("#dnForm").onclick = () => printAdmission(s, formExtra(s, enr, pay), enr);
     $("#dnCard").onclick = () => printDoc("আইডি কার্ড", idCardHtml(s));
     $("#dnView").onclick = () => viewStudent(s.id);
-    $("#dnNew").onclick = (e) => { e.preventDefault(); studentForm(); };
+    $("#dnNew").onclick = (e) => {
+      if (e.currentTarget.hash !== location.hash) return;
+      e.preventDefault();
+      route();
+    };
   }
 
   // ---------- শিক্ষার্থী ----------
@@ -1741,8 +1749,7 @@ ${list.map(receiptHtml).join("")}
       studentBatchFilters.set(filterKey, filter);
       studentBatchFilters.set(mode, filter);
       if (mode === "offline") {
-        const params = new URLSearchParams(Object.entries(filter).filter(([, value]) => value));
-        $("#sdNewAdmission").href = params.size ? "#admission/new?" + params : "#admission";
+        $("#sdNewAdmission").href = newAdmissionHref(filter);
       }
       draw();
     };
