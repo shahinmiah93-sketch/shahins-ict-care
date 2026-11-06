@@ -1184,7 +1184,7 @@ const liveBanners = () => db.banners.filter((b) => b.active && b.image).sort(byO
   .map((b) => ({ id: b.id, title: b.title, link: b.link, img: `/api/banner/${b.id}/image?v=${b.image.v}` }));
 // ---------- সফল শিক্ষার্থী (বিশ্ববিদ্যালয় / পেশা) — মূল পাতায় দুই কলামে পালা করে ----------
 // ---------- ফটো গ্যালারি — পাবলিক সাইটে অ্যালবাম অনুযায়ী ----------
-const liveGallery = (studentOnly = false) => db.gallery.filter((g) => g.active && g.image && !!g.studentOnly === studentOnly).sort(byOrder)
+const liveGallery = (classMomentsOnly = false) => db.gallery.filter((g) => g.active && g.image && (!classMomentsOnly || g.studentOnly)).sort(byOrder)
   .map((g) => ({ id: g.id, title: g.title, description: g.description || "", album: g.album, date: g.date, img: `/api/gphoto/${g.id}/image?v=${g.image.v}` }));
 const liveAchievers = () => db.achievers.filter((a) => a.active && a.image).sort(byOrder)
   .map((a) => ({ id: a.id, group: a.group, name: a.name, detail: a.detail, subject: a.subject || "", careerUniversity: a.careerUniversity || "", careerSubject: a.careerSubject || "", batch: a.batch, img: `/api/achiever/${a.id}/image?v=${a.image.v}` }));
@@ -1818,14 +1818,11 @@ async function api(req, res, url) {
   if (bim && m === "GET") {
     const col = IMG_URL2COL[bim[1]], b = db[col].find((x) => x.id === bim[2]), f = imgFile(col, b);
     if (!f || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
-    const privatePhoto = col === "gallery" && b.studentOnly;
-    if (privatePhoto && ADMIN_LOCK && !getLogin(req, "admin")) {
-      const session = getLogin(req, "student");
-      if (!b.active || !session || !db.students.some((s) => s.id === session.sid && s.status !== "inactive")) {
-        res.writeHead(404, { "Cache-Control": "no-store" }); return res.end();
-      }
+    const classMoment = col === "gallery" && b.studentOnly;
+    if (classMoment && !b.active && ADMIN_LOCK && !getLogin(req, "admin")) {
+      res.writeHead(404, { "Cache-Control": "no-store" }); return res.end();
     }
-    res.writeHead(200, { "Content-Type": IMG_TYPES[b.image.ext] || "application/octet-stream", "Cache-Control": privatePhoto ? "private, no-store" : "public, max-age=86400" });
+    res.writeHead(200, { "Content-Type": IMG_TYPES[b.image.ext] || "application/octet-stream", "Cache-Control": classMoment ? "no-store" : "public, max-age=86400" });
     return fs.createReadStream(f).pipe(res);
   }
 
