@@ -8,6 +8,7 @@
   const VALUE = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
   const bn = (v) => String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
   const MONTHS = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+  const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((name, i) => `${name} (${i + 1})`);
   const DAYS = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"], WD = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
   const pad = (n) => String(n).padStart(2, "0"), iso = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
   const todayIso = () => { const t = new Date(); return iso(t.getFullYear(), t.getMonth(), t.getDate()); };
@@ -17,6 +18,15 @@
   const dlg = document.createElement("dialog"); dlg.className = "sdp"; document.body.append(dlg);
   let input = null, view = "days", vy = 0, vm = 0, sel = "";
   const isMonth = () => !!input && input.type === "month";
+  function yearSelect() {
+    const now = new Date().getFullYear();
+    const first = Math.min(1900, vy, parse(input.min)?.y ?? now);
+    const last = Math.max(now + 100, vy, parse(input.max)?.y ?? now);
+    return `<select data-year aria-label="বছর">${Array.from({ length: last - first + 1 }, (_, i) => {
+      const year = last - i;
+      return `<option${year === vy ? " selected" : ""}>${year}</option>`;
+    }).join("")}</select>`;
+  }
   const head = () => { const p = parse(sel); if (isMonth()) return `<header class="sdp-head"><small>${input.dataset.dpTitle || "মাস বেছে নিন"}</small><b>${p ? MONTHS[p.m] : input.dataset.dpEmpty || "—"}</b><span>${p ? bn(p.y) : "কোনো মাস বাছাই নেই"}</span></header>`; return `<header class="sdp-head"><small>${input && input.dataset.dpTitle || "তারিখ বেছে নিন"}</small><b>${p ? `${bn(p.d)} ${MONTHS[p.m]}` : "—"}</b><span>${p ? `${WD[new Date(p.y, p.m, p.d).getDay()]} · ${bn(p.y)}` : "এখনো বাছাই হয়নি"}</span></header>`; };
   function body() {
     const min = input && input.min || "", max = input && input.max || "", t = todayIso(), now = new Date();
@@ -27,7 +37,10 @@
     }
     if (view === "months") {
       const p = parse(sel);
-      return `<div class="sdp-nav"><button type="button" data-step="-12" aria-label="আগের বছর">‹</button><button type="button" class="sdp-title" data-view="years">${bn(vy)}</button><button type="button" data-step="12" aria-label="পরের বছর">›</button></div><div class="sdp-grid m">${MONTHS.map((n, i) => `<button type="button" class="sdp-m${p && p.y === vy && p.m === i ? " on" : ""}${vy === now.getFullYear() && i === now.getMonth() ? " now" : ""}" data-m="${i}">${n}</button>`).join("")}</div>`;
+      return `<div class="sdp-nav"><button type="button" data-step="-12" aria-label="আগের বছর">‹</button>${yearSelect()}<button type="button" data-step="12" aria-label="পরের বছর">›</button></div><div class="sdp-grid m">${MONTH_LABELS.map((n, i) => {
+        const value = `${vy}-${pad(i + 1)}`;
+        return `<button type="button" class="sdp-m${p && p.y === vy && p.m === i ? " on" : ""}${vy === now.getFullYear() && i === now.getMonth() ? " now" : ""}" data-m="${i}"${(min && value < min) || (max && value > max) ? " disabled" : ""}>${n}</button>`;
+      }).join("")}</div>`;
     }
     const first = new Date(vy, vm, 1).getDay(), days = new Date(vy, vm + 1, 0).getDate(), prev = new Date(vy, vm, 0).getDate();
     let cells = DAYS.map((d) => `<span class="sdp-wd">${d}</span>`).join("");
@@ -37,12 +50,12 @@
       cells += `<button type="button" class="sdp-d${v === sel ? " on" : ""}${v === t ? " today" : ""}${new Date(vy, vm, d).getDay() === 5 ? " fri" : ""}" data-d="${v}"${off ? " disabled" : ""}>${bn(d)}</button>`;
     }
     const tail = (7 - ((first + days) % 7)) % 7; for (let d = 1; d <= tail; d++) cells += `<span class="sdp-d out">${bn(d)}</span>`;
-    return `<div class="sdp-nav"><button type="button" data-step="-1" aria-label="আগের মাস">‹</button><button type="button" class="sdp-title" data-view="months">${MONTHS[vm]} ${bn(vy)} <i>▾</i></button><button type="button" data-step="1" aria-label="পরের মাস">›</button></div><div class="sdp-grid d">${cells}</div>`;
+    return `<div class="sdp-nav"><button type="button" data-step="-1" aria-label="আগের মাস">‹</button><select data-month aria-label="মাস">${MONTH_LABELS.map((name, i) => `<option value="${i}"${i === vm ? " selected" : ""}>${name}</option>`).join("")}</select>${yearSelect()}<button type="button" data-step="1" aria-label="পরের মাস">›</button></div><div class="sdp-grid d">${cells}</div>`;
   }
   const draw = (anim) => { dlg.innerHTML = `${head()}<div class="sdp-body${anim ? " " + anim : ""}">${body()}</div><footer class="sdp-foot"><button type="button" class="sdp-today" data-today>${isMonth() ? "এই মাস" : "আজ"}</button>${input && !input.required ? '<button type="button" class="sdp-clear" data-clear>মুছুন</button>' : ""}<span></span><button type="button" class="sdp-close" data-close>বন্ধ</button></footer>`; };
   function close() { dlg.classList.add("closing"); setTimeout(() => { dlg.classList.remove("closing"); if (dlg.open) dlg.close(); if (input && input._dpBtn) input._dpBtn.focus(); input = null; }, 160); }
   function choose(v) {
-    if (!input) return;
+    if (!input || (v && ((input.min && v < input.min) || (input.max && v > input.max)))) return;
     const inp = input; sel = v; draw();
     setTimeout(() => { close(); inp.value = v; if (inp._dpSync) inp._dpSync(); inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); }, 140);
   }
@@ -61,8 +74,16 @@
     if (t.hasAttribute("data-close")) return close();
   });
   dlg.addEventListener("cancel", (e) => { e.preventDefault(); close(); });
+  dlg.addEventListener("change", (e) => {
+    const key = e.target.matches("[data-year]") ? "year" : e.target.matches("[data-month]") ? "month" : "";
+    if (!key) return;
+    if (key === "year") vy = Number(e.target.value);
+    else vm = Number(e.target.value);
+    draw();
+    dlg.querySelector(`[data-${key}]`).focus();
+  });
   dlg.addEventListener("keydown", (e) => {
-    if (view !== "days" || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter"].includes(e.key)) return;
+    if (view !== "days" || e.target.matches("select, button") || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter"].includes(e.key)) return;
     e.preventDefault(); const p = parse(sel) || parse(todayIso()), d = new Date(p.y, p.m, p.d);
     if (e.key === "Enter") return choose(iso(d.getFullYear(), d.getMonth(), d.getDate()));
     d.setDate(d.getDate() + { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key]); sel = iso(d.getFullYear(), d.getMonth(), d.getDate()); vy = d.getFullYear(); vm = d.getMonth(); draw();
