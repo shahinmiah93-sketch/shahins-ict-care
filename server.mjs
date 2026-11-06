@@ -564,6 +564,7 @@ function syncPauses() {
 function pausedMonths(s) {
   const out = new Set(), mk = (d) => d.slice(0, 7), next = (k) => { const [y, m] = k.split("-").map(Number); return m === 12 ? `${y + 1}-01` : `${y}-${pad2(m + 1)}`; };
   for (const p of (s && s.pauses) || []) {
+    if (!p.from || p.startPending) continue;
     const stop = p.to ? mk(p.to) : next(mk(today())); // খোলা থাকলে চলতি মাসসহ
     for (let k = next(mk(p.from)), n = 0; k < stop && n < 240; k = next(k), n++) out.add(k);
   }
@@ -614,6 +615,7 @@ function enrollmentDue(e, context = {}) {
     if (r.fee < net || monthNet !== net) {
       const mk = `${Y}-${pad2(M + 1)}`;
       const reasons = fc.list.filter((x) => x.from.slice(0, 7) <= mk && x.to.slice(0, 7) >= mk).map((x) => x.reason || "ব্যাচ বন্ধ");
+      if (pauses.some(p => p.from.slice(0, 7) <= mk && (!p.to || p.to.slice(0, 7) >= mk))) reasons.push("পড়া বন্ধ");
       adjust.push({ month: mk, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, monthlyRate: monthNet, scheduled: monthNet !== net, reasons: [...new Set(reasons)] });
     }
   }
