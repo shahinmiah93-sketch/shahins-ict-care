@@ -606,7 +606,7 @@ ${list.map(receiptHtml).join("")}
   const SECTIONS = [
     ["admission", [["admission", "ভর্তি ফর্ম"], ["applications", "অনলাইন আবেদন", "appBadge"], ["onlineApps", "অনলাইন কোর্সে ভর্তি", "oaBadge"], ["leads", "সম্ভাব্য শিক্ষার্থী", "enqBadge"]]],
     ["exams", [["exams", "পরীক্ষা"], ["results", "ফলাফল ও মূল্যায়ন"]]],
-    ["website", [["banners", "বিজ্ঞাপন"], ["notices", "নোটিশ"], ["ebooks", "ই-বুক"], ["daily", "প্রতিদিন শিখি"], ["qna", "প্রশ্নোত্তর বক্স", "qnaBadge"], ["faqs", "সাধারণ প্রশ্ন (FAQ)"], ["gallery", "আমাদের দিনলিপি"], ["classMoments", "ক্লাসের ঝলক"], ["achievers", "সফল শিক্ষার্থী"], ["ratings", "শিক্ষার্থীদের মতামত"], ["learn", "ফ্রি ক্লাস", "learnBadge"]]],
+    ["website", [["banners", "বিজ্ঞাপন"], ["notices", "নোটিশ"], ["ebooks", "ই-বুক"], ["daily", "প্রতিদিন শিখি"], ["qna", "প্রশ্নোত্তর বক্স", "qnaBadge"], ["faqs", "সাধারণ প্রশ্ন (FAQ)"], ["gallery", "আমাদের দিনলিপি"], ["classMoments", "ক্লাসের ক্যানভাস"], ["achievers", "সফল শিক্ষার্থী"], ["ratings", "শিক্ষার্থীদের মতামত"], ["learn", "ফ্রি ক্লাস", "learnBadge"]]],
     ["teachers", [["teachers", "শিক্ষক"], ["settings", "সেটিংস"]]],
   ];
   const SEC_ALIAS = { website: "banners", talent: "exams", quiz: "exams" }; // #website = ব্যানার; ট্যালেন্ট হান্ট ও অনলাইন কুইজ পরীক্ষার ভেতরে
@@ -649,7 +649,7 @@ ${list.map(receiptHtml).join("")}
     courses: ["মডিউল, সেশন ও ব্যাচ", courses],
     banners: ["ওয়েবসাইট — বিজ্ঞাপন", (c, arg) => bannersPage(c, arg)],
     gallery: ["ওয়েবসাইট — আমাদের দিনলিপি", (c, arg) => galleryPage(c, arg)],
-    classMoments: ["ওয়েবসাইট — ক্লাসের ঝলক", classMomentsPage],
+    classMoments: ["ওয়েবসাইট — ক্লাসের ক্যানভাস", classMomentsPage],
     achievers: ["ওয়েবসাইট — সফল শিক্ষার্থী", (c, arg) => achieversPage(c, arg)],
     ratings: ["ওয়েবসাইট — শিক্ষার্থীদের মতামত", ratingsPage],
     notices: ["ওয়েবসাইট — নোটিশ", notices],

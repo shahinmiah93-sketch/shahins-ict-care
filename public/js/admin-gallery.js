@@ -20,7 +20,7 @@ window.SICGallery = function (X, studentOnly) {
     const used = [...new Set(l.map((g) => g.album).filter(Boolean))];
     for (const id of selected) if (!view.some(g => g.id === id)) selected.delete(id);
     C.innerHTML = `<div class="ex-page">
-      <section class="ln-banner"><div><span class="eyebrow">${studentOnly ? "শিক্ষার্থী প্যানেল" : "পাবলিক ওয়েবসাইট"}</span><h2>${studentOnly ? "ক্লাসের ঝলক" : "আমাদের দিনলিপি"}</h2>
+      <section class="ln-banner"><div><span class="eyebrow">${studentOnly ? "শিক্ষার্থী প্যানেল" : "পাবলিক ওয়েবসাইট"}</span><h2>${studentOnly ? "ক্লাসের ক্যানভাস" : "আমাদের দিনলিপি"}</h2>
         <p>${studentOnly ? "প্রতিদিনের ক্লাসের ছবি যোগ করুন। শিক্ষার্থী প্যানেলে রেটিংয়ের পাশে ছবিগুলো একে একে দেখাবে।" : "কোচিংয়ের ক্লাস, অনুষ্ঠান, পুরস্কার বিতরণের ছবি। অ্যালবাম ধরে ওয়েবসাইটের গ্যালারিতে দেখায়, ছবিতে চাপলে বড় হয়।"}</p>
         <div class="ln-nums"><span><b>${bn(l.length)}</b>মোট ছবি</span><span><b>${bn(shown.length)}</b>দেখাচ্ছে</span><span><b>${bn(used.length)}</b>অ্যালবাম</span></div></div>
         ${studentOnly ? "" : '<span class="rs-btns"><a class="btn line" href="/#gallery" target="_blank">→ ওয়েবসাইটে দেখুন</a></span>'}</section>

@@ -222,7 +222,7 @@ ${inner}
   let classMomentTimer;
   function classMomentsCard() {
     const photos = D.classMoments || [];
-    return `<section class="card class-moments" id="classMoments"><h2>ক্লাসের ঝলক</h2>
+    return `<section class="card class-moments" id="classMoments"><h2>ক্লাসের ক্যানভাস</h2>
       ${photos.length ? `<figure><img alt=""><figcaption></figcaption></figure>
         ${photos.length > 1 ? '<div class="class-moments-controls"><button type="button" class="btn line sm" data-step="-1" aria-label="আগের ছবি">‹</button><span data-position></span><button type="button" class="btn line sm" data-step="1" aria-label="পরের ছবি">›</button><button type="button" class="btn line sm" data-pause>বিরতি</button></div>' : ""}`
         : '<p class="empty">ক্লাসের ছবি যোগ হলে এখানে দেখা যাবে।</p>'}</section>`;
