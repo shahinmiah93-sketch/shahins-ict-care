@@ -14,6 +14,13 @@ dialog.sdp.closing{animation:sdpOut .16s ease-in forwards}
 .sdp-body{padding:12px 14px 6px}.sdp-body.slide-l{animation:sdpL .22s ease-out}.sdp-body.slide-r{animation:sdpR .22s ease-out}.sdp-body.zoom{animation:sdpZ .2s ease-out}
 @keyframes sdpL{from{opacity:0;transform:translateX(18px)}}@keyframes sdpR{from{opacity:0;transform:translateX(-18px)}}@keyframes sdpZ{from{opacity:0;transform:scale(.94)}}
 .sdp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sdp-nav:has(select){gap:5px}
+.sdp-nav select{min-width:0;flex:1;padding:6px;border:1px solid rgba(243,197,93,.35);border-radius:8px;background:#242329;color:#fff;font:inherit}
+.sdp-nav:has(select)>button{flex:none;width:30px;height:30px}
+.sdp-m:disabled{opacity:.4;cursor:default}
+#pane .sdp-field{display:block;min-width:0}
+#pane .sdp-trigger{background:#fff;color:#173d42;border:1px solid #cfdce8;border-radius:9px}
+#pane .sdp-trigger svg{stroke:currentColor}
 .sdp-nav button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(243,197,93,.35);background:rgba(255,255,255,.04);color:#f3c55d;font-size:20px;line-height:1;cursor:pointer}.sdp-nav button:hover{background:rgba(243,197,93,.14)}
 .sdp-nav .sdp-title{width:auto;height:auto;padding:6px 14px;border-radius:999px;border:0;background:transparent;font:800 16.5px var(--sans);color:#fff}.sdp-nav .sdp-title i{font-style:normal;font-size:12px;color:#f3c55d}.sdp-nav .sdp-title:hover{background:rgba(255,255,255,.07)}
 .sdp-grid.d{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}

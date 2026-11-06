@@ -30,11 +30,6 @@
   const head = () => { const p = parse(sel); if (isMonth()) return `<header class="sdp-head"><small>${input.dataset.dpTitle || "মাস বেছে নিন"}</small><b>${p ? MONTHS[p.m] : input.dataset.dpEmpty || "—"}</b><span>${p ? bn(p.y) : "কোনো মাস বাছাই নেই"}</span></header>`; return `<header class="sdp-head"><small>${input && input.dataset.dpTitle || "তারিখ বেছে নিন"}</small><b>${p ? `${bn(p.d)} ${MONTHS[p.m]}` : "—"}</b><span>${p ? `${WD[new Date(p.y, p.m, p.d).getDay()]} · ${bn(p.y)}` : "এখনো বাছাই হয়নি"}</span></header>`; };
   function body() {
     const min = input && input.min || "", max = input && input.max || "", t = todayIso(), now = new Date();
-    if (view === "years") {
-      const start = vy - 7; let h = "";
-      for (let y = start; y < start + 16; y++) h += `<button type="button" class="sdp-y${y === vy ? " on" : ""}${y === now.getFullYear() ? " now" : ""}" data-y="${y}">${bn(y)}</button>`;
-      return `<div class="sdp-nav"><button type="button" data-step="-16" aria-label="আগের">‹</button><button type="button" class="sdp-title" data-view="${isMonth() ? "months" : "days"}">${bn(start)} – ${bn(start + 15)}</button><button type="button" data-step="16" aria-label="পরের">›</button></div><div class="sdp-grid y">${h}</div>`;
-    }
     if (view === "months") {
       const p = parse(sel);
       return `<div class="sdp-nav"><button type="button" data-step="-12" aria-label="আগের বছর">‹</button>${yearSelect()}<button type="button" data-step="12" aria-label="পরের বছর">›</button></div><div class="sdp-grid m">${MONTH_LABELS.map((n, i) => {
@@ -64,11 +59,8 @@
     if (e.target === dlg) return close();
     const t = e.target.closest("button"); if (!t || t.disabled) return;
     if (t.dataset.d) return choose(t.dataset.d);
-    if (t.dataset.step) { const n = +t.dataset.step; if (view === "days") { const d = new Date(vy, vm + n, 1); vy = d.getFullYear(); vm = d.getMonth(); } else vy += view === "months" ? Math.sign(n) : n; return draw(n < 0 ? "slide-r" : "slide-l"); }
-    if (t.dataset.view) { view = t.dataset.view; return draw("zoom"); }
+    if (t.dataset.step) { const n = +t.dataset.step; if (view === "days") { const d = new Date(vy, vm + n, 1); vy = d.getFullYear(); vm = d.getMonth(); } else vy += Math.sign(n); draw(n < 0 ? "slide-r" : "slide-l"); return dlg.querySelector(`[data-step="${n}"]`).focus(); }
     if (t.dataset.m && isMonth()) return choose(`${vy}-${pad(+t.dataset.m + 1)}`);
-    if (t.dataset.m) { vm = +t.dataset.m; view = "days"; return draw("zoom"); }
-    if (t.dataset.y) { vy = +t.dataset.y; view = "months"; return draw("zoom"); }
     if (t.hasAttribute("data-today")) return choose(isMonth() ? todayIso().slice(0, 7) : todayIso());
     if (t.hasAttribute("data-clear")) return choose("");
     if (t.hasAttribute("data-close")) return close();
