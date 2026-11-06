@@ -69,7 +69,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
         const date = prefix + String(i + 1).padStart(2, '0');
         return `<button type="button" data-date="${date}" aria-pressed="${date === dob.value}"${date > today ? ' disabled' : ''}>${i + 1}</button>`;
       }).join('')}</div>
-      <button type="button" data-clear>মুছুন</button>`;
+      <div class="sp-calendar-actions"><button type="button" data-clear>মুছুন</button><button type="button" data-close>বন্ধ করুন</button></div>`;
     if (focus) (calendar.querySelector(focus + ':not(:disabled)') || calendar.querySelector('[data-month]')).focus();
   }
   dateToggle.onclick = () => {
@@ -98,8 +98,10 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
       month = next.getMonth() + 1;
       drawCalendar(`[data-move="${button.dataset.move}"]`);
     } else {
-      dob.value = button.dataset.date || '';
-      updateDateLabel();
+      if (!button.hasAttribute('data-close')) {
+        dob.value = button.dataset.date || '';
+        updateDateLabel();
+      }
       hideCalendar();
       dateToggle.focus();
     }

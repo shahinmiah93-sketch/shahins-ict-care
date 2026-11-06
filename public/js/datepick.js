@@ -47,7 +47,7 @@
     const tail = (7 - ((first + days) % 7)) % 7; for (let d = 1; d <= tail; d++) cells += `<span class="sdp-d out">${bn(d)}</span>`;
     return `<div class="sdp-nav"><button type="button" data-step="-1" aria-label="আগের মাস">‹</button><select data-month aria-label="মাস">${MONTH_LABELS.map((name, i) => `<option value="${i}"${i === vm ? " selected" : ""}>${name}</option>`).join("")}</select>${yearSelect()}<button type="button" data-step="1" aria-label="পরের মাস">›</button></div><div class="sdp-grid d">${cells}</div>`;
   }
-  const draw = (anim) => { dlg.innerHTML = `${head()}<div class="sdp-body${anim ? " " + anim : ""}">${body()}</div><footer class="sdp-foot"><button type="button" class="sdp-today" data-today>${isMonth() ? "এই মাস" : "আজ"}</button>${input && !input.required ? '<button type="button" class="sdp-clear" data-clear>মুছুন</button>' : ""}<span></span><button type="button" class="sdp-close" data-close>বন্ধ</button></footer>`; };
+  const draw = (anim) => { dlg.innerHTML = `${head()}<div class="sdp-body${anim ? " " + anim : ""}">${body()}</div><footer class="sdp-foot"><button type="button" class="sdp-today" data-today>${isMonth() ? "এই মাস" : "আজ"}</button>${input && !input.required ? '<button type="button" class="sdp-clear" data-clear>মুছুন</button>' : ""}<span></span><button type="button" class="sdp-close" data-close>বন্ধ করুন</button></footer>`; };
   function close() { dlg.classList.add("closing"); setTimeout(() => { dlg.classList.remove("closing"); if (dlg.open) dlg.close(); if (input && input._dpBtn) input._dpBtn.focus(); input = null; }, 160); }
   function choose(v) {
     if (!input || (v && ((input.min && v < input.min) || (input.max && v > input.max)))) return;

@@ -831,3 +831,4 @@ html.stu-live .stu-hero{margin-top:18px}html.stu-live .stu-hero h1{font-size:28p
 .sp-calendar button{min-height:30px;padding:3px 6px;border:0;border-radius:6px;background:#edf3fa;color:#193d51;cursor:pointer}
 .sp-calendar button[aria-pressed="true"]{background:#1858ad;color:white}
 .sp-calendar button:disabled{opacity:.4;cursor:default}
+.sp-calendar-actions{display:flex;justify-content:space-between;gap:8px}
