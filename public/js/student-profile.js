@@ -7,7 +7,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
     ['শিক্ষার্থীর তথ্য', [['name','নাম (বাংলা)'],['nameEn','নাম (ইংরেজি)'],['dob','জন্ম তারিখ','date'],['gender','লিঙ্গ',['ছেলে|M','মেয়ে|F','অন্যান্য|O']],['bloodGroup','রক্তের গ্রুপ',U.BLOOD_GROUPS],['religion','ধর্ম',U.RELIGIONS],['nationality','জাতীয়তা'],['phone','শিক্ষার্থীর মোবাইল','tel'],['phone2','অতিরিক্ত মোবাইল','tel'],['whatsapp','হোয়াটসঅ্যাপ','tel'],['email','ইমেইল','email']]],
     ['অভিভাবক ও ঠিকানা', [['fatherName','বাবার নাম'],['fatherOccupation','বাবার পেশা'],['fatherPhone','বাবার মোবাইল','tel'],['motherName','মায়ের নাম'],['motherOccupation','মায়ের পেশা'],['motherPhone','মায়ের মোবাইল','tel'],['guardianName','অভিভাবকের নাম'],['guardianRelation','অভিভাবকের সাথে সম্পর্ক'],['guardianOccupation','অভিভাবকের পেশা'],['guardianPhone','অভিভাবকের মোবাইল','tel'],['address','বর্তমান ঠিকানা','textarea'],['sameAddress','বর্তমান ঠিকানাই স্থায়ী ঠিকানা','checkbox'],['permanentAddress','স্থায়ী ঠিকানা','textarea']]],
     ['শিক্ষাগত যোগ্যতা', [['sscExam','পরীক্ষা'],['sscSchool','SSC প্রতিষ্ঠান'],['sscBoard','SSC বোর্ড'],['sscGroup','SSC বিভাগ'],['sscYear','SSC পাসের সাল'],['sscGpa','SSC GPA'],['sscRoll','SSC রোল']]],
-    ['একাডেমিক তথ্য', [['college','কলেজ'],['collegeRoll','কলেজ রোল'],['klass','শ্রেণি',['একাদশ','দ্বাদশ','সেকেন্ড টাইমার']],['group','বিভাগ',['বিজ্ঞান','মানবিক','ব্যবসায় শিক্ষা']],['subject1','বিষয়–১'],['subject2','বিষয়–২'],['subject3','বিষয়–৩'],['subject4','৪র্থ বিষয়'],['groupSubjects','অন্যান্য গ্রুপ বিষয়'],['fourthSubject','৪র্থ বিষয়ের অতিরিক্ত তথ্য']]],
+    ['একাডেমিক তথ্য', [['college','কলেজ'],['collegeRoll','কলেজ রোল'],['klass','শ্রেণি',['একাদশ','দ্বাদশ','সেকেন্ড টাইমার']],['group','বিভাগ',['বিজ্ঞান','মানবিক','ব্যবসায় শিক্ষা']],['subject1','বিষয়–১',[]],['subject2','বিষয়–২',[]],['subject3','বিষয়–৩',[]],['subject4','৪র্থ বিষয়',[]],['groupSubjects','অন্যান্য গ্রুপ বিষয়'],['fourthSubject','৪র্থ বিষয়ের অতিরিক্ত তথ্য']]],
     ['ভর্তির উৎস ও রেফারেন্স', [['source','আমাদের সম্পর্কে কোথা থেকে জেনেছো?'],['refName','রেফারেন্সকারীর নাম'],['refPhone','রেফারেন্সকারীর মোবাইল','tel'],['refOccupation','রেফারেন্সকারীর পেশা']]]
   ];
   const esc = U.esc;
@@ -32,6 +32,21 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   const close=()=>{if(!busy)dialog.close();};dialog.querySelector('.sp-close').onclick=close;dialog.querySelector('[data-cancel]').onclick=close;dialog.oncancel=e=>{if(busy)e.preventDefault();};dialog.onclose=()=>dialog.remove();
   const same=form.elements.namedItem('sameAddress'),address=form.elements.namedItem('address'),permanent=form.elements.namedItem('permanentAddress');
   const syncAddress=()=>{permanent.readOnly=same.checked;if(same.checked)permanent.value=address.value;};same.onchange=syncAddress;address.oninput=syncAddress;syncAddress();
+  const group = form.elements.namedItem('group');
+  const subjects = ['subject1', 'subject2', 'subject3', 'subject4'].map(key => form.elements.namedItem(key));
+  function fillSubjects(keepSaved) {
+    const catalog = U.HSC_SUBJECTS[group.value];
+    subjects.forEach((select, index) => {
+      const current = keepSaved ? values[select.name] : select.value;
+      const options = [...(catalog?.[index === 3 ? 'fourth' : 'main'] || [])];
+      if (keepSaved && current && !options.includes(current)) options.push(current);
+      select.replaceChildren(new Option(group.value ? 'বিষয় নির্বাচন করুন' : 'আগে বিভাগ বেছে নিন', ''));
+      options.forEach(subject => select.add(new Option(subject, subject)));
+      select.value = options.includes(current) ? current : '';
+    });
+  }
+  group.addEventListener('change', () => fillSubjects(false));
+  fillSubjects(true);
   form.onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;save.disabled=true;error.textContent='';try{const data=Object.fromEntries(new FormData(form));data.sameAddress=same.checked;data.profileBase=profile;for(const key of ['phone','phone2','whatsapp','fatherPhone','motherPhone','guardianPhone','refPhone','sscYear','sscGpa','sscRoll','collegeRoll'])data[key]=String(data[key]||'').replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d));await U.api('/api/student/profile',{body:data});await onSaved();dialog.close();}catch(er){error.textContent=er.message;error.scrollIntoView({block:'nearest'});}finally{busy=false;save.disabled=false;}};
   dialog.showModal();
 };
