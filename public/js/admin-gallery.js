@@ -39,7 +39,7 @@ window.SICGallery = function (X, studentOnly) {
             ${studentOnly && files.length ? "" : uploadActions}
             ${studentOnly && !files.length ? "<p>ছবি বেছে নিলে প্রতিটির জন্য আলাদা ক্যাপশন লিখতে পারবেন।</p>" : ""}
           </div></div>
-${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div class="card"><b>${bn(i + 1)}. ${esc(f.file.name)}</b><label>ছবির ক্যাপশন (ঐচ্ছিক)<input data-gf="title" data-fi="${i}" value="${esc(f.title || "")}" maxlength="150" placeholder="ছবির সংক্ষিপ্ত ক্যাপশন"></label><label>ছবির বিস্তারিত বিবরণ<textarea data-gf="description" data-fi="${i}" maxlength="3000" rows="3" placeholder="এই ছবির গল্প বা বিস্তারিত লিখুন">${esc(f.description || "")}</textarea></label></div>`).join("")}</div>` : ""}
+${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div class="gl-upload-photo"><img src="${esc(f.url)}" alt=""><div class="gl-fields"><div class="gl-upload-name"><b>ছবি ${bn(i + 1)}</b><small>${esc(f.file.name)}</small></div><label>ছবির ক্যাপশন (ঐচ্ছিক)<input data-gf="title" data-fi="${i}" value="${esc(f.title || "")}" maxlength="150" placeholder="ছবির সংক্ষিপ্ত ক্যাপশন"></label><label>ছবির বিস্তারিত বিবরণ<textarea data-gf="description" data-fi="${i}" maxlength="3000" rows="3" placeholder="এই ছবির গল্প বা বিস্তারিত লিখুন">${esc(f.description || "")}</textarea></label></div></div>`).join("")}</div>` : ""}
         ${studentOnly && files.length ? uploadActions : ""}</section>
 
       <section class="card"><h3>সব ছবি <small class="ln-count">${bn(view.length)}টি</small></h3>

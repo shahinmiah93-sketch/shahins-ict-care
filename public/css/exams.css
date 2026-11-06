@@ -450,6 +450,14 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .gl-pre img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
 .gl-fields{display:grid;gap:10px}.gl-fields label{display:grid;gap:4px;font-weight:600;color:#33433f}
 .gl-fields input,.gl-fields select{height:42px;padding:0 12px;border:1px solid #cbded7;border-radius:10px;font:inherit}
+.gl-upload-details{display:grid;gap:12px;margin:16px 0}
+.gl-upload-photo{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:start;padding:14px;border:1px solid #d7e5e0;border-radius:14px;background:#f7faf9}
+.gl-upload-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:9px}
+.gl-upload-name{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;overflow-wrap:anywhere}
+.gl-upload-name small{color:#526862}
+.gl-upload-photo input,.gl-upload-photo textarea{box-sizing:border-box;width:100%;min-width:0;background:#fff}
+.gl-upload-photo textarea{padding:8px 12px;border:1px solid #cbded7;border-radius:10px;font:inherit;resize:vertical}
+@media(max-width:520px){.gl-upload-photo{grid-template-columns:minmax(0,1fr)}.gl-upload-photo img{max-width:120px}}
 .gl-prog{margin:0;font-weight:700;color:#0f766e}
 .gl-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
 .gl-chips button{border:1px solid #cbded7;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;color:#33433f;cursor:pointer}
