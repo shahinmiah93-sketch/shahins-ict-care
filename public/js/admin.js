@@ -1771,6 +1771,7 @@ ${list.map(receiptHtml).join("")}
   function batchMove(c) {
     const offlineIds = SICStudentDirectory.ids(DB, "offline");
     const moves = new Map(); // আইডি → নতুন ব্যাচ; ছাঁকনি বদলালেও বাছাই থাকে
+    const selected = new Set();
     const label = (id) => { const b = batchById(id); return b ? U.batchLabel(b) : "—"; };
     c.innerHTML = `<div class="card">
       <div class="toolbar">
@@ -1781,10 +1782,13 @@ ${list.map(receiptHtml).join("")}
         <select id="fs">${opt([["", "সবাই"], ["active", "শুধু সক্রিয় (পড়ছে)"], ["inactive", "শুধু পড়া বন্ধ"]], "")}</select>
       </div>
       <div class="toolbar">
+        <label><input type="checkbox" id="bmAll"> তালিকার সবাইকে বাছুন</label>
+        <select id="bmTarget" aria-label="নির্বাচিতদের নতুন ব্যাচ"></select>
+        <button type="button" class="btn line" id="bmApply" disabled>নির্বাচিতদের ব্যাচ বসান</button>
         <button type="button" class="btn gold" id="bmSave" disabled>পরিবর্তন সেভ করুন</button>
         <span class="grow"></span><span class="muted" id="cnt"></span>
       </div>
-      <div class="tbl-wrap"><table><thead><tr><th>আইডি</th><th>নাম</th><th>বর্তমান ব্যাচ</th><th>নতুন ব্যাচ</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>বাছাই</th><th>আইডি</th><th>নাম</th><th>বর্তমান ব্যাচ</th><th>নতুন ব্যাচ</th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>`;
     const drawBatchSel = () => { $("#fbWrap").innerHTML = batchSelectHtml("fb", "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
     const list = () => {
@@ -1794,19 +1798,53 @@ ${list.map(receiptHtml).join("")}
         && (!qv || [s.id, s.name, s.phone, s.guardianPhone].join(" ").toLowerCase().includes(qv)));
     };
     const syncSave = () => { const n = moves.size, b = $("#bmSave"); b.disabled = !n; b.textContent = n ? `পরিবর্তন সেভ করুন (${bn(n)} জন)` : "পরিবর্তন সেভ করুন"; };
+    const available = (student, batch) => batch.active !== false && batch.session === student.session && batch.id !== student.batchId;
+    const syncBulk = (visible) => {
+      const picked = visible.filter(s => selected.has(s.id)), all = $("#bmAll"), target = $("#bmTarget");
+      all.disabled = !visible.length;
+      all.checked = !!visible.length && picked.length === visible.length;
+      all.indeterminate = !!picked.length && !all.checked;
+      const value = target.value;
+      const batches = picked.length ? DB.batches.filter(b => picked.every(s => available(s, b))) : [];
+      target.innerHTML = opt([["", "নতুন ব্যাচ বেছে নিন"], ...batches.map(b => [b.id, U.batchLabel(b)])], value);
+      $("#bmApply").disabled = !target.value;
+      $("#bmApply").textContent = `নির্বাচিতদের ব্যাচ বসান (${bn(picked.length)} জন)`;
+    };
     const draw = () => {
       const l = list();
+      const visibleIds = new Set(l.map(s => s.id));
+      for (const id of selected) if (!visibleIds.has(id)) selected.delete(id);
+      syncBulk(l);
       $("#cnt").textContent = `${bn(l.length)} জন`;
       $("#rows").innerHTML = l.map((s) => {
-        const others = DB.batches.filter((b) => b.session === s.session && b.id !== s.batchId && b.active !== false);
-        return `<tr><td><b>${esc(s.id)}</b></td><td><a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></td><td>${esc(label(s.batchId))}</td>
+        const others = DB.batches.filter(b => available(s, b));
+        return `<tr><td><input type="checkbox" data-bm-pick="${esc(s.id)}" aria-label="${esc(s.name)} বাছুন"${selected.has(s.id) ? " checked" : ""}></td><td><b>${esc(s.id)}</b></td><td><a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></td><td>${esc(label(s.batchId))}</td>
           <td>${others.length ? `<select data-move="${s.id}">${opt([["", "— বাছুন —"], ...others.map((b) => [b.id, U.batchLabel(b)])], moves.get(s.id) || "")}</select>` : '<span class="muted">এই সেশনে আর ব্যাচ নেই</span>'}</td></tr>`;
-      }).join("") || `<tr><td colspan="4" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>`;
+      }).join("") || `<tr><td colspan="5" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>`;
     };
     drawBatchSel(); draw();
     $("#fse").onchange = () => { drawBatchSel(); draw(); };
     ["q", "fm", "fs"].forEach((id) => $("#" + id).addEventListener("input", draw));
+    $("#bmAll").onchange = (e) => {
+      selected.clear();
+      if (e.target.checked) list().forEach(s => selected.add(s.id));
+      draw();
+    };
+    $("#bmTarget").onchange = (e) => { $("#bmApply").disabled = !e.target.value; };
+    $("#bmApply").onclick = () => {
+      const batch = batchById($("#bmTarget").value);
+      if (!batch) return;
+      list().filter(s => selected.has(s.id) && available(s, batch)).forEach(s => moves.set(s.id, batch.id));
+      draw();
+      syncSave();
+    };
     $("#rows").onchange = (e) => {
+      const picked = e.target.dataset.bmPick;
+      if (picked) {
+        if (e.target.checked) selected.add(picked); else selected.delete(picked);
+        syncBulk(list());
+        return;
+      }
       const id = e.target.dataset.move; if (!id) return;
       if (e.target.value) moves.set(id, e.target.value); else moves.delete(id);
       syncSave();
