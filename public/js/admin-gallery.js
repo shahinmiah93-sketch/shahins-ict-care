@@ -18,6 +18,8 @@ window.SICGallery = function (X, studentOnly) {
     if (!C) return;
     const l = list(), shown = l.filter((g) => g.active && g.image), al = albums(), view = filter ? l.filter((g) => g.album === filter) : l;
     const used = [...new Set(l.map((g) => g.album).filter(Boolean))];
+    const uploadActions = `<div class="rs-act"><button type="button" class="btn gold" data-gl-upload${files.length ? "" : " disabled"}>↑ ${files.length ? bn(files.length) + "টি " : ""}ছবি তুলুন</button>${files.length ? '<button type="button" class="btn line" data-gl-clear>বাতিল</button>' : ""}</div>
+      <p class="gl-prog" hidden></p>`;
     for (const id of selected) if (!view.some(g => g.id === id)) selected.delete(id);
     C.innerHTML = `<div class="ex-page">
       <section class="ln-banner"><div><span class="eyebrow">${studentOnly ? "শিক্ষার্থী প্যানেল" : "পাবলিক ওয়েবসাইট"}</span><h2>${studentOnly ? "ক্লাসের ক্যানভাস" : "আমাদের দিনলিপি"}</h2>
@@ -34,10 +36,11 @@ window.SICGallery = function (X, studentOnly) {
             <label>অ্যালবাম<select data-gl-album>${al.map((a) => `<option${a === album ? " selected" : ""}>${esc(a)}</option>`).join("")}<option value="__new"${album === "__new" ? " selected" : ""}>＋ নতুন অ্যালবাম…</option></select></label>
             ${album === "__new" ? `<label>নতুন অ্যালবামের নাম<input data-gl-newalbum value="${esc(newAlbum)}" maxlength="60" placeholder="যেমন: বার্ষিক পুরস্কার ২০২৬"></label>` : ""}
             <label>তারিখ<input type="date" data-gl-date value="${esc(date)}"></label>
-            <div class="rs-act"><button type="button" class="btn gold" data-gl-upload${files.length ? "" : " disabled"}>↑ ${files.length ? bn(files.length) + "টি " : ""}ছবি তুলুন</button>${files.length ? '<button type="button" class="btn line" data-gl-clear>বাতিল</button>' : ""}</div>
-            <p class="gl-prog" hidden></p>
+            ${studentOnly && files.length ? "" : uploadActions}
+            ${studentOnly && !files.length ? "<p>ছবি বেছে নিলে প্রতিটির জন্য আলাদা ক্যাপশন লিখতে পারবেন।</p>" : ""}
           </div></div>
-${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div class="card"><b>${bn(i + 1)}. ${esc(f.file.name)}</b><label>ছবির ক্যাপশন<input data-gf="title" data-fi="${i}" value="${esc(f.title || "")}" maxlength="150" placeholder="ছবির সংক্ষিপ্ত ক্যাপশন"></label><label>ছবির বিস্তারিত বিবরণ<textarea data-gf="description" data-fi="${i}" maxlength="3000" rows="3" placeholder="এই ছবির গল্প বা বিস্তারিত লিখুন">${esc(f.description || "")}</textarea></label></div>`).join("")}</div>` : ""}</section>
+${files.length ? `<div class="gl-upload-details">${files.map((f, i) => `<div class="card"><b>${bn(i + 1)}. ${esc(f.file.name)}</b><label>ছবির ক্যাপশন (ঐচ্ছিক)<input data-gf="title" data-fi="${i}" value="${esc(f.title || "")}" maxlength="150" placeholder="ছবির সংক্ষিপ্ত ক্যাপশন"></label><label>ছবির বিস্তারিত বিবরণ<textarea data-gf="description" data-fi="${i}" maxlength="3000" rows="3" placeholder="এই ছবির গল্প বা বিস্তারিত লিখুন">${esc(f.description || "")}</textarea></label></div>`).join("")}</div>` : ""}
+        ${studentOnly && files.length ? uploadActions : ""}</section>
 
       <section class="card"><h3>সব ছবি <small class="ln-count">${bn(view.length)}টি</small></h3>
         ${used.length ? `<div class="gl-chips"><button type="button" class="${filter ? "" : "on"}" data-gl-filter="">সব</button>${used.map((a) => `<button type="button" class="${filter === a ? "on" : ""}" data-gl-filter="${esc(a)}">${esc(a)} <i>${bn(l.filter((g) => g.album === a).length)}</i></button>`).join("")}</div>` : ""}
