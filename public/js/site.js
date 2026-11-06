@@ -68,7 +68,7 @@
     // শিক্ষার্থীরা প্যানেল থেকে যে রেটিং দেয় তার গড়; কেউ না দেওয়া পর্যন্ত আগের মতো ক্লাস ব্যাচ
     data.rating && data.rating.count ? [bn(data.rating.avg.toFixed(1)) + "★", `রেটিং · ${bn(data.rating.count)} জন`, "star"] : [bn(data.batches.length), "ক্লাস ব্যাচ", "cal"],
     // সফল শিক্ষার্থীর সংখ্যা অ্যাডমিন → সেটিংস থেকে; না দিলে "সফল শিক্ষার্থী" অংশের ছবির সংখ্যা
-    [S.aplus || bn((data.achievers || []).length), "সফল শিক্ষার্থী", "trophy"],
+    [S.aplus || bn(324), "সফল শিক্ষার্থী", "trophy"],
   ].map(([v, l, i]) => `<div><i aria-hidden="true"><svg viewBox="0 0 24 24">${ico[i]}</svg></i><dt>${v}</dt><dd>${l}</dd></div>`).join("");
   const sessionsOf = () => (data.sessions || []).filter((s) => data.batches.some((b) => b.session === s.name));
 
