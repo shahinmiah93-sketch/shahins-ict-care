@@ -521,16 +521,14 @@ const FULL_FEE_UNTIL_DAY = 6;
 const STD_CLASSES = 12;
 const pad2 = (n) => String(n).padStart(2, "0");
 const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-function monthFee(net, wd, y, m, fromDay, closed, paused = () => false) {
+function monthFee(net, wd, y, m, fromDay, closed) {
   const last = new Date(y, m + 1, 0).getDate();
   let total = 0, got = 0, shut = 0;
   for (let d = 1; d <= last; d++) {
     if (!wd.includes(new Date(y, m, d).getDay())) continue;
     total++;
     if (d < fromDay) continue;
-    const date = `${y}-${pad2(m + 1)}-${pad2(d)}`;
-    if (paused(date)) continue;
-    if (closed.has(date)) shut++; else got++;
+    if (closed.has(`${y}-${pad2(m + 1)}-${pad2(d)}`)) shut++; else got++;
   }
   if (!total || got >= total) return { fee: net, total, got, shut };
   const perClass = Math.min(Math.floor(net / STD_CLASSES), net / total);
@@ -551,7 +549,7 @@ function feeClosures(batchId) {
   return { dates, list };
 }
 
-// পড়া বন্ধ থাকাকালীন নির্ধারিত ক্লাসের ফি ধরা হয় না।
+// পড়া বন্ধের মাস থেকে আবার চালুর আগের মাস পর্যন্ত ফি নেই। একই মাসে চালু হলেও বন্ধের মাসের ফি নেই।
 // সামনের তারিখে বন্ধ / চালু: তারিখ এলে তবেই অবস্থা বদলায় (startPending / endPending — পুরনো রেকর্ডে নেই, মানে আগেই কার্যকর)
 function syncPauses() {
   const t = today(); let changed = false;
@@ -566,7 +564,9 @@ function pausedMonths(s) {
   for (const p of (s && s.pauses) || []) {
     if (!p.from || p.startPending) continue;
     const stop = p.to ? mk(p.to) : next(mk(today())); // খোলা থাকলে চলতি মাসসহ
-    for (let k = next(mk(p.from)), n = 0; k < stop && n < 240; k = next(k), n++) out.add(k);
+    const start = mk(p.from);
+    out.add(start);
+    for (let k = next(start), n = 0; k < stop && n < 240; k = next(k), n++) out.add(k);
   }
   return out;
 }
@@ -600,22 +600,19 @@ function enrollmentDue(e, context = {}) {
   let due = 0, firstNet = net, firstClasses, firstTotal;
   const adjust = [], breakdown = []; // প্রতিটি মাসের স্পষ্ট হিসাব, এবং কমানো ফি
   const pz = pausedMonths(s);
-  const pauses = (s?.pauses || []).filter(p => !p.startPending && p.from);
-  const isPaused = (date) => pauses.some(p => date >= p.from && (!p.to || date < p.to));
   for (let i = 0; i < months; i++) {
     const md = new Date(start.getFullYear(), start.getMonth() + i, 1), Y = md.getFullYear(), M = md.getMonth();
     if (pz.has(`${Y}-${pad2(M + 1)}`)) { const row = { month: `${Y}-${pad2(M + 1)}`, fee: 0, got: 0, total: 0, shut: 0, late: false, paused: true, reasons: ["পড়া বন্ধ"] }; adjust.push(row); breakdown.push(row); if (i === 0) firstNet = 0; continue; }
     // ভর্তির মাস: ১–৬ তারিখে শুরু হলে পুরো মাস ধরা হয়, পরে হলে শুরুর দিন থেকে (পুরনো ভর্তিতে পুরো মাস)
     const fromDay = i === 0 && e.firstTotal && !e.firstGrace ? start.getDate() : 1;
     const monthNet = monthlyFeeFor(c, e, `${Y}-${pad2(M + 1)}`);
-    const r = wd.length ? monthFee(monthNet, wd, Y, M, fromDay, fc.dates, isPaused) : { fee: monthNet };
+    const r = wd.length ? monthFee(monthNet, wd, Y, M, fromDay, fc.dates) : { fee: monthNet };
     due += r.fee;
     breakdown.push({ month: `${Y}-${pad2(M + 1)}`, monthlyRate: monthNet, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, fromDay, paused: false });
     if (i === 0) { firstNet = r.fee; firstClasses = r.got; firstTotal = r.total; }
     if (r.fee < net || monthNet !== net) {
       const mk = `${Y}-${pad2(M + 1)}`;
       const reasons = fc.list.filter((x) => x.from.slice(0, 7) <= mk && x.to.slice(0, 7) >= mk).map((x) => x.reason || "ব্যাচ বন্ধ");
-      if (pauses.some(p => p.from.slice(0, 7) <= mk && (!p.to || p.to.slice(0, 7) >= mk))) reasons.push("পড়া বন্ধ");
       adjust.push({ month: mk, fee: r.fee, got: r.got, total: r.total, shut: r.shut, late: fromDay > 1, monthlyRate: monthNet, scheduled: monthNet !== net, reasons: [...new Set(reasons)] });
     }
   }
