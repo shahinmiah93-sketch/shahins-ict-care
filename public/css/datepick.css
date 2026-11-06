@@ -14,9 +14,9 @@ dialog.sdp.closing{animation:sdpOut .16s ease-in forwards}
 .sdp-body{padding:12px 14px 6px}.sdp-body.slide-l{animation:sdpL .22s ease-out}.sdp-body.slide-r{animation:sdpR .22s ease-out}.sdp-body.zoom{animation:sdpZ .2s ease-out}
 @keyframes sdpL{from{opacity:0;transform:translateX(18px)}}@keyframes sdpR{from{opacity:0;transform:translateX(-18px)}}@keyframes sdpZ{from{opacity:0;transform:scale(.94)}}
 .sdp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.sdp-nav:has(select){gap:5px}
-.sdp-nav select{min-width:0;flex:1;padding:6px;border:1px solid rgba(243,197,93,.35);border-radius:8px;background:#242329;color:#fff;font:inherit}
-.sdp-nav:has(select)>button{flex:none;width:30px;height:30px}
+.sdp-nav{gap:5px}
+.sdp-nav :is(select,[data-year]){min-width:0;flex:1;padding:6px;border:1px solid rgba(243,197,93,.35);border-radius:8px;background:#242329;color:#fff;font:inherit}
+.sdp-nav>button{flex:none;width:30px;height:30px}
 .sdp-m:disabled{opacity:.4;cursor:default}
 #pane .sdp-field{display:block;min-width:0}
 #pane .sdp-trigger{background:#fff;color:#173d42;border:1px solid #cfdce8;border-radius:9px}
