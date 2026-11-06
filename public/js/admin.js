@@ -1649,6 +1649,7 @@ ${list.map(receiptHtml).join("")}
     };
     const pdel = $("#stuPhotoDel"); if (pdel) pdel.onclick = async () => { await api("/api/admin/student-photo", { body: { id: s.id, remove: true } }); await load(); viewStudent(s.id); };
   }
+  const studentBatchFilters = new Map();
   function students(c, arg = "") {
     const type = ["offline","online","quiz","talent"].includes(arg.split("/")[0]) ? arg.split("/")[0] : "offline";
     const rest = type === "offline" && arg.startsWith("batch/") ? arg : arg.split("/").slice(1).join("/");
@@ -1662,8 +1663,11 @@ ${list.map(receiptHtml).join("")}
     const scopedCourses = DB.courses.filter(m => modeOf(m) === mode);
     const listModules = sid => enrollmentsOf(sid).filter(e => e.status === "active" && modeOf(courseById(e.courseId)) === mode).map(e => courseById(e.courseId)?.name).filter(Boolean);
     const scopedFees = s => { const items = (s.fees?.items || []).filter(i => modeOf(courseById(i.courseId)) === mode), enrollmentIds = new Set(items.map(i => i.enrollmentId)); const totalDue=items.reduce((n,i)=>n+i.due,0), paid=DB.payments.filter(p=>p.studentId===s.id&&(enrollmentIds.has(p.enrollmentId)||(!p.enrollmentId&&mode==="offline"))).reduce((n,p)=>n+Number(p.amount||0),0); return {items,totalDue,paid,balance:totalDue-paid}; };
-    const preBatch = arg.startsWith("batch/") ? arg.slice(6) : "";
-    const preSession = preBatch ? (batchById(preBatch) || {}).session || "" : "";
+    const linkedBatch = arg.startsWith("batch/") ? batchById(arg.slice(6)) : null;
+    const filterKey = linkedBatch ? `${mode}/${linkedBatch.id}` : mode;
+    const remembered = studentBatchFilters.get(filterKey);
+    const preBatch = remembered?.batch || (remembered ? "" : linkedBatch?.id || "");
+    const preSession = remembered?.session || (remembered ? "" : linkedBatch?.session || "");
     c.innerHTML = `<div class="card"><div class="sd-list-title"><div><h2>${mode === "online" ? "অনলাইন" : "অফলাইন"} শিক্ষার্থীর তালিকা</h2><p>এই তালিকায় শুধু ${mode === "online" ? "অনলাইন" : "অফলাইন"} মডিউলের ভর্তি ও হিসাব দেখানো হচ্ছে।</p></div>${mode === "offline" ? '<a class="sd-batch-move" href="#batchmove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg><span>ব্যাচ পরিবর্তন</span><span aria-hidden="true">→</span></a>' : ""}</div>
       <div class="toolbar">
         <input class="grow" id="q" placeholder="নাম, আইডি বা মোবাইল">
@@ -1690,7 +1694,7 @@ ${list.map(receiptHtml).join("")}
       $$("#modalBody [data-review-profile]").forEach(b=>b.onclick=()=>reviewProfileChanges(b.dataset.reviewProfile));
     };
     $("#reviewStudentPhotos").onclick = () => reviewStudentPhotos(scopeIds);
-    const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = draw; };
+    const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = rememberAndDraw; };
     const list = () => {
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
       return DB.students.filter((s) => scopeIds.has(s.id) && (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
@@ -1712,8 +1716,14 @@ ${list.map(receiptHtml).join("")}
         <td class="num" style="white-space:nowrap"><button class="icon-btn" title="বিস্তারিত" data-view="${s.id}">দেখুন</button><button class="icon-btn" title="ভর্তি ফর্ম প্রিন্ট" data-print="${s.id}">প্রিন্ট</button><button class="icon-btn" title="বদলান" data-edit="${s.id}">✎</button><button class="icon-btn" title="মুছুন" data-del="${s.id}">✕</button></td></tr>`).join("")
         || `<tr><td colspan="8" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>`;
     };
-    drawBatchSel(preBatch); draw();
-    $("#fse").onchange = () => { drawBatchSel(); draw(); };
+    const rememberAndDraw = () => {
+      const filter = { session: $("#fse").value, batch: $("#fbSel").value };
+      studentBatchFilters.set(filterKey, filter);
+      studentBatchFilters.set(mode, filter);
+      draw();
+    };
+    drawBatchSel(preBatch); rememberAndDraw();
+    $("#fse").onchange = () => { drawBatchSel(); rememberAndDraw(); };
     ["q", "fm", "fs"].forEach((id) => $("#" + id).addEventListener("input", draw));
     $("#rows").onclick = async (e) => {
       const pay = e.target.closest("[data-list-pay]");
