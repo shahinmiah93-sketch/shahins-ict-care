@@ -449,9 +449,12 @@ ${inner}
       };
       const item = (h, kind) => `<article class="stu-hw-item">
         <div class="stu-hw-meta"><span class="stu-hw-kind">${kind.title}</span>${status(h, kind)}</div>
-        <h4>${esc(h.title)}</h4>
-        <div class="stu-hw-meta">${[h.subject, h.chapter].filter(Boolean).map(esc).join(" · ")}</div>
-        ${h.details ? `<p class="stu-hw-details">${esc(h.details)}</p>` : ""}
+        <div class="stu-hw-topic">
+          ${h.subject ? `<span>বিষয় · ${esc(h.subject)}</span>` : ""}
+          ${h.chapter ? `<span class="stu-hw-chapter">অধ্যায় · ${esc(h.chapter)}</span>` : ""}
+          <div class="stu-hw-topic-title"><span>টপিক</span><h4>${esc(h.title)}</h4></div>
+        </div>
+        ${h.details ? `<div class="stu-hw-details"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
         <div class="stu-hw-date">${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"} · <b>${h.dueDate ? esc(U.date(h.dueDate)) : "ঠিক করা হয়নি"}</b></div>
       </article>`;
       const section = ([key, kind]) => {

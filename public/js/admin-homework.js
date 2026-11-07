@@ -63,7 +63,7 @@ window.SICHomework = function (X) {
       <div class="hw-grid">
         <label>বিষয়<input name="subject" value="${esc(F.subject)}" placeholder="যেমন: ICT"></label>
         <label>অধ্যায়<input name="chapter" value="${esc(F.chapter)}" placeholder="যেমন: অধ্যায় ৩.১ — সংখ্যা পদ্ধতি"></label>
-        <label class="span2">${F.kind === "lesson" ? "কোন পড়া" : "কী কাজ"} *<input name="title" value="${esc(F.title)}" placeholder="${F.kind === "lesson" ? "যেমন: বাইনারি থেকে ডেসিমেল রূপান্তরের নিয়ম মুখস্থ" : "যেমন: অনুশীলনী ১–১০ সমাধান খাতায়"}" required></label>
+        <label class="span2">টপিক *<input name="title" value="${esc(F.title)}" placeholder="${F.kind === "lesson" ? "যেমন: বাইনারি থেকে ডেসিমেল রূপান্তরের নিয়ম মুখস্থ" : "যেমন: অনুশীলনী ১–১০ সমাধান খাতায়"}" required></label>
         <label class="span2">বিস্তারিত (ঐচ্ছিক)<textarea name="details" rows="3" placeholder="পৃষ্ঠা নম্বর, প্রশ্ন নম্বর, নির্দেশনা…">${esc(F.details)}</textarea></label>
         <label>দেওয়ার তারিখ<input type="date" name="givenDate" value="${esc(F.givenDate)}"></label>
         <label>${F.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"}<input type="date" name="dueDate" value="${esc(F.dueDate)}"></label>
@@ -98,10 +98,27 @@ window.SICHomework = function (X) {
   }
 
   // ================= সব কাজ =================
+  function topic(h) {
+    return `<div class="hw-topic">
+      ${h.subject ? `<span>বিষয় · ${esc(h.subject)}</span>` : ""}
+      ${h.chapter ? `<span class="hw-chapter">অধ্যায় · ${esc(h.chapter)}</span>` : ""}
+      <div class="hw-topic-title"><span>টপিক</span><b>${esc(h.title)}</b></div>
+    </div>`;
+  }
+  function dates(h) {
+    return [h.givenDate && `দেওয়া: ${U.date(h.givenDate)}`, h.dueDate && `${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"}: ${U.date(h.dueDate)}`]
+      .filter(Boolean).map(esc).join(" · ");
+  }
   function row(h) {
     const c = counts(h), d = h.dueDate ? dayParts(h.dueDate) : null;
     return `<div class="ln-row hw-row" style="--k:${KIND[h.kind][1]}"><span class="ln-date">${d ? `<b>${d.day}</b><small>${d.mon}</small>` : "<b>—</b>"}</span>
-      <span class="ln-main"><span class="hw-heading">${kindChip(h.kind)}<b>${esc(h.title)}</b></span><small class="hw-meta">${[h.subject, h.chapter, `দেওয়া: ${U.date(h.givenDate)}`, d && `${h.kind === "lesson" ? "পড়া" : "জমা"}: ${d.wd}`].filter(Boolean).map(esc).join(" · ")}</small>${h.details ? `<small class="ln-syl">${esc(h.details)}</small>` : ""}<small class="hw-wholine">${esc(whoText(h))} · ${bn(c.total)} জন</small></span>
+      <div class="ln-main">
+        ${kindChip(h.kind)}
+        ${topic(h)}
+        ${h.details ? `<div class="ln-syl"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
+        <small class="hw-meta">${dates(h)}</small>
+        <small class="hw-wholine">${esc(whoText(h))} · ${bn(c.total)} জন</small>
+      </div>
       <span class="ln-side"><span class="hw-status">${dueTag(h)}${c.done + c.not + c.absent ? `<span class="ln-tag done">✓ ${bn(c.done)}</span><span class="ln-tag" style="background:#fde3e8;color:#9b1c3c">✗ ${bn(c.not)}</span>${c.absent ? `<span class="ln-tag">অনু ${bn(c.absent)}</span>` : ""}` : ""}${c.pending && h.dueDate && h.dueDate <= today() ? `<span class="ln-tag today">যাচাই বাকি ${bn(c.pending)}</span>` : ""}
         </span><span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান" aria-label="কাজ বদলান">✎ বদলান</button><button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন" aria-label="কাজ মুছুন">✕ মুছুন</button></span></span></div>`;
   }
@@ -124,8 +141,12 @@ window.SICHomework = function (X) {
     const ATT = { P: ["উপস্থিত", "ok"], A: ["অনুপস্থিত", "bad"], L: ["ছুটি", "warn"] };
     return `<section class="card hw-check">
       <div class="ex-etop"><label class="grow">কোন কাজ যাচাই করবেন<select data-pick>${all.map((x) => `<option value="${x.id}"${x.id === h.id ? " selected" : ""}>${esc(`${x.dueDate ? U.date(x.dueDate) : "তারিখ নেই"} — ${x.kind === "lesson" ? "পড়া" : "বাড়ির কাজ"}: ${x.title} (${whoText(x)})`)}</option>`).join("")}</select></label></div>
-      <div class="ex-head">${kindChip(h.kind)}<b>${esc(h.title)}</b>${dueTag(h)}<small>${[h.subject, h.chapter, `দেওয়া ${U.date(h.givenDate)}`, h.dueDate && `${h.kind === "lesson" ? "পড়া" : "জমা"} ${U.date(h.dueDate)}`, `${whoText(h)}`].filter(Boolean).map(esc).join(" · ")}</small></div>
-      ${h.details ? `<p class="ex-rule">${esc(h.details)}</p>` : ""}
+      <div class="hw-check-topic">
+        <div class="hw-status">${kindChip(h.kind)}${dueTag(h)}</div>
+        ${topic(h)}
+        ${h.details ? `<div class="ln-syl"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
+        <small class="hw-meta">${dates(h)} · ${esc(whoText(h))}</small>
+      </div>
       <div class="ex-rsum"><span><b>${bn(c.total)}</b>শিক্ষার্থী</span><span class="ok"><b>${bn(c.done)}</b>${yes}</span><span class="bad"><b>${bn(c.not)}</b>${no}</span><span><b>${bn(c.absent)}</b>অনুপস্থিত</span><span><b>${bn(c.pending)}</b>বাকি</span></div>
       <div class="ex-bulkbar"><span>প্রত্যেকের পাশে চাপ দিন · অনুপস্থিত হলে হিসাবে ধরা হয় না</span><span class="grow"></span><span class="ex-dirty" ${dirty ? "" : "hidden"}>● সেভ হয়নি</span>
         <button type="button" class="btn line sm" data-all="done">✓ সবাই ${yes}</button><button type="button" class="btn line sm" data-from-att>হাজিরা থেকে অনুপস্থিত / ছুটি</button><button type="button" class="btn line sm" data-all="">Clean</button><button type="button" class="btn gold" data-save-check>সংরক্ষণ করুন</button></div>

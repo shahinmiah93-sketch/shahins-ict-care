@@ -866,3 +866,9 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .stu-hw-kind { font-weight: 700; }
 .stu-hw-details { margin: 0; padding: 10px 12px; border-radius: 8px; background: #f5f8fa; white-space: pre-line; line-height: 1.8; }
 .stu-hw-date { border-top: 1px solid #e4edf2; padding-top: 8px; color: #405968; font-size: 13px; }
+
+.stu-hw-topic { display: grid; gap: 6px; }
+.stu-hw-topic > span, .stu-hw-topic-title > span { color: #546773; font-size: 13px; }
+.stu-hw-topic .stu-hw-chapter { font-weight: 700; color: #24476a; }
+.stu-hw-topic-title { display: grid; gap: 2px; padding-inline-start: 12px; border-inline-start: 2px solid #d6e5ef; }
+.stu-hw-details strong { display: block; margin-bottom: 4px; }
