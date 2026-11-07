@@ -60,18 +60,42 @@ window.SICHomework = function (X) {
   function draftFor(kind) {
     return drafts[kind] ||= blankForm(kind);
   }
+  function copyBatches(form) {
+    const source = form.copyOf && hwById(form.copyOf);
+    return batches(form.session).filter((b) => !source || source.session !== form.session ||
+      (source.batchIds?.length && !source.batchIds.includes(b.id)));
+  }
+  function suggestCopyDate() {
+    const form = S.form;
+    if (!form.copyOf) return;
+    const selected = copyBatches(form).filter((b) => form.batchIds.includes(b.id));
+    const nextClass = (batch) => {
+      const schedule = batchDayGroup(batch.days);
+      if (schedule.startsWith("9")) return "";
+      for (let offset = 1; offset <= 366; offset++) {
+        const date = addDays(form.givenDate, offset);
+        const weekday = new Date(date + "T00:00:00").getDay();
+        if (schedule.includes(String((weekday + 1) % 7)) && !U.closureOn(DB().closures, batch.id, date)) return date;
+      }
+      return "";
+    };
+    const dates = new Set(form.givenDate ? selected.map(nextClass) : []);
+    form.dueDate = dates.size === 1 ? [...dates][0] : "";
+    form.mixedDates = dates.size > 1;
+  }
   function formTab() {
-    const F = (S.form ||= draftFor(S.f.kind || "homework")), bs = batches(F.session), days = [...new Set(bs.map((b) => b.days).filter(Boolean))];
-    const formTitle = F.id ? `${KIND[F.kind][0]} বদলান` : `নতুন ${KIND[F.kind][0]} দিন`;
+    const F = (S.form ||= draftFor(S.f.kind || "homework")), bs = copyBatches(F), days = [...new Set(bs.map((b) => b.days).filter(Boolean))];
+    const formTitle = F.copyOf ? "একই পড়া অন্য ব্যাচে দিন" : F.id ? `${KIND[F.kind][0]} বদলান` : `নতুন ${KIND[F.kind][0]} দিন`;
     return `<section class="card hw-form">
       <div class="hw-group-title">
-        <div><h3>${formTitle}</h3><p>নতুন কিছু দিতে নিচে ধরন বাছুন। আগে দেওয়া কাজ বা পড়া পাশের বাটন থেকে দেখুন।</p></div>
+        <div><h3>${formTitle}</h3><p>${F.copyOf ? "ব্যাচ বাছলে পরের ক্লাসের তারিখ বসবে। চাইলে তারিখ বদলাতে পারবেন।" : "আগে দেওয়া কাজ বা পড়া পাশের বাটন থেকে দেখুন।"}</p></div>
         <div class="hw-acts">
+          ${F.id && F.kind === "lesson" ? copyButton(F) : ""}
           <button type="button" class="btn line sm" data-view-kind="homework">দেওয়া বাড়ির কাজ দেখুন</button>
           <button type="button" class="btn line sm" data-view-kind="lesson">দেওয়া পড়া দেখুন</button>
         </div>
       </div>
-      ${F.id ? `<div>${kindChip(F.kind)}</div>` : `<div class="hw-kinds" role="group" aria-label="ফর্মের ধরন">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>`}
+      ${F.id || F.copyOf ? `<div>${kindChip(F.kind)}</div>` : `<div class="hw-kinds" role="group" aria-label="ফর্মের ধরন">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>`}
       <div class="hw-grid">
         <label>বিষয়<input name="subject" value="${esc(F.subject)}" placeholder="যেমন: ICT"></label>
         <label>অধ্যায়<input name="chapter" value="${esc(F.chapter)}" placeholder="যেমন: অধ্যায় ৩.১ — সংখ্যা পদ্ধতি"></label>
@@ -81,13 +105,14 @@ window.SICHomework = function (X) {
         <label>${F.kind === "lesson" ? "পড়া নেওয়ার তারিখ" : "জমার তারিখ"}<input type="date" name="dueDate" value="${esc(F.dueDate)}"></label>
       </div>
       <div class="hw-who"><b>কাদের জন্য?</b>
+        ${F.mixedDates ? '<p class="ex-sub">বাছা ব্যাচগুলোর পরের ক্লাসের তারিখ এক নয়। একই রুটিনের ব্যাচ একবারে দিন, অথবা সবার জন্য একটি তারিখ নিজে বাছুন।</p>' : ""}
         <div class="hw-scope"><label><span>সেশন</span><select name="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), F.session)}</select></label>
-          <label class="hw-pill${F.scope === "all" ? " on" : ""}"><input type="radio" name="scope" value="all"${F.scope === "all" ? " checked" : ""}>পুরো ${esc(F.session)} — সব ব্যাচ</label>
-          <label class="hw-pill${F.scope === "batch" ? " on" : ""}"><input type="radio" name="scope" value="batch"${F.scope === "batch" ? " checked" : ""}>নির্দিষ্ট ব্যাচ</label></div>
+          ${F.copyOf ? "" : `<label class="hw-pill${F.scope === "all" ? " on" : ""}"><input type="radio" name="scope" value="all"${F.scope === "all" ? " checked" : ""}>পুরো ${esc(F.session)} — সব ব্যাচ</label>
+          <label class="hw-pill${F.scope === "batch" ? " on" : ""}"><input type="radio" name="scope" value="batch"${F.scope === "batch" ? " checked" : ""}>নির্দিষ্ট ব্যাচ</label>`}</div>
         ${F.scope === "batch" ? `<div class="cl-quick">${days.map((d) => `<button type="button" class="btn sm line" data-qd="${esc(d)}">সব ${esc(d)}</button>`).join("")}<button type="button" class="btn sm line" data-qd="*">সব</button><button type="button" class="btn sm line" data-qd="">কোনোটা না</button></div>
           <div class="cl-batches">${bs.map((b) => `<label class="cl-b"><input type="checkbox" name="hb" value="${b.id}"${F.batchIds.includes(b.id) ? " checked" : ""}><span><b>${esc(b.name)}</b><small>${esc(b.days || "")} · ${esc(b.time || "")}</small></span></label>`).join("") || '<p class="ex-sub">এই সেশনে কোনো ব্যাচ নেই</p>'}</div>` : ""}
         <p class="ex-sub hw-count">${(() => { const h = { session: F.session, batchIds: F.scope === "batch" ? F.batchIds : [] }; return `মোট ${bn(recipients(h).length)} জন শিক্ষার্থী পাবে`; })()}</p></div>
-      <div class="rs-act"><button type="button" class="btn gold" data-save-hw>${F.id ? "✓ সংরক্ষণ করুন" : F.kind === "lesson" ? "✓ পড়া দিন" : "✓ বাড়ির কাজ দিন"}</button>${F.id ? '<button type="button" class="btn line" data-cancel-edit>বাতিল</button>' : '<button type="button" class="btn line" data-reset>খালি করুন</button>'}</div></section>`;
+      <div class="rs-act"><button type="button" class="btn gold" data-save-hw>${F.id ? "✓ সংরক্ষণ করুন" : F.kind === "lesson" ? "✓ পড়া দিন" : "✓ বাড়ির কাজ দিন"}</button>${F.id || F.copyOf ? '<button type="button" class="btn line" data-cancel-edit>বাতিল</button>' : '<button type="button" class="btn line" data-reset>খালি করুন</button>'}</div></section>`;
   }
   function readForm() {
     const F = S.form, q = (n) => $(`.hw-form [name="${n}"]`, C);
@@ -104,7 +129,7 @@ window.SICHomework = function (X) {
       const body = { kind: F.kind, subject: F.subject.trim(), chapter: F.chapter.trim(), title: F.title.trim(), details: F.details.trim(), givenDate: F.givenDate, dueDate: F.dueDate, session: F.session, batchIds: F.scope === "batch" ? F.batchIds : [] };
       await X.save("homework", body, F.id || undefined);
       const who = whoText(body);
-      if (!F.id) delete drafts[F.kind];
+      if (drafts[F.kind] === F) delete drafts[F.kind];
       S.form = null; S.tab = "list"; S.show = "all"; S.f.kind = body.kind; S.f.batch = ""; S.f.session = body.session; keepFilter();
       await X.load(); render(); toast(`${F.id ? "সংরক্ষণ হয়েছে" : KIND[F.kind][0] + " দেওয়া হয়েছে"} — ${who}`);
     } catch (e) { toast(e.message, true); }
@@ -137,11 +162,12 @@ window.SICHomework = function (X) {
           <td><b>${esc(h.title)}</b>${h.chapter ? `<small>${esc(h.chapter)}</small>` : ""}</td>
           <td>${esc(whoText(h))}</td>
           <td>${h.dueDate ? esc(U.date(h.dueDate)) : "—"}</td>
-          <td><button type="button" class="btn line sm" data-edit="${esc(h.id)}" aria-label="বদলান: ${esc(h.title)}">✎ বদলান</button></td>
+          <td><button type="button" class="btn line sm" data-edit="${esc(h.id)}" aria-label="বদলান: ${esc(h.title)}">✎ বদলান</button>${h.kind === "lesson" ? copyButton(h) : ""}</td>
         </tr>`).join("")}</tbody>
       </table></div>` : empty("এই বাছাইয়ে কোনো কাজ বা পড়া নেই।")}
     </section>`;
   }
+  const copyButton = (h) => `<button type="button" class="btn line sm" data-copy-lesson="${esc(h.id)}">অন্য ব্যাচে দিন</button>`;
   function row(h) {
     const c = counts(h), d = h.dueDate ? dayParts(h.dueDate) : null;
     return `<div class="ln-row hw-row" style="--k:${KIND[h.kind][1]}"><span class="ln-date">${d ? `<b>${d.day}</b><small>${d.mon}</small>` : "<b>—</b>"}</span>
@@ -153,7 +179,7 @@ window.SICHomework = function (X) {
         <small class="hw-wholine">${esc(whoText(h))} · ${bn(c.total)} জন</small>
       </div>
       <span class="ln-side"><span class="hw-status">${dueTag(h)}${c.done + c.not + c.absent ? `<span class="ln-tag done">✓ ${bn(c.done)}</span><span class="ln-tag" style="background:#fde3e8;color:#9b1c3c">✗ ${bn(c.not)}</span>${c.absent ? `<span class="ln-tag">অনু ${bn(c.absent)}</span>` : ""}` : ""}${c.pending && h.dueDate && h.dueDate <= today() ? `<span class="ln-tag today">যাচাই বাকি ${bn(c.pending)}</span>` : ""}
-        </span><span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান" aria-label="কাজ বদলান">✎ বদলান</button><button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন" aria-label="কাজ মুছুন">✕ মুছুন</button></span></span></div>`;
+        </span><span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান" aria-label="কাজ বদলান">✎ বদলান</button>${h.kind === "lesson" ? copyButton(h) : ""}<button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন" aria-label="কাজ মুছুন">✕ মুছুন</button></span></span></div>`;
   }
   function listTab() {
     const all = list(), open = all.filter((h) => !h.dueDate || h.dueDate >= today()).reverse(), past = all.filter((h) => h.dueDate && h.dueDate < today());
@@ -231,6 +257,17 @@ window.SICHomework = function (X) {
     if ((el = t("[data-show]"))) { S.show = el.dataset.show; return render(); }
     if ((el = t("[data-month]"))) { S.month = el.dataset.month; return render(); }
     if ((el = t("[data-check]"))) { S.checkId = el.dataset.check; S.tab = "check"; return render(); }
+    if ((el = t("[data-copy-lesson]"))) {
+      const source = hwById(el.dataset.copyLesson);
+      if (!source || source.kind !== "lesson") return;
+      S.form = {
+        ...blankForm("lesson"), copyOf: source.id, session: source.session,
+        subject: source.subject || "", chapter: source.chapter || "", title: source.title, details: source.details || "",
+        scope: "batch", batchIds: [], dueDate: "",
+      };
+      S.tab = "new";
+      return render();
+    }
     if ((el = t("[data-edit]"))) { const h = hwById(el.dataset.edit); S.form = { id: h.id, kind: h.kind, subject: h.subject || "", chapter: h.chapter || "", title: h.title, details: h.details || "", givenDate: h.givenDate || today(), dueDate: h.dueDate || "", session: h.session, scope: (h.batchIds || []).length ? "batch" : "all", batchIds: [...(h.batchIds || [])] }; S.tab = "new"; return render(); }
     if ((el = t("[data-del]"))) return X.remove("homework", el.dataset.del, "এই কাজ ও এর যাচাই");
     if (t("[data-save-hw]")) return saveForm();
@@ -240,7 +277,7 @@ window.SICHomework = function (X) {
       return render();
     }
     if (t("[data-cancel-edit]")) { S.form = null; S.tab = "list"; return render(); }
-    if ((el = t("[data-qd]"))) { readForm(); const bs = batches(S.form.session); S.form.batchIds = el.dataset.qd === "*" ? bs.map((b) => b.id) : el.dataset.qd === "" ? [] : [...new Set([...S.form.batchIds, ...bs.filter((b) => b.days === el.dataset.qd).map((b) => b.id)])]; return render(); }
+    if ((el = t("[data-qd]"))) { readForm(); const bs = copyBatches(S.form); S.form.batchIds = el.dataset.qd === "*" ? bs.map((b) => b.id) : el.dataset.qd === "" ? [] : [...new Set([...S.form.batchIds, ...bs.filter((b) => b.days === el.dataset.qd).map((b) => b.id)])]; suggestCopyDate(); return render(); }
     if ((el = t("[data-set]"))) { const tr = el.closest("tr"); setRow(tr, tr.dataset.v === el.dataset.set ? "" : el.dataset.set); return markDirty(); }
     if ((el = t("[data-all]"))) { $$(".hw-check tr[data-sid]", C).forEach((tr) => setRow(tr, el.dataset.all)); return markDirty(); }
     if (t("[data-from-att]")) {
@@ -262,7 +299,8 @@ window.SICHomework = function (X) {
         return render();
       }
       if (el.name === "scope") { S.form.scope = el.value; return render(); }
-      if (el.name === "session") { S.form.batchIds = []; return render(); }
+      if (el.name === "session") { S.form.batchIds = []; suggestCopyDate(); return render(); }
+      if (S.form.copyOf && ["hb", "givenDate"].includes(el.name)) { suggestCopyDate(); return render(); }
       if (el.name === "hb") { const n = recipients({ session: S.form.session, batchIds: S.form.batchIds }).length; $(".hw-count", C).textContent = `মোট ${bn(n)} জন শিক্ষার্থী পাবে`; }
     }
   }
