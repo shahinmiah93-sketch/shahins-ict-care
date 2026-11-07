@@ -15,8 +15,9 @@ window.SICHomework = function (X) {
   const addDays = (d, n) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("en-CA"); };
   const kindChip = (k) => `<span class="ex-type" style="--k:${KIND[k][1]}">${KIND[k][0]}</span>`;
 
-  const S = { tab: "list", f: { session: "", batch: "", kind: "" }, show: "open", checkId: "", form: null, month: "" };
+  const S = { tab: "list", f: { session: "", batch: "", kind: "" }, show: "all", checkId: "", form: null, month: "" };
   try { Object.assign(S.f, JSON.parse(localStorage.getItem("sicHwFilter") || "{}")); } catch {}
+  S.f.kind = ""; // Start with both types visible, even after an older saved filter.
   const keepFilter = () => { try { localStorage.setItem("sicHwFilter", JSON.stringify(S.f)); } catch {} };
   let C = null, dirty = false;
 
@@ -43,16 +44,13 @@ window.SICHomework = function (X) {
     if (!C) return;
     const all = DB().homework.filter((h) => h.session === session()), open = all.filter((h) => !h.dueDate || h.dueDate >= today());
     const toCheck = all.filter((h) => h.dueDate && h.dueDate <= today() && counts(h).pending > 0);
-    const tabs = [["new", S.form && S.form.id ? "✎ কাজ বদলান" : "কাজ দিন"], ["list", "সব কাজ", all.length], ["check", "যাচাই", toCheck.length], ["stats", "হিসাব"]];
+    const listLabel = S.f.kind === "lesson" ? "দেওয়া পড়া" : S.f.kind === "homework" ? "দেওয়া বাড়ির কাজ" : "দেওয়া কাজ ও পড়া";
+    const tabs = [["list", listLabel, list().length], ["new", S.form && S.form.id ? "বদলান" : "নতুন দিন"], ["check", "কে করেছে / পেরেছে", toCheck.length], ["stats", "শিক্ষার্থীদের হিসাব"]];
     C.innerHTML = `<div class="ex-page hw-page">
-      <section class="ln-banner"><div><span class="eyebrow">ক্লাসের পড়া ও বাড়ির কাজ</span><h2>বাড়ির কাজ / পড়া</h2>
-        <p>পুরো সেশনের সব ব্যাচকে (যেমন ${esc(session())}) বা নির্দিষ্ট ব্যাচকে কাজ দিন; পরের ক্লাসে কে করেছে / পড়া পেরেছে টিক দিন। শিক্ষার্থী নিজের প্যানেলে কাজ আর নিজের অবস্থা দেখে। হাজিরা পেজ থেকেও টিক দেওয়া যায় — প্রতিদিন সর্বোচ্চ ৩ পয়েন্ট (উপস্থিত ১ + বাড়ির কাজ ১ + পড়া ১)।</p>
-        <div class="ln-nums"><span><b>${bn(all.length)}</b>মোট কাজ (${esc(session())})</span><span><b>${bn(open.length)}</b>চলমান / সামনে</span><span><b>${bn(toCheck.length)}</b>যাচাই বাকি</span><span><b>${bn(all.filter((h) => h.kind === "homework").length)}/${bn(all.filter((h) => h.kind === "lesson").length)}</b>বাড়ির কাজ / পড়া</span></div></div>
-        <button type="button" class="btn gold" data-new>＋ নতুন কাজ দিন</button></section>
-      <div class="ln-filter"><label>সেশন<select data-f="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), session())}</select></label>
-        <label>ব্যাচ<select data-f="batch">${X.opt([["", "সব ব্যাচ"], ...batches().map((b) => [b.id, U.batchLabel(b)])], S.f.batch)}</select></label>
-        <label>ধরন<select data-f="kind">${X.opt([["", "দুটোই"], ["homework", "বাড়ির কাজ"], ["lesson", "পড়া"]], S.f.kind)}</select></label></div>
-      <div class="ln-tabs">${tabs.map(([k, t, n]) => `<button type="button" data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}${n !== undefined ? ` <i>${bn(n)}</i>` : ""}</button>`).join("")}</div>
+      <section class="hw-intro"><div><span class="eyebrow">ক্লাস ব্যবস্থাপনা</span><h2>বাড়ির কাজ ও ক্লাসের পড়া</h2><p>যা দিয়েছেন সব নিচে পাবেন। বাড়িতে লিখে আনার কাজ ও ক্লাসে শিখে আসার পড়া আলাদা করে দেখুন।</p></div><button type="button" class="btn gold" data-new>＋ কাজ / পড়া দিন</button></section>
+      <div class="ln-tabs hw-nav">${tabs.map(([k,t,n]) => `<button type="button" data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}${n !== undefined ? ` <i>${bn(n)}</i>` : ""}</button>`).join("")}</div>
+      <div class="hw-toolbar"><div class="hw-type-tabs" aria-label="কাজের ধরন">${[["", "সব"], ["homework", "বাড়ির কাজ"], ["lesson", "ক্লাসের পড়া"]].map(([k,t]) => `<button type="button" data-kind="${k}" aria-pressed="${S.f.kind === k}" class="${S.f.kind === k ? "on" : ""}">${t}</button>`).join("")}</div>
+      <div class="ln-filter"><label>সেশন<select data-f="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), session())}</select></label><label>ব্যাচ<select data-f="batch">${X.opt([["", "সব ব্যাচ"], ...batches().map((b) => [b.id, U.batchLabel(b)])], S.f.batch)}</select></label></div></div>
       ${({ new: formTab, list: listTab, check: checkTab, stats: statsTab })[S.tab]()}</div>`;
   }
 
@@ -61,7 +59,7 @@ window.SICHomework = function (X) {
   function formTab() {
     const F = (S.form ||= blankForm()), bs = batches(F.session), days = [...new Set(bs.map((b) => b.days).filter(Boolean))];
     return `<section class="card hw-form">
-      <div class="hw-kinds">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}</label>`).join("")}</div>
+      <div class="hw-kinds">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>
       <div class="hw-grid">
         <label>বিষয়<input name="subject" value="${esc(F.subject)}" placeholder="যেমন: ICT"></label>
         <label>অধ্যায়<input name="chapter" value="${esc(F.chapter)}" placeholder="যেমন: অধ্যায় ৩.১ — সংখ্যা পদ্ধতি"></label>
@@ -94,7 +92,7 @@ window.SICHomework = function (X) {
       const body = { kind: F.kind, subject: F.subject.trim(), chapter: F.chapter.trim(), title: F.title.trim(), details: F.details.trim(), givenDate: F.givenDate, dueDate: F.dueDate, session: F.session, batchIds: F.scope === "batch" ? F.batchIds : [] };
       await X.save("homework", body, F.id || undefined);
       const who = whoText(body);
-      S.form = null; S.tab = "list"; S.show = "open"; S.f.session = body.session; keepFilter();
+      S.form = null; S.tab = "list"; S.show = "all"; S.f.kind = ""; S.f.batch = ""; S.f.session = body.session; keepFilter();
       await X.load(); render(); toast(`${F.id ? "সংরক্ষণ হয়েছে" : "কাজ দেওয়া হয়েছে"} — ${who}`);
     } catch (e) { toast(e.message, true); }
   }
@@ -103,16 +101,17 @@ window.SICHomework = function (X) {
   function row(h) {
     const c = counts(h), d = h.dueDate ? dayParts(h.dueDate) : null;
     return `<div class="ln-row hw-row" style="--k:${KIND[h.kind][1]}"><span class="ln-date">${d ? `<b>${d.day}</b><small>${d.mon}</small>` : "<b>—</b>"}</span>
-      <span class="ln-main"><b>${kindChip(h.kind)} ${esc(h.title)}</b><small>${[h.subject, h.chapter, `দেওয়া: ${U.date(h.givenDate)}`, d && `${h.kind === "lesson" ? "পড়া" : "জমা"}: ${d.wd}`].filter(Boolean).map(esc).join(" · ")}</small>${h.details ? `<small class="ln-syl">${esc(h.details.slice(0, 140))}</small>` : ""}<small class="hw-wholine">${esc(whoText(h))} · ${bn(c.total)} জন</small></span>
-      <span class="ln-side">${dueTag(h)}${c.done + c.not + c.absent ? `<span class="ln-tag done">✓ ${bn(c.done)}</span><span class="ln-tag" style="background:#fde3e8;color:#9b1c3c">✗ ${bn(c.not)}</span>${c.absent ? `<span class="ln-tag">অনু ${bn(c.absent)}</span>` : ""}` : ""}${c.pending && h.dueDate && h.dueDate <= today() ? `<span class="ln-tag today">যাচাই বাকি ${bn(c.pending)}</span>` : ""}
-        <span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান">✎</button><button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন">✕</button></span></span></div>`;
+      <span class="ln-main"><span class="hw-heading">${kindChip(h.kind)}<b>${esc(h.title)}</b></span><small class="hw-meta">${[h.subject, h.chapter, `দেওয়া: ${U.date(h.givenDate)}`, d && `${h.kind === "lesson" ? "পড়া" : "জমা"}: ${d.wd}`].filter(Boolean).map(esc).join(" · ")}</small>${h.details ? `<small class="ln-syl">${esc(h.details)}</small>` : ""}<small class="hw-wholine">${esc(whoText(h))} · ${bn(c.total)} জন</small></span>
+      <span class="ln-side"><span class="hw-status">${dueTag(h)}${c.done + c.not + c.absent ? `<span class="ln-tag done">✓ ${bn(c.done)}</span><span class="ln-tag" style="background:#fde3e8;color:#9b1c3c">✗ ${bn(c.not)}</span>${c.absent ? `<span class="ln-tag">অনু ${bn(c.absent)}</span>` : ""}` : ""}${c.pending && h.dueDate && h.dueDate <= today() ? `<span class="ln-tag today">যাচাই বাকি ${bn(c.pending)}</span>` : ""}
+        </span><span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান" aria-label="কাজ বদলান">✎ বদলান</button><button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন" aria-label="কাজ মুছুন">✕ মুছুন</button></span></span></div>`;
   }
   function listTab() {
     const all = list(), open = all.filter((h) => !h.dueDate || h.dueDate >= today()).reverse(), past = all.filter((h) => h.dueDate && h.dueDate < today());
-    const show = S.show === "past" ? past : open;
-    return `<div class="ln-months"><button type="button" data-show="open" class="${S.show !== "past" ? "on" : ""}">» চলমান ও সামনে <i>${bn(open.length)}</i></button><button type="button" data-show="past" class="${S.show === "past" ? "on" : ""}">✓ আগের কাজ <i>${bn(past.length)}</i></button></div>
-      <section class="card"><h3>${S.show === "past" ? "আগের কাজ — নতুন থেকে পুরনো" : "চলমান ও সামনের কাজ — কাছ থেকে দূরে"} <small class="ln-count">${bn(show.length)}টি</small></h3>
-      ${show.length ? `<div class="ln-list">${show.map(row).join("")}</div>` : empty(S.show === "past" ? "আগের কোনো কাজ নেই।" : 'চলমান কোনো কাজ নেই — "＋ নতুন কাজ দিন" চাপুন।')}</section>`;
+    const show = S.show === "past" ? past : S.show === "open" ? open : all;
+    const group = (kind, title, hint) => { const items = show.filter(h => h.kind === kind); return `<section class="card hw-group" style="--k:${KIND[kind][1]}"><div class="hw-group-title"><div><h3>${title} <small class="ln-count">${bn(items.length)}টি</small></h3><p>${hint}</p></div><button type="button" class="btn line sm" data-add-kind="${kind}">＋ ${kind === "lesson" ? "পড়া দিন" : "কাজ দিন"}</button></div>${items.length ? `<div class="ln-list">${items.map(row).join("")}</div>` : empty("এই বাছাইয়ে কোনো " + title + " নেই।")}</section>`; };
+    return `<div class="hw-list-heading"><h3>আপনার ${S.f.kind === "lesson" ? "দেওয়া পড়া" : S.f.kind === "homework" ? "দেওয়া বাড়ির কাজ" : "দেওয়া কাজ ও পড়া"}</h3><p>${esc(session())} · ${S.f.batch ? esc(X.batchName(S.f.batch)) : "সব ব্যাচ"} · মোট ${bn(all.length)}টি</p></div><div class="hw-period">${[["all","সব তারিখ",all.length],["open","চলমান ও সামনে",open.length],["past","আগের",past.length]].map(([k,t,n]) => `<button type="button" data-show="${k}" class="${S.show === k ? "on" : ""}">${t} <span>${bn(n)}</span></button>`).join("")}</div>
+    ${!S.f.kind || S.f.kind === "homework" ? group("homework", "বাড়ির কাজ", "খাতায় লিখে বা সমাধান করে আনবে · যাচাই: করেছে / করেনি") : ""}
+    ${!S.f.kind || S.f.kind === "lesson" ? group("lesson", "ক্লাসের পড়া", "শিখে বা প্রস্তুতি নিয়ে আসবে · যাচাই: পেরেছে / পারেনি") : ""}`;
   }
 
   // ================= ✓ যাচাই =================
@@ -162,6 +161,8 @@ window.SICHomework = function (X) {
   function onClick(e) {
     const t = (s) => e.target.closest(s); let el;
     if ((el = t("[data-tab]"))) { if (!leaveOk()) return; dirty = false; if (S.tab === "new") readFormSafe(); S.tab = el.dataset.tab; return render(); }
+    if ((el = t("[data-kind]"))) { if (!leaveOk()) return; readFormSafe(); dirty = false; S.f.kind = el.dataset.kind; keepFilter(); return render(); }
+    if ((el = t("[data-add-kind]"))) { if (!leaveOk()) return; dirty = false; S.form = blankForm(); S.form.kind = el.dataset.addKind; S.tab = "new"; return render(); }
     if (t("[data-new]")) { if (!leaveOk()) return; dirty = false; S.form = blankForm(); S.tab = "new"; render(); return $('.hw-form [name="title"]', C).focus(); }
     if ((el = t("[data-show]"))) { S.show = el.dataset.show; return render(); }
     if ((el = t("[data-month]"))) { S.month = el.dataset.month; return render(); }
