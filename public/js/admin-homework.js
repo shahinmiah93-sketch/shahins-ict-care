@@ -58,8 +58,16 @@ window.SICHomework = function (X) {
   function blankForm() { return { id: "", kind: "homework", subject: "ICT", chapter: "", title: "", details: "", givenDate: today(), dueDate: addDays(today(), 2), session: session(), scope: S.f.batch ? "batch" : "all", batchIds: S.f.batch ? [S.f.batch] : [] }; }
   function formTab() {
     const F = (S.form ||= blankForm()), bs = batches(F.session), days = [...new Set(bs.map((b) => b.days).filter(Boolean))];
+    const formTitle = F.id ? `${KIND[F.kind][0]} বদলান` : `নতুন ${KIND[F.kind][0]} দিন`;
     return `<section class="card hw-form">
-      <div class="hw-kinds">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>
+      <div class="hw-group-title">
+        <div><h3>${formTitle}</h3><p>নতুন কিছু দিতে নিচে ধরন বাছুন। আগে দেওয়া কাজ বা পড়া পাশের বাটন থেকে দেখুন।</p></div>
+        <div class="hw-acts">
+          <button type="button" class="btn line sm" data-view-kind="homework">দেওয়া বাড়ির কাজ দেখুন</button>
+          <button type="button" class="btn line sm" data-view-kind="lesson">দেওয়া পড়া দেখুন</button>
+        </div>
+      </div>
+      <div class="hw-kinds" role="group" aria-label="ফর্মের ধরন">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>
       <div class="hw-grid">
         <label>বিষয়<input name="subject" value="${esc(F.subject)}" placeholder="যেমন: ICT"></label>
         <label>অধ্যায়<input name="chapter" value="${esc(F.chapter)}" placeholder="যেমন: অধ্যায় ৩.১ — সংখ্যা পদ্ধতি"></label>
