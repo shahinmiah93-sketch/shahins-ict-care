@@ -1971,7 +1971,12 @@ ${list.map(receiptHtml).join("")}
           <div class="at-stu"><span class="at-av">${esc(String(s.name || "?").trim().split(/\s+/).map((x) => x[0]).slice(0, 2).join(""))}</span><div><b>${esc(s.name)}</b><small>${esc(s.id)}</small></div></div>
           ${moveCell(s)}<div class="at-offtx">পড়া বন্ধ — হাজিরা লাগবে না</div><span></span><span></span><b class="at-pts">—</b><div class="at-st">${stToggle(s)}</div></div>`).join("");
       $("#arows").innerHTML = (list.map((s) => {
-        const ms = Object.entries(DB.attendance).filter(([k, m]) => k.startsWith(month) && (m[s.id] === "P" || m[s.id] === "A")).map(([, m]) => m[s.id]);
+        const ms = Object.entries(DB.attendance)
+          .filter(([key, marks]) => {
+            const [day, batchId] = key.split("|");
+            return day.slice(0, 7) === month && batchId === s.batchId && (marks[s.id] === "P" || marks[s.id] === "A");
+          })
+          .map(([, marks]) => marks[s.id]);
         const pct = ms.length ? Math.round((ms.filter((v) => v === "P").length / ms.length) * 100) : null; // ছুটি বাদ
         const chip = pct === null ? "" : ` · <span class="chip ${pct >= 80 ? "ok" : pct >= 60 ? "warn" : "bad"}" title="এই মাসে উপস্থিতি">এই মাসে ${bn(pct)}%</span>`;
         ticks[s.id] = { hw: (rh?.checks || {})[s.id] === "done", lesson: (rl?.checks || {})[s.id] === "done" };
