@@ -77,8 +77,8 @@ window.SICHomework = function (X) {
         <label>অধ্যায়<input name="chapter" value="${esc(F.chapter)}" placeholder="যেমন: অধ্যায় ৩.১ — সংখ্যা পদ্ধতি"></label>
         <label class="span2">টপিক *<input name="title" value="${esc(F.title)}" placeholder="${F.kind === "lesson" ? "যেমন: বাইনারি থেকে ডেসিমেল রূপান্তরের নিয়ম মুখস্থ" : "যেমন: অনুশীলনী ১–১০ সমাধান খাতায়"}" required></label>
         <label class="span2">বিস্তারিত (ঐচ্ছিক)<textarea name="details" rows="3" placeholder="পৃষ্ঠা নম্বর, প্রশ্ন নম্বর, নির্দেশনা…">${esc(F.details)}</textarea></label>
-        <label>দেওয়ার তারিখ<input type="date" name="givenDate" value="${esc(F.givenDate)}"></label>
-        <label>${F.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"}<input type="date" name="dueDate" value="${esc(F.dueDate)}"></label>
+        <label>${F.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "দেওয়ার তারিখ"}<input type="date" name="givenDate" value="${esc(F.givenDate)}"></label>
+        <label>${F.kind === "lesson" ? "পড়া নেওয়ার তারিখ" : "জমার তারিখ"}<input type="date" name="dueDate" value="${esc(F.dueDate)}"></label>
       </div>
       <div class="hw-who"><b>কাদের জন্য?</b>
         <div class="hw-scope"><label><span>সেশন</span><select name="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), F.session)}</select></label>
@@ -119,7 +119,11 @@ window.SICHomework = function (X) {
     </div>`;
   }
   function dates(h) {
-    return [h.givenDate && `দেওয়া: ${U.date(h.givenDate)}`, h.dueDate && `${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"}: ${U.date(h.dueDate)}`]
+    if (h.kind === "lesson") {
+      return [h.givenDate && `পড়া দেওয়ার তারিখ ${U.dateWithWeekday(h.givenDate)}`, h.dueDate && `পড়া নেওয়ার তারিখ ${U.dateWithWeekday(h.dueDate)}`]
+        .filter(Boolean).map(esc).join("<br>");
+    }
+    return [h.givenDate && `দেওয়া: ${U.date(h.givenDate)}`, h.dueDate && `জমার তারিখ: ${U.date(h.dueDate)}`]
       .filter(Boolean).map(esc).join(" · ");
   }
   function editTab() {
@@ -174,7 +178,7 @@ window.SICHomework = function (X) {
         <div class="hw-status">${kindChip(h.kind)}${dueTag(h)}</div>
         ${topic(h)}
         ${h.details ? `<div class="ln-syl"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
-        <small class="hw-meta">${dates(h)} · ${esc(whoText(h))}</small>
+        <small class="hw-meta">${dates(h)}</small><small class="hw-meta">${esc(whoText(h))}</small>
       </div>
       <div class="ex-rsum"><span><b>${bn(c.total)}</b>শিক্ষার্থী</span><span class="ok"><b>${bn(c.done)}</b>${yes}</span><span class="bad"><b>${bn(c.not)}</b>${no}</span><span><b>${bn(c.absent)}</b>অনুপস্থিত</span><span><b>${bn(c.pending)}</b>বাকি</span></div>
       <div class="ex-bulkbar"><span>প্রত্যেকের পাশে চাপ দিন · অনুপস্থিত হলে হিসাবে ধরা হয় না</span><span class="grow"></span><span class="ex-dirty" ${dirty ? "" : "hidden"}>● সেভ হয়নি</span>

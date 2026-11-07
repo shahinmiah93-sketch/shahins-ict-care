@@ -455,7 +455,11 @@ ${inner}
           <div class="stu-hw-topic-title"><span>টপিক</span><h4>${esc(h.title)}</h4></div>
         </div>
         ${h.details ? `<div class="stu-hw-details"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
-        <div class="stu-hw-date">${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"} · <b>${h.dueDate ? esc(U.date(h.dueDate)) : "ঠিক করা হয়নি"}</b></div>
+        <div class="stu-hw-date">
+          ${h.kind === "lesson" ? `${h.givenDate ? `<div>পড়া দেওয়ার তারিখ <b>${esc(U.dateWithWeekday(h.givenDate))}</b></div>` : ""}
+          <div>পড়া নেওয়ার তারিখ <b>${h.dueDate ? esc(U.dateWithWeekday(h.dueDate)) : "ঠিক করা হয়নি"}</b></div>`
+          : `জমার তারিখ · <b>${h.dueDate ? esc(U.date(h.dueDate)) : "ঠিক করা হয়নি"}</b>`}
+        </div>
       </article>`;
       const section = ([key, kind]) => {
         const entries = items.filter((h) => h.kind === key);

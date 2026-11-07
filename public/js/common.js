@@ -59,6 +59,16 @@ window.U = {
     const d = new Date(s.length === 10 ? s + "T00:00:00" : s);
     return isNaN(d) ? s : d.toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
   },
+  dateWithWeekday: (s) => {
+    if (!s) return "—";
+    const d = new Date(s.length === 10 ? s + "T00:00:00" : s);
+    if (isNaN(d)) return s;
+    const parts = new Intl.DateTimeFormat("bn-BD", {
+      day: "numeric", month: "long", year: "numeric", weekday: "long",
+    }).formatToParts(d);
+    const { day, month, year, weekday } = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+    return `${day} ${month} ${year}, ${weekday}`;
+  },
   month: (s) => {
     if (!s) return "—";
     const d = new Date(s + "-01T00:00:00");
