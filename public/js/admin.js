@@ -3011,7 +3011,7 @@ ${list.map(receiptHtml).join("")}
         { type: "html", html: targetHtml },
         { name: "public", label: "ওয়েবসাইটেও দেখান (সবাই দেখবে)", type: "check" },
         { name: "important", label: "জরুরি — উপরে দেখান", type: "check" },
-        { name: "tag", label: "ট্যাগ — চলন্ত পট্টিতে সোনালি ছাপ (যেমন ভর্তি, পরীক্ষা, ছুটি; খালি রাখলে নোটিশ / জরুরি)" },
+        { name: "tag", label: "ট্যাগ — নোটিশ বোর্ডে নোটিশের উপরের ছোট লেবেল (যেমন ভর্তি, পরীক্ষা, ছুটি; খালি রাখলে নোটিশ / জরুরি)" },
         { type: "html", html: `<label>PDF সংযুক্তি (ঐচ্ছিক — যেমন পরীক্ষার পূর্ণ রুটিন; ১৫ MB পর্যন্ত)<input type="file" id="nPdf" accept="application/pdf,.pdf"></label>
           ${n && n.pdf ? `<p style="margin:6px 0 0">এখন আছে: <a href="/api/notice/${n.id}/pdf?v=${n.pdf.v}" target="_blank" rel="noopener">${esc(n.pdf.name)}</a> · নতুন PDF দিলে এটা বদলে যাবে
           <label class="check" style="display:inline-flex;margin-left:10px"><input type="checkbox" id="nPdfDel"> PDF সরিয়ে দিন</label></p>` : ""}` },
@@ -3050,7 +3050,7 @@ ${list.map(receiptHtml).join("")}
   }
   function notices(c) {
     c.innerHTML = `<div class="card"><div class="card-head"><h2>সব নোটিশ</h2><button class="btn gold" id="addN">+ নতুন নোটিশ</button></div>
-      <p style="margin-top:0;color:var(--muted)">সব নোটিশ শিক্ষার্থী প্যানেলে দেখায়। "ওয়েবসাইটেও দেখান" দিলে পাবলিক সাইটে উপরের হলুদ পট্টিতেও দেখাবে।</p>
+      <p style="margin-top:0;color:var(--muted)">সব নোটিশ শিক্ষার্থী প্যানেলে দেখায়। "ওয়েবসাইটেও দেখান" দিলে পাবলিক সাইটের "নোটিশ" বোর্ডেও দেখাবে।</p>
       <div class="tbl-wrap"><table><thead><tr><th>নোটিশ</th><th>তারিখ</th><th>কোথায়</th><th></th></tr></thead><tbody>
       ${DB.notices.slice().sort((a, b) => b.date.localeCompare(a.date)).map((n) => {
         const expired = n.until && n.until < U.today();
