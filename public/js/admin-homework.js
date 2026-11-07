@@ -49,8 +49,8 @@ window.SICHomework = function (X) {
     C.innerHTML = `<div class="ex-page hw-page">
       <section class="hw-intro"><div><span class="eyebrow">ক্লাস ব্যবস্থাপনা</span><h2>বাড়ির কাজ ও ক্লাসের পড়া</h2><p>যা দিয়েছেন সব নিচে পাবেন। বাড়িতে লিখে আনার কাজ ও ক্লাসে শিখে আসার পড়া আলাদা করে দেখুন।</p></div><button type="button" class="btn gold" data-new>＋ কাজ / পড়া দিন</button></section>
       <div class="ln-tabs hw-nav">${tabs.map(([k,t,n]) => `<button type="button" data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}${n !== undefined ? ` <i>${bn(n)}</i>` : ""}</button>`).join("")}</div>
-      <div class="hw-toolbar"><div class="hw-type-tabs" aria-label="কাজের ধরন">${[["", "সব"], ["homework", "বাড়ির কাজ"], ["lesson", "ক্লাসের পড়া"]].map(([k,t]) => `<button type="button" data-kind="${k}" aria-pressed="${S.f.kind === k}" class="${S.f.kind === k ? "on" : ""}">${t}</button>`).join("")}</div>
-      <div class="ln-filter"><label>সেশন<select data-f="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), session())}</select></label><label>ব্যাচ<select data-f="batch">${X.opt([["", "সব ব্যাচ"], ...batches().map((b) => [b.id, U.batchLabel(b)])], S.f.batch)}</select></label></div></div>
+      ${S.tab === "new" ? "" : `<div class="hw-toolbar"><div class="hw-type-tabs" aria-label="তালিকায় দেখুন">${[["", "সব"], ["homework", "বাড়ির কাজ"], ["lesson", "ক্লাসের পড়া"]].map(([k,t]) => `<button type="button" data-kind="${k}" aria-pressed="${S.f.kind === k}" class="${S.f.kind === k ? "on" : ""}">${t}</button>`).join("")}</div>
+      <div class="ln-filter"><label>সেশন<select data-f="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), session())}</select></label><label>ব্যাচ<select data-f="batch">${X.opt([["", "সব ব্যাচ"], ...batches().map((b) => [b.id, U.batchLabel(b)])], S.f.batch)}</select></label></div></div>`}
       ${({ new: formTab, list: listTab, check: checkTab, stats: statsTab })[S.tab]()}</div>`;
   }
 
@@ -75,7 +75,7 @@ window.SICHomework = function (X) {
         ${F.scope === "batch" ? `<div class="cl-quick">${days.map((d) => `<button type="button" class="btn sm line" data-qd="${esc(d)}">সব ${esc(d)}</button>`).join("")}<button type="button" class="btn sm line" data-qd="*">সব</button><button type="button" class="btn sm line" data-qd="">কোনোটা না</button></div>
           <div class="cl-batches">${bs.map((b) => `<label class="cl-b"><input type="checkbox" name="hb" value="${b.id}"${F.batchIds.includes(b.id) ? " checked" : ""}><span><b>${esc(b.name)}</b><small>${esc(b.days || "")} · ${esc(b.time || "")}</small></span></label>`).join("") || '<p class="ex-sub">এই সেশনে কোনো ব্যাচ নেই</p>'}</div>` : ""}
         <p class="ex-sub hw-count">${(() => { const h = { session: F.session, batchIds: F.scope === "batch" ? F.batchIds : [] }; return `মোট ${bn(recipients(h).length)} জন শিক্ষার্থী পাবে`; })()}</p></div>
-      <div class="rs-act"><button type="button" class="btn gold" data-save-hw>${F.id ? "✓ সংরক্ষণ করুন" : "✓ কাজ দিন"}</button>${F.id ? '<button type="button" class="btn line" data-cancel-edit>বাতিল</button>' : '<button type="button" class="btn line" data-reset>খালি করুন</button>'}</div></section>`;
+      <div class="rs-act"><button type="button" class="btn gold" data-save-hw>${F.id ? "✓ সংরক্ষণ করুন" : F.kind === "lesson" ? "✓ পড়া দিন" : "✓ বাড়ির কাজ দিন"}</button>${F.id ? '<button type="button" class="btn line" data-cancel-edit>বাতিল</button>' : '<button type="button" class="btn line" data-reset>খালি করুন</button>'}</div></section>`;
   }
   function readForm() {
     const F = S.form, q = (n) => $(`.hw-form [name="${n}"]`, C);
@@ -92,8 +92,8 @@ window.SICHomework = function (X) {
       const body = { kind: F.kind, subject: F.subject.trim(), chapter: F.chapter.trim(), title: F.title.trim(), details: F.details.trim(), givenDate: F.givenDate, dueDate: F.dueDate, session: F.session, batchIds: F.scope === "batch" ? F.batchIds : [] };
       await X.save("homework", body, F.id || undefined);
       const who = whoText(body);
-      S.form = null; S.tab = "list"; S.show = "all"; S.f.kind = ""; S.f.batch = ""; S.f.session = body.session; keepFilter();
-      await X.load(); render(); toast(`${F.id ? "সংরক্ষণ হয়েছে" : "কাজ দেওয়া হয়েছে"} — ${who}`);
+      S.form = null; S.tab = "list"; S.show = "all"; S.f.kind = body.kind; S.f.batch = ""; S.f.session = body.session; keepFilter();
+      await X.load(); render(); toast(`${F.id ? "সংরক্ষণ হয়েছে" : KIND[F.kind][0] + " দেওয়া হয়েছে"} — ${who}`);
     } catch (e) { toast(e.message, true); }
   }
 
@@ -182,6 +182,16 @@ window.SICHomework = function (X) {
   function onClick(e) {
     const t = (s) => e.target.closest(s); let el;
     if ((el = t("[data-tab]"))) { if (!leaveOk()) return; dirty = false; if (S.tab === "new") readFormSafe(); S.tab = el.dataset.tab; return render(); }
+    if ((el = t("[data-view-kind]"))) {
+      readFormSafe();
+      S.f.session = S.form.session;
+      S.f.batch = "";
+      S.f.kind = el.dataset.viewKind;
+      S.show = "all";
+      S.tab = "list";
+      keepFilter();
+      return render();
+    }
     if ((el = t("[data-kind]"))) { if (!leaveOk()) return; readFormSafe(); dirty = false; S.f.kind = el.dataset.kind; keepFilter(); return render(); }
     if ((el = t("[data-add-kind]"))) { if (!leaveOk()) return; dirty = false; S.form = blankForm(); S.form.kind = el.dataset.addKind; S.tab = "new"; return render(); }
     if (t("[data-new]")) { if (!leaveOk()) return; dirty = false; S.form = blankForm(); S.tab = "new"; render(); return $('.hw-form [name="title"]', C).focus(); }
