@@ -832,3 +832,37 @@ html.stu-live .stu-hero{margin-top:18px}html.stu-live .stu-hero h1{font-size:28p
 .sp-calendar button[aria-pressed="true"]{background:#1858ad;color:white}
 .sp-calendar button:disabled{opacity:.4;cursor:default}
 .sp-calendar-actions{display:flex;justify-content:space-between;gap:8px}
+
+/* Student assignments share the admin panel's type colors and card hierarchy. */
+.stu-hw-panel.card, .stu-hw-group.card,
+html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
+  background: #fff;
+  border: 1px solid #dce6ec;
+  border-top: 4px solid var(--stu-hw-accent, #24476a);
+  border-radius: 16px;
+}
+.stu-hw-homework { --stu-hw-accent: #286fa3; --stu-hw-tint: #edf6fc; }
+.stu-hw-lesson { --stu-hw-accent: #865b0c; --stu-hw-tint: #fff6df; }
+.stu-hw-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.stu-hw-head h2, .stu-hw-head h3 { margin: 0; color: var(--stu-hw-accent, #24476a); }
+.stu-hw-head > p { margin: 0 !important; }
+.stu-hw-head h3 small, .stu-hw-kind, .stu-hw-rate {
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--stu-hw-tint);
+  color: var(--stu-hw-accent);
+  font-size: 13px;
+}
+.stu-hw-hint { margin: 4px 0 0; color: #546773; }
+.stu-hw-filters { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.stu-hw-filters > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.stu-hw-filters button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccdae5; background: #fff; color: #24476a; cursor: pointer; }
+.stu-hw-filters button[aria-pressed="true"] { background: #24476a; border-color: #24476a; color: #fff; font-weight: 700; }
+.stu-hw-filters button:focus-visible { outline: 2px solid #286fa3; outline-offset: 2px; }
+.stu-hw-list { display: grid; gap: 12px; margin-top: 16px; }
+.stu-hw-item { display: grid; gap: 8px; padding: 16px; border: 1px solid #dce6ec; border-inline-start: 4px solid var(--stu-hw-accent); border-radius: 12px; overflow-wrap: anywhere; }
+.stu-hw-item h4 { margin: 0; font-size: 18px; color: #173b4a; }
+.stu-hw-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: #546773; font-size: 13px; }
+.stu-hw-kind { font-weight: 700; }
+.stu-hw-details { margin: 0; padding: 10px 12px; border-radius: 8px; background: #f5f8fa; white-space: pre-line; line-height: 1.8; }
+.stu-hw-date { border-top: 1px solid #e4edf2; padding-top: 8px; color: #405968; font-size: 13px; }

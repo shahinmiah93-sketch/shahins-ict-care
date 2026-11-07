@@ -429,14 +429,50 @@ ${inner}
     },
     // বাড়ির কাজ / পড়া: সামনের কাজ আর আগের কাজে নিজের অবস্থা
     hw() {
-      const list = D.homework || [], t = U.today(), open = list.filter((h) => !h.dueDate || h.dueDate >= t).reverse(), past = list.filter((h) => h.dueDate && h.dueDate < t);
-      const K = { homework: ["📒 বাড়ির কাজ", "করেছ", "করোনি"], lesson: ["🗣 পড়া", "পেরেছ", "পারোনি"] };
-      const st = (h) => (h.status === "done" ? `<span class="chip ok">✓ ${K[h.kind][1]}</span>` : h.status === "not" ? `<span class="chip bad">✗ ${K[h.kind][2]}</span>` : h.status === "absent" ? '<span class="chip">অনুপস্থিত</span>' : '<span class="chip warn">যাচাই হয়নি</span>');
-      const rate = (k) => { const l = list.filter((h) => h.kind === k), d = l.filter((h) => h.status === "done").length, n = l.filter((h) => h.status === "not").length; return d + n ? bn(Math.round((d / (d + n)) * 100)) + "%" : "—"; };
-      const item = (h, showSt) => `<li><b>${K[h.kind][0]} — ${esc(h.title)}</b>${showSt ? " " + st(h) : ""}<p>${[h.subject, h.chapter].filter(Boolean).map(esc).join(" · ")}${h.dueDate ? ` · ${h.kind === "lesson" ? "পড়া দিতে হবে" : "জমা"}: <b>${U.date(h.dueDate)}</b>` : ""}</p>${h.details ? `<p>${esc(h.details)}</p>` : ""}</li>`;
-      return `${pBtn("hw", "বাড়ির কাজের রিপোর্ট")}<div class="tiles"><div class="tile"><small>বাড়ির কাজ করেছ</small><b>${rate("homework")}</b></div><div class="tile"><small>পড়া পেরেছ</small><b>${rate("lesson")}</b></div><div class="tile dark"><small>সামনের কাজ</small><b>${bn(open.length)}</b></div></div>
-        <div class="card"><h2>সামনের কাজ ও পড়া</h2>${open.length ? `<ul class="list" style="margin-top:12px">${open.map((h) => item(h, false)).join("")}</ul>` : '<p class="empty">এখন কোনো কাজ নেই</p>'}</div>
-        <div class="card"><h2>আগের কাজ</h2>${past.length ? `<ul class="list" style="margin-top:12px">${past.map((h) => item(h, true)).join("")}</ul>` : '<p class="empty">আগের কোনো কাজ নেই</p>'}</div>`;
+      const today = U.today();
+      const list = (D.homework || []).slice().sort((a, b) => (b.dueDate || b.givenDate || "").localeCompare(a.dueDate || a.givenDate || ""));
+      const kinds = {
+        homework: { title: "বাড়ির কাজ", hint: "লিখে বা সমাধান করে আনবে", yes: "করেছ", no: "করোনি" },
+        lesson: { title: "ক্লাসের পড়া", hint: "শিখে বা প্রস্তুতি নিয়ে আসবে", yes: "পেরেছ", no: "পারোনি" },
+      };
+      const selected = TABS._hwKind || "";
+      const period = TABS._hwPeriod || "all";
+      const isPast = (h) => !!h.dueDate && h.dueDate < today;
+      const filtered = list.filter((h) => !selected || h.kind === selected);
+      const items = filtered.filter((h) => period === "all" || isPast(h) === (period === "past"));
+      if (period === "open") items.reverse();
+      const status = (h, kind) => {
+        if (h.status === "done") return `<span class="chip ok">✓ ${kind.yes}</span>`;
+        if (h.status === "not") return `<span class="chip bad">✗ ${kind.no}</span>`;
+        if (h.status === "absent") return '<span class="chip">অনুপস্থিত</span>';
+        return '<span class="chip warn">যাচাই হয়নি</span>';
+      };
+      const item = (h, kind) => `<article class="stu-hw-item">
+        <div class="stu-hw-meta"><span class="stu-hw-kind">${kind.title}</span>${status(h, kind)}</div>
+        <h4>${esc(h.title)}</h4>
+        <div class="stu-hw-meta">${[h.subject, h.chapter].filter(Boolean).map(esc).join(" · ")}</div>
+        ${h.details ? `<p class="stu-hw-details">${esc(h.details)}</p>` : ""}
+        <div class="stu-hw-date">${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"} · <b>${h.dueDate ? esc(U.date(h.dueDate)) : "ঠিক করা হয়নি"}</b></div>
+      </article>`;
+      const section = ([key, kind]) => {
+        const entries = items.filter((h) => h.kind === key);
+        const checked = list.filter((h) => h.kind === key && ["done", "not"].includes(h.status));
+        const completed = checked.filter((h) => h.status === "done").length;
+        const rate = checked.length ? bn(Math.round(completed / checked.length * 100)) + "%" : "—";
+        return `<section class="card stu-hw-group stu-hw-${key}">
+          <div class="stu-hw-head"><div><h3>${kind.title} <small>${bn(entries.length)}টি</small></h3><p class="stu-hw-hint">${kind.hint}</p></div><span class="stu-hw-rate">${kind.yes} <b>${rate}</b></span></div>
+          ${entries.length ? `<div class="stu-hw-list">${entries.map((h) => item(h, kind)).join("")}</div>` : '<p class="empty">এই তালিকায় কিছু নেই।</p>'}
+        </section>`;
+      };
+      const filter = (attr, current, choices) => choices.map(([key, title]) =>
+        `<button type="button" ${attr}="${key}" aria-pressed="${current === key}">${title}</button>`).join("");
+      return `<section class="card stu-hw-panel">
+        <div class="stu-hw-head"><h2>আমার কাজ ও পড়া</h2>${pBtn("hw", "কাজ ও পড়ার রিপোর্ট")}</div>
+        <div class="stu-hw-filters no-print">
+          <div role="group" aria-label="ধরন">${filter("data-stu-hw-kind", selected, [["", "সব"], ...Object.entries(kinds).map(([key, kind]) => [key, kind.title])])}</div>
+          <div role="group" aria-label="তারিখ">${filter("data-stu-hw-period", period, [["all", "সব তারিখ"], ["open", "চলমান ও সামনে"], ["past", "আগের"]])}</div>
+        </div>
+      </section>${Object.entries(kinds).filter(([key]) => !selected || key === selected).map(section).join("")}`;
     },
     notices() {
       return `<div class="card"><h2>নোটিশ বোর্ড</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b> <small style="float:right;color:var(--muted)">${U.date(n.date)}</small><p>${esc(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>`;
@@ -504,6 +540,15 @@ ${inner}
     if ($("#tabBody").dataset.tab !== "routine") return;
     const c = e.target.closest("[data-rt]"); if (c) { TABS._rt = c.dataset.rt; return show("routine"); }
     if (e.target.closest("[data-rt-print]")) printRoutine();
+  });
+  $("#tabBody").addEventListener("click", (e) => {
+    const button = e.target.closest("[data-stu-hw-kind], [data-stu-hw-period]");
+    if (!button || $("#tabBody").dataset.tab !== "hw") return;
+    const attr = button.hasAttribute("data-stu-hw-kind") ? "data-stu-hw-kind" : "data-stu-hw-period";
+    const value = button.getAttribute(attr);
+    TABS[attr === "data-stu-hw-kind" ? "_hwKind" : "_hwPeriod"] = value;
+    show("hw");
+    $(`[${attr}]`, $("#tabBody")).find((b) => b.getAttribute(attr) === value)?.focus();
   });
   // ফলাফল ট্যাব: ধরন বাছাই আর রিপোর্ট কার্ড প্রিন্ট
   $("#tabBody").addEventListener("click", (e) => {
