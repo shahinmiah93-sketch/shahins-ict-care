@@ -341,7 +341,7 @@ window.U = {
     });
   },
   // প্রিন্টের পাতার উপরে বাটন — প্রিন্টের ঘর বন্ধ করে ফেললেও আবার প্রিন্ট করা যায় (কাগজে আসে না)
-  PRINT_BAR: `<div class="pbar"><b>প্রিন্ট প্রিভিউ</b><button type="button" onclick="print()">🖨 প্রিন্ট করুন</button><button type="button" class="x" onclick="close()">✕ বন্ধ করুন</button></div>`,
+  PRINT_BAR: `<div class="pbar"><b>প্রিন্ট প্রিভিউ</b><button type="button" onclick="print()">🖨 প্রিন্ট করুন</button><button type="button" class="x" onclick="window.close()">✕ বন্ধ করুন</button></div>`,
   // সব প্রিন্টের এক রকম হেডার (Progress Report-এর ডিজাইন): বামে ইংরেজি দুই লাইনের টাইটেল, মাঝে প্রতিষ্ঠান, ডানে লোগো, নিচে সবুজ দাগ
   docKind(t) {
     const k = [[/পূর্ণ রিপোর্ট|Full Report/i, "Student", "Full Report"], [/আইডি কার্ড|ID Card/i, "ID", "Card"], [/আবেদন|Application/i, "Admission", "Applications"], [/ভর্তি ফর্ম|Admission/i, "Admission", "Form"], [/প্রবেশপত্র|Admit/i, "Admit", "Card"], [/মেধা|Merit/i, "Merit", "List"], [/কুইজ|Quiz/i, "Quiz", "Result"], [/Progress/i, "Progress", "Report"],
@@ -458,7 +458,7 @@ window.U = {
       ul{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:#3a5550}footer{position:absolute;left:10mm;right:10mm;bottom:7mm;display:flex;justify-content:space-between}footer span{border-top:1px solid #777;padding-top:3px;width:52mm;text-align:center;font-size:12px}
       .bar{position:sticky;top:0;background:#0b3b36;color:#fff;padding:10px;text-align:center}.bar button{font:inherit;font-weight:700;padding:6px 18px;border-radius:999px;border:0;background:#f3c55d;cursor:pointer}
       @media print{body{background:#fff}.bar{display:none}.ac{margin:4mm auto;border-width:1.5px}}</style></head>
-      <body><div class="bar">প্রিন্ট প্রিভিউ · ${bn(regs.length)}টি প্রবেশপত্র · <button onclick="print()">🖨 প্রিন্ট / PDF</button> <button onclick="close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>${regs.map(card).join("")}
+      <body><div class="bar">প্রিন্ট প্রিভিউ · ${bn(regs.length)}টি প্রবেশপত্র · <button onclick="print()">🖨 প্রিন্ট / PDF</button> <button onclick="window.close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>${regs.map(card).join("")}
       </body></html>`);
     w.document.close();
   },

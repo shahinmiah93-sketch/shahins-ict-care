@@ -185,7 +185,7 @@ table{border-collapse:collapse;width:calc(100% - 16mm);margin:0 8mm;font-size:11
 thead{display:table-header-group}tr,.bx,.sh{break-inside:avoid;page-break-inside:avoid}.sh{break-after:avoid;page-break-after:avoid}
 @page{@bottom-right{content:"পৃষ্ঠা " counter(page) " / " counter(pages);font:9px sans-serif;color:#6c7a75}}
 @media print{body{background:#fff}.pb{display:none}.a4{margin:0;box-shadow:none;width:auto;min-height:280mm;overflow:visible}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>
-<div class="pb"><button onclick="print()">🖨 প্রিন্ট / PDF</button><button onclick="close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>
+<div class="pb"><button onclick="print()">🖨 প্রিন্ট / PDF</button><button onclick="window.close()" style="background:rgba(255,255,255,.18);color:#fff">✕ বন্ধ করুন</button></div>
 <main class="a4"><div class="hd"><svg class="sw" viewBox="0 0 794 190" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0H794V112C620 96 430 132 260 150C160 160 70 156 0 146Z" fill="#0b3b36"/><path d="M0 146C70 156 160 160 260 150C430 132 620 96 794 112V126C620 112 430 148 262 166C160 176 70 172 0 162Z" fill="#d9a441"/></svg>
   <div class="lc"><img src="${O}/images/logo-receipt.png" alt=""></div><div class="tt"><h1>${h1}</h1><p>শাহিন'স আইসিটি কেয়ার · ${esc(site.address || "মাস্টার কলোনি, মাদারীপুর")}</p></div></div>
 <div class="inf"><span>নাম: <b>${esc(s.name)}</b></span><span>আইডি: <b>${esc(s.id)}</b></span><span>তারিখ: <b>${bn(p2(now.getDate()))}-${bn(p2(now.getMonth() + 1))}-${bn(now.getFullYear())}</b></span>
@@ -663,7 +663,7 @@ ${inner}
         const tell = () => parent.postMessage({ sicH: document.body.getBoundingClientRect().height }, location.origin);
         new ResizeObserver(tell).observe(document.body); new MutationObserver(() => setTimeout(tell, 30)).observe(document.body, { childList: true, subtree: true, attributes: true }); tell();
       }
-      else if (!$(".as-bar")) document.body.insertAdjacentHTML("afterbegin", `<div class="as-bar no-print">👁 অ্যাডমিন ভিউ — <b>${esc(D.profile.name)}</b> (${esc(D.profile.id)})-এর প্যানেল, শিক্ষার্থী যেভাবে দেখে · শুধু দেখার জন্য <button type="button" class="btn sm line" onclick="close()">✕ বন্ধ করুন</button></div>`);
+      else if (!$(".as-bar")) document.body.insertAdjacentHTML("afterbegin", `<div class="as-bar no-print">👁 অ্যাডমিন ভিউ — <b>${esc(D.profile.name)}</b> (${esc(D.profile.id)})-এর প্যানেল, শিক্ষার্থী যেভাবে দেখে · শুধু দেখার জন্য <button type="button" class="btn sm line" onclick="window.close()">✕ বন্ধ করুন</button></div>`);
     }
     const p = D.profile;
     $("#siteName").textContent = "শাহিন’স আইসিটি কেয়ার";
