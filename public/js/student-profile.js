@@ -18,7 +18,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
     if (key === 'college') {
       input = `<input name="college" list="sp-colleges" value="${esc(value)}" maxlength="300" placeholder="তালিকা থেকে বেছে নাও বা নাম লেখো"${req}><datalist id="sp-colleges">${(U.MADARIPUR_INSTITUTIONS || []).map(name => `<option value="${esc(name)}"></option>`).join('')}</datalist><small>তালিকায় নাম না থাকলে নিজে লিখতে পারবে।</small>`;
     } else if (Array.isArray(type)) {
-      const options = type.map(x=>{const [text,val]=x.split('|');return [val||text,text];});
+      const nv = String(value).normalize('NFC'), options = type.map(x=>{const [text,val]=x.split('|'),v=val||text;return [value && v.normalize('NFC')===nv ? value : v,text];});
       if (value && !options.some(([v])=>v===value)) options.push([value,value]);
       input = `<select name="${key}"${req}><option value="">বেছে নিন</option>${options.map(([v,t])=>`<option value="${esc(v)}"${v===value?' selected':''}>${esc(t)}</option>`).join('')}</select>`;
     } else if (key === 'dob') {
@@ -150,7 +150,7 @@ window.SICStudentProfile = function ({ profile, onSaved }) {
   const group = form.elements.namedItem('group');
   const subjects = ['subject1', 'subject2', 'subject3', 'subject4'].map(key => form.elements.namedItem(key));
   function fillSubjects(keepSaved) {
-    const catalog = U.HSC_SUBJECTS[group.value];
+    const norm = (s) => String(s || '').normalize('NFC'), catalog = (Object.entries(U.HSC_SUBJECTS).find(([name]) => norm(name) === norm(group.value)) || [])[1];
     subjects.forEach((select, index) => {
       const current = keepSaved ? values[select.name] : select.value;
       const options = [...(catalog?.[index === 3 ? 'fourth' : 'main'] || [])];

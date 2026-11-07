@@ -1283,7 +1283,7 @@ ${list.map(receiptHtml).join("")}
     syncGuardian(); // এডিটে সম্পর্ক বাবা/মা থাকলে শুরু থেকেই মিলিয়ে রাখে
     // HSC বিষয়: বিভাগ অনুযায়ী বিষয়-০১/০২/০৩ ও ৪র্থ বিষয়ের তালিকা; নিচে আবশ্যিক + পত্রসহ পুরো তালিকা (নম্বর একটানা)
     const setSubjectOptions = (keep) => {
-      const g = U.HSC_SUBJECTS[q("group").value] || { main: [], fourth: [] };
+      const g = (Object.entries(U.HSC_SUBJECTS).find(([name]) => name.normalize("NFC") === String(q("group").value).normalize("NFC")) || [])[1] || { main: [], fourth: [] };
       const fill = (name, items, label) => {
         const sel = q(name), cur = keep ? vals[name] || sel.value : sel.value;
         sel.innerHTML = `<option value="">${label}</option>` + items.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
