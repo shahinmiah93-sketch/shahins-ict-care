@@ -1359,7 +1359,7 @@ const CLEAN = {
   notices: (b) => {
     const batchIds = [...new Set((Array.isArray(b.batchIds) ? b.batchIds : []).map((x) => str(x, 60)).filter((x) => db.batches.some((bt) => bt.id === x)))];
     const sessions = [...new Set((Array.isArray(b.sessions) ? b.sessions : []).map((x) => str(x, 60)).filter((x) => db.sessions.some((se) => se.name === x)))];
-    return { title: str(b.title, 200), body: str(b.body, 3000), date: str(b.date, 10) || today(), until: str(b.until, 10), public: !!b.public && !batchIds.length && !sessions.length, important: !!b.important, tag: str(b.tag, 20), batchIds, sessions };
+    return { title: str(b.title, 200), body: str(b.body, 3000), date: str(b.date, 10) || today(), until: str(b.until, 10), public: !!b.public && !batchIds.length && !sessions.length, important: !!b.important, ...(b.tag === undefined ? {} : { tag: str(b.tag, 20) }), batchIds, sessions };
   },
   teachers: (b) => ({ name: str(b.name, 120), subject: str(b.subject, 120), bio: str(b.bio, 600), photo: str(b.photo, 300) }),
   // ব্যানার: ছবি আসে আলাদা আপলোডে; লিংক — /apply, #batches বা http(s)://… (খালি = চাপ দিলে কিছু হয় না)

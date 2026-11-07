@@ -3011,7 +3011,6 @@ ${list.map(receiptHtml).join("")}
         { type: "html", html: targetHtml },
         { name: "public", label: "ওয়েবসাইটেও দেখান (সবাই দেখবে)", type: "check" },
         { name: "important", label: "জরুরি — উপরে দেখান", type: "check" },
-        { name: "tag", label: "ট্যাগ — নোটিশ বোর্ডে নোটিশের উপরের ছোট লেবেল (যেমন ভর্তি, পরীক্ষা, ছুটি; খালি রাখলে নোটিশ / জরুরি)" },
         { type: "html", html: `<label>PDF সংযুক্তি (ঐচ্ছিক — যেমন পরীক্ষার পূর্ণ রুটিন; ১৫ MB পর্যন্ত)<input type="file" id="nPdf" accept="application/pdf,.pdf"></label>
           ${n && n.pdf ? `<p style="margin:6px 0 0">এখন আছে: <a href="/api/notice/${n.id}/pdf?v=${n.pdf.v}" target="_blank" rel="noopener">${esc(n.pdf.name)}</a> · নতুন PDF দিলে এটা বদলে যাবে
           <label class="check" style="display:inline-flex;margin-left:10px"><input type="checkbox" id="nPdfDel"> PDF সরিয়ে দিন</label></p>` : ""}` },
