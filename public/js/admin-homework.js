@@ -46,13 +46,13 @@ window.SICHomework = function (X) {
     const all = DB().homework.filter((h) => h.session === session()), open = all.filter((h) => !h.dueDate || h.dueDate >= today());
     const toCheck = all.filter((h) => h.dueDate && h.dueDate <= today() && counts(h).pending > 0);
     const listLabel = S.f.kind === "lesson" ? "দেওয়া পড়া" : S.f.kind === "homework" ? "দেওয়া বাড়ির কাজ" : "দেওয়া কাজ ও পড়া";
-    const tabs = [["list", listLabel, list().length], ["new", S.form && S.form.id ? "বদলান" : "নতুন দিন"], ["check", "কে করেছে / পেরেছে", toCheck.length], ["stats", "শিক্ষার্থীদের হিসাব"]];
+    const tabs = [["list", listLabel, list().length], ["new", S.form && S.form.id ? "সম্পাদনা" : "নতুন দিন"], ["edit", "✎ বদলান"], ["check", "কে করেছে / পেরেছে", toCheck.length], ["stats", "শিক্ষার্থীদের হিসাব"]];
     C.innerHTML = `<div class="ex-page hw-page">
       <section class="hw-intro"><div><span class="eyebrow">ক্লাস ব্যবস্থাপনা</span><h2>বাড়ির কাজ ও ক্লাসের পড়া</h2><p>যা দিয়েছেন সব নিচে পাবেন। বাড়িতে লিখে আনার কাজ ও ক্লাসে শিখে আসার পড়া আলাদা করে দেখুন।</p></div><button type="button" class="btn gold" data-new>＋ কাজ / পড়া দিন</button></section>
       <div class="ln-tabs hw-nav">${tabs.map(([k,t,n]) => `<button type="button" data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}${n !== undefined ? ` <i>${bn(n)}</i>` : ""}</button>`).join("")}</div>
       ${S.tab === "new" ? "" : `<div class="hw-toolbar"><div class="hw-type-tabs" aria-label="তালিকায় দেখুন">${[["", "সব"], ["homework", "বাড়ির কাজ"], ["lesson", "ক্লাসের পড়া"]].map(([k,t]) => `<button type="button" data-kind="${k}" aria-pressed="${S.f.kind === k}" class="${S.f.kind === k ? "on" : ""}">${t}</button>`).join("")}</div>
       <div class="ln-filter"><label>সেশন<select data-f="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), session())}</select></label><label>ব্যাচ<select data-f="batch">${X.opt([["", "সব ব্যাচ"], ...batches().map((b) => [b.id, U.batchLabel(b)])], S.f.batch)}</select></label></div></div>`}
-      ${({ new: formTab, list: listTab, check: checkTab, stats: statsTab })[S.tab]()}</div>`;
+      ${({ new: formTab, list: listTab, edit: editTab, check: checkTab, stats: statsTab })[S.tab]()}</div>`;
   }
 
   // ================= কাজ দিন =================
@@ -121,6 +121,22 @@ window.SICHomework = function (X) {
   function dates(h) {
     return [h.givenDate && `দেওয়া: ${U.date(h.givenDate)}`, h.dueDate && `${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "জমার তারিখ"}: ${U.date(h.dueDate)}`]
       .filter(Boolean).map(esc).join(" · ");
+  }
+  function editTab() {
+    const entries = list();
+    return `<section class="card">
+      <h3>কোন কাজ বা পড়া বদলাবেন?</h3>
+      ${entries.length ? `<div class="tbl-wrap"><table class="exam-entry-table">
+        <thead><tr><th scope="col">ধরন</th><th scope="col">টপিক</th><th scope="col">ব্যাচ</th><th scope="col">তারিখ</th><th scope="col">সম্পাদনা</th></tr></thead>
+        <tbody>${entries.map((h) => `<tr>
+          <td>${kindChip(h.kind)}</td>
+          <td><b>${esc(h.title)}</b>${h.chapter ? `<small>${esc(h.chapter)}</small>` : ""}</td>
+          <td>${esc(whoText(h))}</td>
+          <td>${h.dueDate ? esc(U.date(h.dueDate)) : "—"}</td>
+          <td><button type="button" class="btn line sm" data-edit="${esc(h.id)}" aria-label="বদলান: ${esc(h.title)}">✎ বদলান</button></td>
+        </tr>`).join("")}</tbody>
+      </table></div>` : empty("এই বাছাইয়ে কোনো কাজ বা পড়া নেই।")}
+    </section>`;
   }
   function row(h) {
     const c = counts(h), d = h.dueDate ? dayParts(h.dueDate) : null;
