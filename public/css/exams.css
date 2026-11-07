@@ -548,6 +548,17 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .hw-page button:focus-visible{outline:3px solid #e8b746;outline-offset:3px}
 @media(max-width:650px){.hw-page .hw-intro{align-items:flex-start;flex-direction:column;padding:18px}.hw-intro h2{font-size:22px}.hw-toolbar{align-items:stretch}.hw-toolbar .ln-filter{width:100%}.hw-toolbar .ln-filter label{flex:1;min-width:0}.hw-toolbar .ln-filter select{min-width:0;width:100%}.hw-group-title{align-items:flex-start;flex-direction:column}.hw-page .hw-group{padding:14px}.hw-page .hw-nav button{padding:10px 12px;font-size:13px}}
 
+.hw-page .ex-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-inline-size: 88px;
+  min-block-size: 28px;
+  padding: 4px 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 .hw-row .ln-main > .ex-type { justify-self: start; }
 .hw-topic, .hw-check-topic { display: grid; gap: 6px; overflow-wrap: anywhere; }
 .hw-topic > span, .hw-topic-title > span { color: #546773; font-size: 13px; }
