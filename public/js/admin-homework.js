@@ -20,6 +20,7 @@ window.SICHomework = function (X) {
   S.f.kind = ""; // Start with both types visible, even after an older saved filter.
   const keepFilter = () => { try { localStorage.setItem("sicHwFilter", JSON.stringify(S.f)); } catch {} };
   let C = null, dirty = false;
+  const drafts = {};
 
   const session = () => S.f.session || (X.liveSessions()[0] || {}).name || "";
   const batches = (sess) => DB().batches.filter((b) => b.session === (sess || session()));
@@ -55,9 +56,12 @@ window.SICHomework = function (X) {
   }
 
   // ================= কাজ দিন =================
-  function blankForm() { return { id: "", kind: "homework", subject: "ICT", chapter: "", title: "", details: "", givenDate: today(), dueDate: addDays(today(), 2), session: session(), scope: S.f.batch ? "batch" : "all", batchIds: S.f.batch ? [S.f.batch] : [] }; }
+  function blankForm(kind = "homework") { return { id: "", kind, subject: "ICT", chapter: "", title: "", details: "", givenDate: today(), dueDate: addDays(today(), 2), session: session(), scope: S.f.batch ? "batch" : "all", batchIds: S.f.batch ? [S.f.batch] : [] }; }
+  function draftFor(kind) {
+    return drafts[kind] ||= blankForm(kind);
+  }
   function formTab() {
-    const F = (S.form ||= blankForm()), bs = batches(F.session), days = [...new Set(bs.map((b) => b.days).filter(Boolean))];
+    const F = (S.form ||= draftFor(S.f.kind || "homework")), bs = batches(F.session), days = [...new Set(bs.map((b) => b.days).filter(Boolean))];
     const formTitle = F.id ? `${KIND[F.kind][0]} বদলান` : `নতুন ${KIND[F.kind][0]} দিন`;
     return `<section class="card hw-form">
       <div class="hw-group-title">
@@ -67,7 +71,7 @@ window.SICHomework = function (X) {
           <button type="button" class="btn line sm" data-view-kind="lesson">দেওয়া পড়া দেখুন</button>
         </div>
       </div>
-      <div class="hw-kinds" role="group" aria-label="ফর্মের ধরন">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>
+      ${F.id ? `<div>${kindChip(F.kind)}</div>` : `<div class="hw-kinds" role="group" aria-label="ফর্মের ধরন">${Object.entries(KIND).map(([k, [t]]) => `<label class="hw-kind${F.kind === k ? " on" : ""}"><input type="radio" name="kind" value="${k}"${F.kind === k ? " checked" : ""}>${t}<small>${k === "homework" ? "লিখে / সমাধান করে আনবে" : "শিখে / প্রস্তুতি নিয়ে আসবে"}</small></label>`).join("")}</div>`}
       <div class="hw-grid">
         <label>বিষয়<input name="subject" value="${esc(F.subject)}" placeholder="যেমন: ICT"></label>
         <label>অধ্যায়<input name="chapter" value="${esc(F.chapter)}" placeholder="যেমন: অধ্যায় ৩.১ — সংখ্যা পদ্ধতি"></label>
@@ -100,6 +104,7 @@ window.SICHomework = function (X) {
       const body = { kind: F.kind, subject: F.subject.trim(), chapter: F.chapter.trim(), title: F.title.trim(), details: F.details.trim(), givenDate: F.givenDate, dueDate: F.dueDate, session: F.session, batchIds: F.scope === "batch" ? F.batchIds : [] };
       await X.save("homework", body, F.id || undefined);
       const who = whoText(body);
+      if (!F.id) delete drafts[F.kind];
       S.form = null; S.tab = "list"; S.show = "all"; S.f.kind = body.kind; S.f.batch = ""; S.f.session = body.session; keepFilter();
       await X.load(); render(); toast(`${F.id ? "সংরক্ষণ হয়েছে" : KIND[F.kind][0] + " দেওয়া হয়েছে"} — ${who}`);
     } catch (e) { toast(e.message, true); }
@@ -201,15 +206,19 @@ window.SICHomework = function (X) {
       return render();
     }
     if ((el = t("[data-kind]"))) { if (!leaveOk()) return; readFormSafe(); dirty = false; S.f.kind = el.dataset.kind; keepFilter(); return render(); }
-    if ((el = t("[data-add-kind]"))) { if (!leaveOk()) return; dirty = false; S.form = blankForm(); S.form.kind = el.dataset.addKind; S.tab = "new"; return render(); }
-    if (t("[data-new]")) { if (!leaveOk()) return; dirty = false; S.form = blankForm(); S.tab = "new"; render(); return $('.hw-form [name="title"]', C).focus(); }
+    if ((el = t("[data-add-kind]"))) { if (!leaveOk()) return; dirty = false; S.form = draftFor(el.dataset.addKind); S.tab = "new"; return render(); }
+    if (t("[data-new]")) { if (!leaveOk()) return; dirty = false; S.form = draftFor(S.f.kind || "homework"); S.tab = "new"; render(); return $('.hw-form [name="title"]', C).focus(); }
     if ((el = t("[data-show]"))) { S.show = el.dataset.show; return render(); }
     if ((el = t("[data-month]"))) { S.month = el.dataset.month; return render(); }
     if ((el = t("[data-check]"))) { S.checkId = el.dataset.check; S.tab = "check"; return render(); }
     if ((el = t("[data-edit]"))) { const h = hwById(el.dataset.edit); S.form = { id: h.id, kind: h.kind, subject: h.subject || "", chapter: h.chapter || "", title: h.title, details: h.details || "", givenDate: h.givenDate || today(), dueDate: h.dueDate || "", session: h.session, scope: (h.batchIds || []).length ? "batch" : "all", batchIds: [...(h.batchIds || [])] }; S.tab = "new"; return render(); }
     if ((el = t("[data-del]"))) return X.remove("homework", el.dataset.del, "এই কাজ ও এর যাচাই");
     if (t("[data-save-hw]")) return saveForm();
-    if (t("[data-reset]")) { S.form = blankForm(); return render(); }
+    if (t("[data-reset]")) {
+      const kind = S.form.kind;
+      S.form = drafts[kind] = blankForm(kind);
+      return render();
+    }
     if (t("[data-cancel-edit]")) { S.form = null; S.tab = "list"; return render(); }
     if ((el = t("[data-qd]"))) { readForm(); const bs = batches(S.form.session); S.form.batchIds = el.dataset.qd === "*" ? bs.map((b) => b.id) : el.dataset.qd === "" ? [] : [...new Set([...S.form.batchIds, ...bs.filter((b) => b.days === el.dataset.qd).map((b) => b.id)])]; return render(); }
     if ((el = t("[data-set]"))) { const tr = el.closest("tr"); setRow(tr, tr.dataset.v === el.dataset.set ? "" : el.dataset.set); return markDirty(); }
@@ -228,7 +237,10 @@ window.SICHomework = function (X) {
     if (el.matches("[data-pick]")) { if (!leaveOk()) { el.value = S.checkId; return; } dirty = false; S.checkId = el.value; return render(); }
     if (el.closest(".hw-form")) {
       readForm();
-      if (el.name === "kind") { S.form.kind = el.value; return render(); }
+      if (el.name === "kind" && !S.form.id) {
+        S.form = draftFor(el.value);
+        return render();
+      }
       if (el.name === "scope") { S.form.scope = el.value; return render(); }
       if (el.name === "session") { S.form.batchIds = []; return render(); }
       if (el.name === "hb") { const n = recipients({ session: S.form.session, batchIds: S.form.batchIds }).length; $(".hw-count", C).textContent = `মোট ${bn(n)} জন শিক্ষার্থী পাবে`; }
