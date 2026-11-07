@@ -2998,6 +2998,9 @@ ${list.map(receiptHtml).join("")}
 
   // ---------- নোটিশ ----------
   function noticeForm(n) {
+    const selB = new Set((n && n.batchIds) || []), selS = new Set((n && n.sessions) || []);
+    const targetHtml = `<div><b>কাদের দেখাবে?</b> <small style="color:var(--muted)">কিছু না বাছলে সব শিক্ষার্থী দেখবে। সেশন বা ব্যাচ বাছলে শুধু তারাই দেখবে (ওয়েবসাইটে যাবে না)।</small>
+      ${DB.sessions.map((se) => { const list = DB.batches.filter((b) => b.session === se.name); return `<div class="cl-sess"><label class="check"><input type="checkbox" name="nts" value="${esc(se.name)}"${selS.has(se.name) ? " checked" : ""}> <b>পুরো সেশন — ${esc(se.name)}</b></label>${list.length ? `<div class="cl-batches">${list.map((b) => `<label class="cl-b"><input type="checkbox" name="ntb" value="${b.id}"${selB.has(b.id) ? " checked" : ""}><span><b>${esc(b.name)}</b><small>${esc(b.days || "")}${b.time ? " · " + esc(b.time) : ""}</small></span></label>`).join("")}</div>` : ""}</div>`; }).join("")}</div>`;
     openForm({
       title: n ? "নোটিশ বদলান" : "নতুন নোটিশ",
       fields: [
@@ -3005,6 +3008,7 @@ ${list.map(receiptHtml).join("")}
         { name: "body", label: "বিস্তারিত", type: "textarea", wide: true },
         { name: "date", label: "তারিখ", type: "date", value: U.today() },
         { name: "until", label: "কবে পর্যন্ত দেখাবে (ঐচ্ছিক)", type: "date" },
+        { type: "html", html: targetHtml },
         { name: "public", label: "ওয়েবসাইটেও দেখান (সবাই দেখবে)", type: "check" },
         { name: "important", label: "জরুরি — উপরে দেখান", type: "check" },
         { name: "tag", label: "ট্যাগ — চলন্ত পট্টিতে সোনালি ছাপ (যেমন ভর্তি, পরীক্ষা, ছুটি; খালি রাখলে নোটিশ / জরুরি)" },
@@ -3014,6 +3018,9 @@ ${list.map(receiptHtml).join("")}
       ],
       values: n || {},
       onSave: async (d) => {
+        d.batchIds = $$('#modalBody [name="ntb"]:checked').map((x) => x.value);
+        d.sessions = $$('#modalBody [name="nts"]:checked').map((x) => x.value);
+        if (d.public && (d.batchIds.length || d.sessions.length)) throw new Error("নির্দিষ্ট সেশন / ব্যাচের নোটিশ ওয়েবসাইটে দেখানো যায় না — \"ওয়েবসাইটেও দেখান\" টিকটি তুলে দিন, অথবা সেশন / ব্যাচের টিক সরান");
         const file = $("#nPdf").files[0], del = $("#nPdfDel") && $("#nPdfDel").checked;
         if (file && !/\.pdf$/i.test(file.name)) throw new Error("শুধু PDF ফাইল দিন");
         if (file && file.size > 15 * 1024 * 1024) throw new Error("PDF অনেক বড় — ১৫ MB-এর মধ্যে দিন");
@@ -3027,6 +3034,12 @@ ${list.map(receiptHtml).join("")}
       },
     });
   }
+  function noticeTargetChip(n) {
+    const parts = [...(n.sessions || []).map((s) => "সেশন " + s), ...(n.batchIds || []).map((id) => batchName(id))];
+    if (parts.length) return `<span class="chip gold" title="${esc(parts.join(", "))}">শুধু: ${esc(parts.join(", "))}</span>`;
+    if (n.studentIds && n.studentIds.length) return '<span class="chip gold">নির্দিষ্ট শিক্ষার্থী</span>';
+    return '<span class="chip gold">সব শিক্ষার্থী (প্যানেল)</span>';
+  }
   function notices(c) {
     c.innerHTML = `<div class="card"><div class="card-head"><h2>সব নোটিশ</h2><button class="btn gold" id="addN">+ নতুন নোটিশ</button></div>
       <p style="margin-top:0;color:var(--muted)">সব নোটিশ শিক্ষার্থী প্যানেলে দেখায়। "ওয়েবসাইটেও দেখান" দিলে পাবলিক সাইটে উপরের হলুদ পট্টিতেও দেখাবে।</p>
@@ -3034,7 +3047,7 @@ ${list.map(receiptHtml).join("")}
       ${DB.notices.slice().sort((a, b) => b.date.localeCompare(a.date)).map((n) => {
         const expired = n.until && n.until < U.today();
         return `<tr><td><b>${n.important ? "" : ""}${esc(n.title)}</b>${n.pdf ? ` <a class="chip" href="/api/notice/${n.id}/pdf?v=${n.pdf.v}" target="_blank" rel="noopener" title="${esc(n.pdf.name)}">PDF</a>` : ""}<small>${esc(n.body)}</small></td><td>${U.date(n.date)}${n.until ? `<small>${expired ? "মেয়াদ শেষ" : "চলবে " + U.date(n.until) + " পর্যন্ত"}</small>` : ""}</td>
-        <td>${expired ? '<span class="chip">মেয়াদ শেষ</span>' : n.public ? '<span class="chip ok">ওয়েবসাইট + প্যানেল</span>' : '<span class="chip gold">শুধু শিক্ষার্থী</span>'}</td>
+        <td>${expired ? '<span class="chip">মেয়াদ শেষ</span>' : n.public ? '<span class="chip ok">ওয়েবসাইট + প্যানেল</span>' : noticeTargetChip(n)}</td>
         <td class="num"><button class="icon-btn" data-en="${n.id}">✎</button><button class="icon-btn" data-dn="${n.id}">✕</button></td></tr>`;
       }).join("") || `<tr><td colspan="4" class="empty">কোনো নোটিশ নেই</td></tr>`}</tbody></table></div></div>`;
     $("#addN").onclick = () => noticeForm();

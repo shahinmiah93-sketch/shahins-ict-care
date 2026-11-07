@@ -1355,7 +1355,12 @@ const CLEAN = {
   ebooks: (b) => ({ validityDays: Math.max(0, Math.min(3650, Math.floor(num(b.validityDays)) || 0)), title: str(b.title, 200), short: str(b.short, 600), category: str(b.category, 40), pinned: !!b.pinned, kind: ["premium", "students"].includes(b.kind) ? b.kind : "free", price: Math.max(0, Math.round(num(b.price))), oldPrice: Math.max(0, Math.round(num(b.oldPrice))), active: b.active !== false, order: Math.floor(num(b.order)) || 0,
     buyers: [...new Set((Array.isArray(b.buyers) ? b.buyers : String(b.buyers || "").split(/[\s,]+/)).map((x) => phoneOf(x)).filter((x) => /^01\d{9}$/.test(x)))].slice(0, 5000) }),
   faqs: (b) => ({ q: str(b.q, 300), a: str(b.a, 3000), active: b.active !== false, order: Math.floor(num(b.order)) || 0 }),
-  notices: (b) => ({ title: str(b.title, 200), body: str(b.body, 3000), date: str(b.date, 10) || today(), until: str(b.until, 10), public: !!b.public, important: !!b.important, tag: str(b.tag, 20) }),
+  // নোটিশ: batchIds / sessions খালি থাকলে সব শিক্ষার্থী দেখে; কিছু বাছা থাকলে শুধু সেই ব্যাচ / সেশনের শিক্ষার্থী (আর তখন ওয়েবসাইটে যায় না)
+  notices: (b) => {
+    const batchIds = [...new Set((Array.isArray(b.batchIds) ? b.batchIds : []).map((x) => str(x, 60)).filter((x) => db.batches.some((bt) => bt.id === x)))];
+    const sessions = [...new Set((Array.isArray(b.sessions) ? b.sessions : []).map((x) => str(x, 60)).filter((x) => db.sessions.some((se) => se.name === x)))];
+    return { title: str(b.title, 200), body: str(b.body, 3000), date: str(b.date, 10) || today(), until: str(b.until, 10), public: !!b.public && !batchIds.length && !sessions.length, important: !!b.important, tag: str(b.tag, 20), batchIds, sessions };
+  },
   teachers: (b) => ({ name: str(b.name, 120), subject: str(b.subject, 120), bio: str(b.bio, 600), photo: str(b.photo, 300) }),
   // ব্যানার: ছবি আসে আলাদা আপলোডে; লিংক — /apply, #batches বা http(s)://… (খালি = চাপ দিলে কিছু হয় না)
   // সফল শিক্ষার্থী: group — university (বিশ্ববিদ্যালয়ে পড়ছে) বা career (পেশায় প্রতিষ্ঠিত)
@@ -2511,7 +2516,7 @@ async function api(req, res, url) {
       classMoments: liveGallery(true).sort((a, b) => (b.date || "").localeCompare(a.date || "")),
       examRoutines: db.examRoutines.filter((r) => routineForStudent(r, s)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ id, title, type, pdf, createdAt }) => ({ id, title, type, pdf, createdAt })),
       payments: db.payments.filter((x) => x.studentId === s.id).sort((a, b) => b.date.localeCompare(a.date)),
-      fees, books: studentBookAccount(s.id), notices: activeNotices(false).filter((n) => (n.studentIds ? n.studentIds.includes(s.id) : !(n.batchIds || []).length || n.batchIds.includes(s.batchId))),
+      fees, books: studentBookAccount(s.id), notices: activeNotices(false).filter((n) => n.studentIds ? n.studentIds.includes(s.id) : (!(n.batchIds || []).length && !(n.sessions || []).length) || (n.batchIds || []).includes(s.batchId) || (n.sessions || []).includes(s.session)),
       quizzes: quizzesFor(s),
       // নিজের ব্যাচের বাড়ির কাজ / পড়া (পুরো সেশনের জন্য দেওয়া হলেও) আর নিজের অবস্থা
       homework: db.homework.filter((h) => h.session === s.session && (!(h.batchIds || []).length || h.batchIds.includes(s.batchId)))
