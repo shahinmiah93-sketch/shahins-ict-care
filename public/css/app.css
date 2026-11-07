@@ -215,6 +215,13 @@ tr.tot td{background:#f6efdf;font-weight:700}
 .fgrid .cl-b input,.fgrid .cl-fee input{margin:3px 0 0;width:auto;flex:none;padding:0;min-height:0}
 .cl-b span,.cl-fee span{display:flex;flex-direction:column;line-height:1.35}.cl-b small,.cl-fee small{color:var(--muted);font-size:12px;font-weight:400}
 .cl-b:has(input:checked){border-color:#0f5c4f;background:#eef6f2}
+/* নোটিশের "কাদের দেখাবে?" — লেখা আর ব্যাচ কার্ডের মাঝে ফাঁকা জায়গা */
+#ntTarget>b{display:block;font-size:15px;margin:2px 0 4px}
+#ntTarget>small{display:block;margin:0 0 14px;line-height:1.6;font-size:12.5px}
+#ntTarget .cl-sess{margin:0 0 18px;padding:12px;border:1px solid #ece6d6;border-radius:14px;background:#fffefa}
+#ntTarget .cl-sess>label.check{display:flex;flex-direction:row;align-items:center;gap:10px;margin:0 0 12px;padding:2px 0;font-size:15px;line-height:1.5;cursor:pointer}
+#ntTarget .cl-sess>label.check input{width:auto;margin:0;padding:0;min-height:0;flex:none}
+#ntTarget .cl-batches{gap:10px}
 .cl-fee{margin-top:8px}.cl-fee:has(input:checked){border-color:#0f5c4f;background:#eef6f2}
 .cl-days{margin:0;color:var(--muted);font-weight:600}
 tr.muted-row td{opacity:.55}
