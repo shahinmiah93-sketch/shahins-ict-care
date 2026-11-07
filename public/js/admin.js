@@ -1025,7 +1025,7 @@ ${list.map(receiptHtml).join("")}
       { name: "nameEn", label: "নাম (ENGLISH)", placeholder: "SSC সার্টিফিকেট অনুযায়ী", span: 2 },
       { name: "name", label: "নাম (বাংলা)", required: true, span: 2 },
       { name: "dob", label: "জন্ম তারিখ", type: "date" },
-      { name: "gender", label: "লিঙ্গ", type: "select", options: [["M", "ছেলে (Male)"], ["F", "মেয়ে (Female)"], ["O", "অন্যান্য (Other)"]] },
+      { name: "gender", label: "লিঙ্গ", type: "select", options: [["", "বেছে নিন"], ["M", "ছেলে (Male)"], ["F", "মেয়ে (Female)"], ["O", "অন্যান্য (Other)"]] },
       { name: "bloodGroup", label: "রক্তের গ্রুপ", type: "select", options: [["", "বেছে নিন"], ...U.BLOOD_GROUPS.map((x) => [x, x])] },
       { name: "religion", label: "ধর্ম", type: "select", options: [["", "বেছে নিন"], ...U.RELIGIONS.map((x) => [x, x])] },
       { name: "nationality", label: "জাতীয়তা", value: "বাংলাদেশী" },
@@ -1619,7 +1619,7 @@ ${list.map(receiptHtml).join("")}
         ${s.pendingPhoto ? `<section class="student-photo-review"><h3>নতুন ছবি অনুমোদনের অপেক্ষায়</h3><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="শিক্ষার্থীর পাঠানো ছবি" style="width:120px;height:145px;object-fit:contain;border:1px solid #dae4e2;border-radius:12px;background:#f2f6f8"><p>অনুমোদন দিলে এই ছবি প্রোফাইল ও আইডি কার্ডে ব্যবহার হবে।</p><div class="toolbar"><button type="button" class="btn gold" data-photo-review="approve">✓ অনুমোদন করুন</button><button type="button" class="btn line" data-photo-review="reject">অনুমোদন না দিন</button></div></section>` : ""}
         ${s.pendingProfile ? `<section class="student-photo-review"><h3>তথ্য সংশোধন অনুমোদনের অপেক্ষায়</h3><p>${bn(Object.keys(s.pendingProfile.changes).length)}টি তথ্য বদলানোর অনুরোধ এসেছে।</p><button type="button" class="btn gold" id="viewProfileChanges">আগের ও নতুন তথ্য দেখুন →</button></section>` : ""}
         <dl class="kv">
-          <dt>আইডি</dt><dd>${esc(s.id)}</dd><dt>নাম</dt><dd>${esc(s.name)}${s.nameEn ? ` · ${esc(s.nameEn)}` : ""} (${s.gender === "F" ? "মেয়ে" : s.gender === "O" ? "অন্যান্য" : "ছেলে"})</dd>
+          <dt>আইডি</dt><dd>${esc(s.id)}</dd><dt>নাম</dt><dd>${esc(s.name)}${s.nameEn ? ` · ${esc(s.nameEn)}` : ""} (${s.gender === "F" ? "মেয়ে" : s.gender === "O" ? "অন্যান্য" : s.gender === "M" ? "ছেলে" : "লিঙ্গ দেওয়া নেই"})</dd>
           ${s.dob || s.bloodGroup || s.religion ? `<dt>জন্ম · রক্ত · ধর্ম</dt><dd>${esc([s.dob && s.dob.split("-").reverse().join("/"), s.bloodGroup, s.religion, s.nationality].filter(Boolean).join(" · "))}</dd>` : ""}
           <dt>সেশন / ব্যাচ</dt><dd>${esc(s.session || "")} · ${esc(batchFull(batchById(s.batchId)))}</dd>
           <dt>মোবাইল</dt><dd>${esc(s.phone || "—")}</dd>${s.fatherName || s.fatherPhone ? `<dt>বাবা</dt><dd>${esc([s.fatherName, s.fatherOccupation, s.fatherPhone].filter(Boolean).join(" · "))}</dd>` : ""}

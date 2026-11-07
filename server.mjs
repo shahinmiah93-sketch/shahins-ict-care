@@ -1203,7 +1203,7 @@ const liveAchievers = () => db.achievers.filter((a) => a.active && a.image).sort
 const lines = (v) => (Array.isArray(v) ? v : String(v || "").split("\n"));
 const enDigits = (s) => String(s || "").replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d));
 const STUDENT_KEYS = (b) => ({
-  name: str(b.name, 120), nameEn: str(b.nameEn, 120), gender: ["F", "O"].includes(b.gender) ? b.gender : "M", dob: str(b.dob, 10),
+  name: str(b.name, 120), nameEn: str(b.nameEn, 120), gender: ["M", "F", "O"].includes(b.gender) ? b.gender : "", dob: str(b.dob, 10),
   bloodGroup: str(b.bloodGroup, 12), religion: str(b.religion, 30), nationality: str(b.nationality, 40),
   phone2: phoneOf(b.phone2), whatsapp: phoneOf(b.whatsapp),
   // শিক্ষাগত যোগ্যতা (SSC) ও একাডেমিক
