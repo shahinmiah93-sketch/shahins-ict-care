@@ -3759,14 +3759,14 @@ const monthlyTick = () => sendMonthlyProgress().catch((e) => console.error("ম�
 monthlyTick(); setInterval(monthlyTick, 60e3).unref();
 
 // ---------- মাসের ১ তারিখের বকেয়ার SMS ----------
-// ১ তারিখ সকাল ১০টা থেকে রাত ১০টার মধ্যে (সার্ভার দেরিতে চালু হলে তখনই), মাসে একবার: যেকোনো মডিউলে (মাসিক, এককালীন, অধ্যায়ভিত্তিক …) বকেয়া আছে এমন সক্রিয় শিক্ষার্থী ও অভিভাবকের নম্বরে
+// ১ তারিখ সকাল ১০টা থেকে রাত ১০টার মধ্যে (সার্ভার দেরিতে চালু হলে তখনই), মাসে একবার: যেকোনো মডিউলে (মাসিক, এককালীন, অধ্যায়ভিত্তিক …) বকেয়া আছে এমন শিক্ষার্থী ও অভিভাবকের নম্বরে — পড়া বন্ধ হয়ে গেলেও বকেয়া থাকলে যায়
 const FEE_FROM = 10, FEE_UNTIL = 22;
 let feeBusy = false;
 async function sendFeeDue() {
   const now = new Date(), hour = now.getHours();
   if (feeBusy || now.getDate() !== 1 || hour < FEE_FROM || hour >= FEE_UNTIL || !smsOn()) return;
   const month = today().slice(0, 7), sent = (db.feeSent || {})[month] || [];
-  const list = db.students.filter((s) => s.status !== "inactive" && !sent.includes(s.id));
+  const list = db.students.filter((s) => !sent.includes(s.id)); // পড়া বন্ধ হলেও বকেয়া থাকলে যায়
   if (!list.length) return;
   feeBusy = true;
   try {

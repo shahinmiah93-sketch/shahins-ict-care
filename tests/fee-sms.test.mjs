@@ -27,27 +27,33 @@ const students = [
   { id: 'one-time', name: 'এককালীন কোর্সের শিক্ষার্থী', phone: '01700000001', guardianPhone: '01800000001', status: 'active' },
   { id: 'monthly', name: 'মাসিক ব্যাচের শিক্ষার্থী', phone: '01700000002', guardianPhone: '01800000002', status: 'active' },
   { id: 'clear', name: 'বকেয়া নেই', phone: '01700000003', guardianPhone: '01800000003', status: 'active' },
-  { id: 'off', name: 'পড়া বন্ধ', phone: '01700000004', guardianPhone: '01800000004', status: 'inactive' },
+  { id: 'off', name: 'পড়া বন্ধ কিন্তু বকেয়া আছে', phone: '01700000004', guardianPhone: '01800000004', status: 'inactive' },
+  { id: 'off-clear', name: 'পড়া বন্ধ, বকেয়া নেই', phone: '01700000005', guardianPhone: '01800000005', status: 'inactive' },
   { id: 'nophone', name: 'নম্বর নেই', phone: '', guardianPhone: '', status: 'active' },
 ];
-const balances = { 'one-time': 5000, monthly: 1500, clear: 0, off: 900, nophone: 700 };
+const balances = { 'one-time': 5000, monthly: 1500, clear: 0, off: 900, 'off-clear': 0, nophone: 700 };
 
 test('Any student with dues gets the SMS on the 1st — student and guardian numbers — whatever the module type', async () => {
   const t = app({ students, balances }); await t.run();
-  assert.deepEqual(t.sent.map((x) => x.phone).sort(), ['01700000001', '01700000002', '01800000001', '01800000002']);
+  assert.deepEqual(t.sent.map((x) => x.phone).sort(), ['01700000001', '01700000002', '01700000004', '01800000001', '01800000002', '01800000004']);
   assert.ok(t.sent.every((x) => x.tag === 'Fee'));
   const one = t.sent.find((x) => x.phone === '01800000001');
   assert.match(one.text, /এককালীন কোর্সের শিক্ষার্থী-এর বেতন বাবদ মোট ৫,০০০ টাকা বকেয়া রয়েছে/);
 });
-test('No dues, inactive students and students without numbers get nothing', async () => {
+test('Students who left (পড়া বন্ধ) still get the SMS while dues remain; no dues or no numbers = nothing', async () => {
   const t = app({ students, balances }); await t.run();
-  for (const p of ['01700000003', '01800000003', '01700000004', '01800000004']) assert.ok(!t.sent.some((x) => x.phone === p), p);
-  assert.equal(t.sent.length, 4);
+  assert.ok(t.sent.some((x) => x.phone === '01800000004' && /পড়া বন্ধ কিন্তু বকেয়া আছে-এর বেতন বাবদ মোট ৯০০ টাকা/.test(x.text)));
+  for (const p of ['01700000003', '01800000003', '01700000005', '01800000005']) assert.ok(!t.sent.some((x) => x.phone === p), p);
+  assert.equal(t.sent.length, 6);
 });
 test('Only once a month and only on the 1st between 10:00 and 22:00', async () => {
   const t = app({ students, balances }); await t.run(); await t.run();
-  assert.equal(t.sent.length, 4); // দ্বিতীয়বার চালালে আর যায় না
+  assert.equal(t.sent.length, 6); // দ্বিতীয়বার চালালে আর যায় না
   const other = app({ day: 2, students, balances }); await other.run(); assert.equal(other.sent.length, 0);
   const early = app({ hour: 9, students, balances }); await early.run(); assert.equal(early.sent.length, 0);
   const late = app({ hour: 22, students, balances }); await late.run(); assert.equal(late.sent.length, 0);
+});
+test('Month-end progress SMS is unchanged: it still goes only to active students', () => {
+  const m = source.slice(source.indexOf('async function sendMonthlyProgress'), source.indexOf('const monthlyTick'));
+  assert.match(m, /db\.students\.filter\(\(s\) => s\.status !== "inactive" && !sent\.includes\(s\.id\)\)/);
 });
