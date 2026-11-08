@@ -1,15 +1,15 @@
 // শিক্ষার্থী প্যানেলকে মোবাইল অ্যাপের মতো ইনস্টল করার ব্যবস্থা (PWA):
 // ১) service worker চালু করা  ২) অ্যান্ড্রয়েড/ক্রোমে "অ্যাপ ইনস্টল করুন" বোতাম  ৩) আইফোনে (Safari) "হোম স্ক্রিনে যোগ করুন"-এর নিয়ম দেখানো।
-// অ্যাপ হিসেবে খোলা থাকলে বোতাম দেখায় না; "✕" দিলে ৭ দিন আর বিরক্ত করে না।
+// অ্যাপ হিসেবে খোলা থাকলে বোতাম দেখায় না; "✕" দিলে শুধু এই ভিজিটের জন্য সরে — পরের বার (নতুন করে খুললে) আবার আসে।
 (function () {
   "use strict";
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
     addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
   }
   const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  const KEY = "sic-install-hide";
-  const hidden = () => { try { return Date.now() - Number(localStorage.getItem(KEY) || 0) < 7 * 864e5; } catch { return false; } };
-  const hide = () => { try { localStorage.setItem(KEY, String(Date.now())); } catch {} };
+  const KEY = "sic-install-hide-visit"; // আগের ৭ দিনের লুকানো ("sic-install-hide") আর ধরা হয় না
+  const hidden = () => { try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; } };
+  const hide = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} };
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios|edgios/i.test(navigator.userAgent); // iOS-এ শুধু Safari থেকে যোগ করা যায়
   let deferred = null, pill = null;
 

@@ -49,6 +49,13 @@ test('Manifest is complete and every icon exists', () => {
   for (const i of m.icons) assert.ok(fs.existsSync(pub(i.src.slice(1))), i.src);
   assert.ok(fs.existsSync(pub('offline.html')));
 });
+test('Dismissing the install button hides it only for this visit, not for days', () => {
+  const s = fs.readFileSync(pub('js/pwa.js'), 'utf8');
+  assert.match(s, /sessionStorage\.getItem\(KEY\)/);
+  assert.match(s, /sessionStorage\.setItem\(KEY, "1"\)/);
+  assert.doesNotMatch(s, /localStorage/);
+  assert.doesNotMatch(s, /7 \* 864e5/);
+});
 test('Student page links the manifest and the install helper; server knows the manifest type', () => {
   const html = fs.readFileSync(pub('student.html'), 'utf8');
   assert.match(html, /<link rel="manifest" href="\/manifest\.webmanifest">/);
