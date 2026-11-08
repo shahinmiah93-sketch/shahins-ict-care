@@ -1921,8 +1921,16 @@ ${list.map(receiptHtml).join("")}
       </div>`;
     // ট্যাব: হাজিরা দিন | 📞 অনুপস্থিতি কল তালিকা (অনুপস্থিতদের অভিভাবককে কল — admin-absence.js)
     const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save });
+    // ক্লাসের দিন নয় এমন তারিখে হাজিরা দিতে গেলে সতর্কবার্তা (ব্যাচের দিনের সাথে তারিখের বারের মিল দেখে); বন্ধের দিন হলে আলাদা বার্তা আছে, তাই সেটা বাদ
+    const dayWords = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+    const offDayInfo = () => {
+      const date = $("#ad").value, bid = $("#abSel") && $("#abSel").value, bt = DB.batches.find((x) => x.id === bid);
+      if (!bt || !date || U.isClassDay(bt.days, date) !== false || U.closureOn(DB.closures, bid, date)) return null;
+      return `${U.date(date)} (${dayWords[new Date(date + "T00:00:00").getDay()]}) — ${bt.name} ব্যাচের ক্লাসের দিন নয়। ক্লাস হয়: ${bt.days}।`;
+    };
     const callBadge = () => { const b = $("#attCallN"); if (b) b.textContent = absCalls.pending() || ""; };
     c.classList.remove("at-show-calls");
+    $("#attClosed").insertAdjacentHTML("afterend", '<div class="at-closed at-offday" id="attOffDay" hidden><span>⚠</span><div><b>এই দিনে এই ব্যাচের ক্লাস নেই</b><small id="attOffDayTx"></small></div></div>');
     c.querySelector(".at-head").insertAdjacentHTML("afterend", '<div class="at-tabs" id="attTabs"><button type="button" class="on" data-at-tab="reg">✓ হাজিরা দিন</button><button type="button" data-at-tab="calls">📞 অনুপস্থিতি কল তালিকা <span class="at-tabn" id="attCallN"></span></button></div>');
     c.insertAdjacentHTML("beforeend", '<div id="attCalls"></div>');
     callBadge();
@@ -1969,6 +1977,7 @@ ${list.map(receiptHtml).join("")}
       // এই দিনে ব্যাচ বন্ধ থাকলে জানিয়ে দেয়
       const cl = U.closureOn(DB.closures, b, date);
       $("#attClosed").hidden = !cl;
+      const off = offDayInfo(); $("#attOffDay").hidden = !off; if (off) $("#attOffDayTx").textContent = off + " এই দিনে হাজিরা দিলে মাসের উপস্থিতি, ক্লাস গোনা আর ফি / SMS-এর হিসাবে ঢুকে যাবে।";
       if (cl) $("#attClosedTx").textContent = `${U.date(cl.from)} – ${U.date(cl.to)}${cl.reason ? " · " + cl.reason : ""} — সাধারণত এই দিনে হাজিরা লাগবে না।`;
       const list = activeStudents().filter((s) => s.batchId === b);
       const month = date.slice(0, 7);
@@ -2029,6 +2038,7 @@ ${list.map(receiptHtml).join("")}
     $("#attClean").onclick = () => { rows().forEach((r) => { marks[r.dataset.sid] = undefined; ticks[r.dataset.sid] = { hw: false, lesson: false }; paintRow(r.dataset.sid); }); summary(); toast("চিহ্ন মুছে গেছে — সেভ করলে তবেই বদলাবে"); };
     $("#saveAtt").onclick = async () => {
       if (!$("#abSel").value) return toast("ব্যাচ বেছে নিন", true);
+      const offNote = offDayInfo(); if (offNote && Object.values(marks).some(Boolean) && !confirm(`⚠ ${offNote}\n\nতবুও এই দিনের হাজিরা সেভ করবেন?`)) return;
       const clean = Object.fromEntries(Object.entries(marks).filter(([, v]) => v));
       // কারো হাজিরা বাকি থাকলে আগে জিজ্ঞেস — চিহ্ন না দেওয়া মানে উপস্থিত নয়, তার কোনো হাজিরাই সেভ হয় না
       const left = [...new Set(rows().map((r) => r.dataset.sid))].filter((sid) => !clean[sid]);

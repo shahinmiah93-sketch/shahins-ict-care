@@ -967,3 +967,4 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 /* বকেয়া SMS তালিকার ওপরের লাইন: সেশন · ব্যাচ · কাকে পাঠাবেন (ছোট) · খুঁজুন · সর্বনিম্ন বকেয়া */
 .ab-ctl-sms>label:nth-child(1){flex:.45 1 110px}.ab-ctl-sms>label:nth-child(2){flex:1.6 1 230px}.ab-ctl-sms>label:nth-child(3){flex:0 0 140px}.ab-ctl-sms>label:nth-child(4){flex:1 1 130px}.ab-ctl-sms>label:nth-child(5){flex:0 0 118px}
 @media(max-width:520px){.ab-ctl-sms>label:nth-child(n){flex:1 1 100%}}
+.at-offday{border-color:#f1b0a0;background:#fff1ec;color:#7a2a12}.at-offday small{color:#9a4a30;line-height:1.6}.at-show-calls .at-offday{display:none!important}

@@ -109,6 +109,13 @@ window.U = {
     const extra = (U.extraLists[key] || []).filter((x) => x && !base.includes(x) && x !== "অন্যান্য");
     return [...base, ...extra, "অন্যান্য"];
   },
+  // ব্যাচের দিন ("রবি, মঙ্গল, বৃহস্পতি") অনুযায়ী ঐ তারিখে ক্লাস আছে কি না। দিন বোঝা না গেলে null (সতর্ক করা হয় না)
+  isClassDay(days, date) {
+    const W = [[0, /রবি|sun/i], [1, /সোম|mon/i], [2, /মঙ্গল|tue/i], [3, /বুধ|wed/i], [4, /বৃহস্পতি|thu/i], [5, /শুক্র|fri/i], [6, /শনি|sat/i]];
+    const wd = W.filter(([, re]) => re.test(String(days || ""))).map(([d]) => d), dt = new Date(String(date || "") + "T00:00:00");
+    if (!wd.length || isNaN(dt)) return null;
+    return wd.includes(dt.getDay());
+  },
   // রেগুলার ব্যাচের প্রথম মাস: ব্যাচের দিন ধরে ঐ মাসের মোট ক্লাস আর শুরুর দিন থেকে পাওয়া ক্লাস (সার্ভারেও একই নিয়ম)
   firstMonthClasses(days, startDate) {
     const W = [[0, /রবি|sun/i], [1, /সোম|mon/i], [2, /মঙ্গল|tue/i], [3, /বুধ|wed/i], [4, /বৃহস্পতি|thu/i], [5, /শুক্র|fri/i], [6, /শনি|sat/i]];
