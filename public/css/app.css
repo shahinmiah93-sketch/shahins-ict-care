@@ -916,3 +916,8 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-move{display:grid;gap:10px;padding:14px;border:1px solid #b9d6e8;border-radius:14px;background:#f4faff}.ab-move[hidden]{display:none}
 .ab-move label{display:grid;gap:6px;color:var(--muted);font-size:14px;font-weight:600}
 .ab-move select{width:100%;height:44px;padding:0 12px;border:1px solid #cbded7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-weight:600}
+.ab-btn.pay{background:#fff6dd;border-color:#d99a2b;color:#7a4e00}.ab-btn.pay:hover{background:#ffeebb}
+.ab-ctl input.dc-q{width:100%;height:44px;padding:0 12px;border:1px solid #cbded7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-weight:600}
+.ab-sum article.bad small{color:#a3212b}
+.ab-hist{font-size:13px;color:var(--muted)}.ab-hist summary{cursor:pointer;font-weight:600}.ab-hist ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.dc-link .at-tabn{margin-left:6px}
