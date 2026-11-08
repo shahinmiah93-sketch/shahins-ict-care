@@ -1919,6 +1919,14 @@ ${list.map(receiptHtml).join("")}
         <div id="arows"></div>
         <p class="at-note">পয়েন্ট: উপস্থিত ১ + বাড়ির কাজ ১ + পড়া পারা ১ = দিনে সর্বোচ্চ ৩ · ছুটি উপস্থিতির হিসাবে ধরা হয় না · একই বোতামে আবার চাপলে চিহ্ন উঠে যায়</p>
       </div>`;
+    // ট্যাব: হাজিরা দিন | 📞 অনুপস্থিতি কল তালিকা (অনুপস্থিতদের অভিভাবককে কল — admin-absence.js)
+    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName });
+    const callBadge = () => { const b = $("#attCallN"); if (b) b.textContent = absCalls.pending() || ""; };
+    c.classList.remove("at-show-calls");
+    c.querySelector(".at-head").insertAdjacentHTML("afterend", '<div class="at-tabs" id="attTabs"><button type="button" class="on" data-at-tab="reg">✓ হাজিরা দিন</button><button type="button" data-at-tab="calls">📞 অনুপস্থিতি কল তালিকা <span class="at-tabn" id="attCallN"></span></button></div>');
+    c.insertAdjacentHTML("beforeend", '<div id="attCalls"></div>');
+    callBadge();
+    $("#attTabs").onclick = (e) => { const b = e.target.closest("[data-at-tab]"); if (!b) return; $$("#attTabs button").forEach((x) => x.classList.toggle("on", x === b)); const calls = b.dataset.atTab === "calls"; c.classList.toggle("at-show-calls", calls); if (calls) absCalls($("#attCalls")); else callBadge(); };
     let marks = {}, ticks = {}, moveLock = true; // নতুন ব্যাচের ঘর শুরুতে সবসময় লক; ব্যাচ / তারিখ বদলালে আবার লক
     const paintLock = () => { const b = $("#attLock"); b.textContent = moveLock ? "🔒 লক" : "🔓 খোলা"; b.classList.toggle("open", !moveLock); b.title = moveLock ? "চাপ দিয়ে খুলুন — তারপর ব্যাচ বদলানো যাবে" : "চাপ দিয়ে আবার লক করুন"; $$("#arows select[data-move]").forEach((x) => (x.disabled = moveLock)); };
     // ওই দিনে ওই ব্যাচের বাড়ির কাজ / পড়ার রেকর্ড (সার্ভারও একই নিয়মে খোঁজে)
@@ -2029,7 +2037,7 @@ ${list.map(receiptHtml).join("")}
         left.forEach((sid) => { marks[sid] = clean[sid] = "P"; paintRow(sid); }); summary();
       }
       const tks = Object.fromEntries(Object.entries(ticks).filter(([sid]) => clean[sid] === "P"));
-      try { await api("/api/admin/attendance", { body: { date: $("#ad").value, batchId: $("#abSel").value, marks: clean, ticks: tks } }); await load(); toast("হাজিরা, বাড়ির কাজ ও পড়া সেভ হয়েছে"); draw(); }
+      try { await api("/api/admin/attendance", { body: { date: $("#ad").value, batchId: $("#abSel").value, marks: clean, ticks: tks } }); await load(); toast("হাজিরা, বাড়ির কাজ ও পড়া সেভ হয়েছে"); draw(); callBadge(); }
       catch (e) { toast(e.message, true); }
     };
   }

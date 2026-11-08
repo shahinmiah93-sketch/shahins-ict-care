@@ -103,6 +103,7 @@ const COLLECTIONS = ["sessions", "courses", "batches", "students", "enrollments"
 for (const c of COLLECTIONS) db[c] ||= [];
 db.attendance ||= {};
 db.absentSent ||= {}; // আজ কার অভিভাবককে অনুপস্থিতির SMS গেছে: { তারিখ: [আইডি] }
+db.absenceCalls ||= {}; // অনুপস্থিত শিক্ষার্থীর অভিভাবককে কল: { "তারিখ|আইডি": { status, reason, note, followUp, at } }
 db.monthlySent ||= {}; // এই মাসে কার অভিভাবককে অগ্রগতির SMS গেছে: { মাস: [আইডি] }
 db.feeSent ||= {}; // এই মাসে কার বকেয়ার SMS গেছে: { মাস: [আইডি] }
 db.quizGuests ||= []; // অনলাইন কুইজ দেওয়া ব্যাচের বাইরের শিক্ষার্থী
@@ -2733,6 +2734,21 @@ async function api(req, res, url) {
     saveDb();
     return send(res, 200, { ok: true, items });
   }
+  // অনুপস্থিত শিক্ষার্থীর অভিভাবককে কল — কলের অবস্থা (কথা হয়েছে / ধরেনি / পরে ফোন), কারণ আর নোট জমা রাখা
+  if (p === "/api/admin/absence-call" && m === "POST") {
+    const b = await readBody(req);
+    const date = str(b.date, 10), sid = str(b.studentId, 40), status = str(b.status, 12);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !db.students.some((s) => s.id === sid)) return send(res, 400, { error: "তারিখ ও শিক্ষার্থী দিন" });
+    const key = `${date}|${sid}`;
+    if (!["talked", "noanswer", "later"].includes(status)) { delete db.absenceCalls[key]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
+    const followUp = /^\d{4}-\d{2}-\d{2}$/.test(b.followUp || "") ? b.followUp : "";
+    const item = { status, reason: str(b.reason, 60), note: str(b.note, 300), followUp: status === "later" ? followUp : "", at: new Date().toISOString() };
+    db.absenceCalls[key] = item;
+    const cutoff = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10); // ১২০ দিনের পুরোনো কলের হিসাব সরিয়ে ফেলা
+    for (const k of Object.keys(db.absenceCalls)) if (k.split("|")[0] < cutoff) delete db.absenceCalls[k];
+    saveDb();
+    return send(res, 200, { ok: true, item });
+  }
   if (p === "/api/admin/attendance" && m === "POST") {
     const b = await readBody(req);
     const date = str(b.date, 10), batchId = str(b.batchId, 60);
@@ -2826,7 +2842,7 @@ async function api(req, res, url) {
     db.applications.forEach((a) => removePhoto("a", a.id));
     db.docs.forEach((d) => { if (d.file) try { fs.unlinkSync(docPath(d)); } catch {} });
     db.examRoutines.forEach((r) => { try { fs.unlinkSync(examRoutineFile(r)); } catch {} }); db.examRoutines = [];
-    db.students = []; db.enrollments = []; db.payments = []; db.exams = []; db.docs = []; db.homework = []; db.quizzes = []; db.quizGuests = []; db.leads = []; db.smsLog = []; db.thRegs = []; db.learners = []; db.ocEnrolls = []; db.enquiries = []; db.applications = []; db.attendance = {}; db.absentSent = {}; db.monthlySent = {}; db.feeSent = {};
+    db.students = []; db.enrollments = []; db.payments = []; db.exams = []; db.docs = []; db.homework = []; db.quizzes = []; db.quizGuests = []; db.leads = []; db.smsLog = []; db.thRegs = []; db.learners = []; db.ocEnrolls = []; db.enquiries = []; db.applications = []; db.attendance = {}; db.absenceCalls = {}; db.absentSent = {}; db.monthlySent = {}; db.feeSent = {};
     saveDb();
     return send(res, 200, { ok: true });
   }
