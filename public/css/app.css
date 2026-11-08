@@ -938,7 +938,7 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .bday-main{position:relative;z-index:1;min-width:0}
 .bday-kicker{display:inline-block;margin-bottom:6px;padding:3px 13px;border-radius:999px;background:#fff;border:1px solid #f1cfdd;color:#b2336b;font-size:12.5px;font-weight:700}
 .bday h2{margin:0 0 8px;font-size:27px;line-height:1.3;font-weight:800;color:#d62f78;background:linear-gradient(90deg,#e0357f,#f07a1a 55%,#6b4df0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.bday p{margin:0 0 10px;color:#3a3351;font-size:15.5px;line-height:1.85}.bday p:last-of-type{margin-bottom:12px}.bday-emo{-webkit-text-fill-color:initial;color:initial;background:none}
+.bday p{margin:0 0 10px;color:#3a3351;font-size:15.5px;line-height:1.85;text-align:justify;text-justify:inter-word;overflow-wrap:anywhere}.bday p:last-of-type{margin-bottom:12px}.bday-emo{-webkit-text-fill-color:initial;color:initial;background:none}
 .bday-sign{display:inline-grid;gap:1px;padding-top:9px;border-top:1px dashed #e6cbd9;color:#5b5078;font-size:14.5px;font-weight:700;line-height:1.5}.bday-sign small{color:#9a8fb4;font-weight:600;font-size:12.5px}
 .bday-b{position:absolute;bottom:-42px;z-index:0;font-size:26px;opacity:0;animation:bdayUp 8s linear infinite}
 .bday-b.b1{left:68%}.bday-b.b2{left:82%;animation-delay:2.4s;font-size:22px}.bday-b.b3{left:93%;animation-delay:4.6s;font-size:20px}
