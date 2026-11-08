@@ -166,9 +166,9 @@ ${M.map((x, i) => `<tr><td class="c">${bn(i + 1)}</td><td>${U.month(x.m)}</td><t
 ${f.items.map((i, k) => `<tr><td class="c">${bn(k + 1)}</td><td>${esc(i.course)}${i.status === "ended" ? " (শেষ)" : ""}${i.chapters.length ? `<small class="ty">অধ্যায় ${esc(i.chapters.join(", "))}</small>` : ""}</td><td>${ddmy(i.startDate)}</td><td class="n">${money(i.fee)}${i.monthly ? "/মাস" : ""}</td><td class="n">${i.discount ? money(i.discount) : "—"}</td><td class="n"><b>${money(i.due)}</b>${i.monthly ? `<small class="ty">${bn(i.months)} মাস${(i.adjust || []).filter((a) => a.paused).length ? ` · ⏸ ${bn(i.adjust.filter((a) => a.paused).length)} মাস বন্ধ` : ""}</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" style="text-align:center">কোনো মডিউল নেই</td></tr>'}
 <tr class="ov"><td colspan="5">মোট ফি (এখন পর্যন্ত)</td><td class="n">${money(f.totalDue)}</td></tr></tbody></table>
 <h4 class="sh">পেমেন্টের ইতিহাস</h4><table><thead><tr><th class="c">নং</th><th>রসিদ</th><th>তারিখ</th><th>মাস</th><th>মাধ্যম</th><th class="n">টাকা</th></tr></thead><tbody>
-${pays.map((p, k) => `<tr><td class="c">${bn(k + 1)}</td><td>#${bn(p.receiptNo)}</td><td>${ddmy(p.date)}</td><td>${p.month ? U.month(p.month) : "—"}</td><td>${esc(p.method || "—")}</td><td class="n"><b>${money(p.amount)}</b></td></tr>`).join("") || '<tr><td colspan="6" style="text-align:center">কোনো পেমেন্ট নেই</td></tr>'}
+${pays.map((p, k) => `<tr><td class="c">${bn(k + 1)}</td><td>#${bn(p.receiptNo)}</td><td>${ddmy(p.date)}</td><td>${p.month ? U.month(p.month) : "—"}</td><td>${esc(p.method || "—")}</td><td class="n"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small class="ty">+ ছাড় ${money(p.discount)}</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" style="text-align:center">কোনো পেমেন্ট নেই</td></tr>'}
 <tr class="ov"><td colspan="5">মোট পরিশোধ</td><td class="n">${money(f.paid)}</td></tr></tbody></table>
-<div class="bx"><h3>সারাংশ</h3><div class="g"><div><span>মোট ফি</span><b>${money(f.totalDue)}</b></div><div><span>পরিশোধ</span><b>${money(f.paid)}</b></div>
+<div class="bx"><h3>সারাংশ</h3><div class="g"><div><span>মোট ফি</span><b>${money(f.totalDue)}</b></div><div><span>পরিশোধ</span><b>${money(f.paid)}</b></div>${f.discounts > 0 ? `<div><span>ছাড়</span><b>${money(f.discounts)}</b></div>` : ""}
   <div><span>${f.balance >= 0 ? "বকেয়া" : "অগ্রিম"}</span><b style="color:${f.balance > 0 ? "#b42318" : "#187460"}">${money(Math.abs(f.balance))}</b></div><div><span>শেষ পেমেন্ট</span><b>${last ? `${money(last.amount)} · ${ddmy(last.date)}` : "—"}</b></div></div></div>`, fb);
   }
   // রিপোর্ট কার্ডের A4 কাঠামো (সব রিপোর্টে একই): মাথার নকশা, শিক্ষার্থীর তথ্য, মাঝের অংশ, মন্তব্য, একদম নিচে স্বাক্ষর
@@ -427,7 +427,7 @@ ${inner}
         </div>
         <section class="student-module-fees"><h2>মডিউল অনুযায়ী বেতনের হিসাব</h2><p class="sf-intro">কোন মাসে কত ফি ধরা হয়েছে, নিচে আলাদা করে দেখুন।</p>${f.items.map(moduleFeeCard).join('') || '<p class="empty">কোনো মডিউল নেই</p>'}</section>
         <div class="card"><h2>পেমেন্টের ইতিহাস</h2><div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>রসিদ</th><th>তারিখ</th><th>মাস</th><th>মাধ্যম</th><th class="num">টাকা</th></tr></thead><tbody>
-          ${D.payments.map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b></td></tr>`).join("") || '<tr><td colspan="5" class="empty">কোনো পেমেন্ট নেই</td></tr>'}
+          ${D.payments.map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="5" class="empty">কোনো পেমেন্ট নেই</td></tr>'}
         </tbody></table></div></div>`;
     },
     // অনলাইন কুইজ: চলমান (শুরু করো), সামনে, আগে দেওয়া (নম্বর ও উত্তর)

@@ -391,7 +391,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
           ${f.items.map((it) => `<tr><td>${esc(it.course)}${it.status === "ended" ? " <small>(শেষ)</small>" : ""}<small>শুরু ${U.date(it.startDate)}</small></td><td class="r">${money(it.fee)}${it.monthly ? "/মাস" : ""}${it.discount ? `<small>ছাড় ${money(it.discount)}</small>` : ""}</td><td class="r">${money(it.due)}${it.monthly ? `<small>${bn(it.months)} মাস</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="3">কোনো মডিউল নেই</td></tr>'}
           <tr><td><b>মোট</b></td><td></td><td class="r"><b>${money(f.totalDue)}</b></td></tr><tr><td><b>জমা</b></td><td></td><td class="r ok">${money(f.paid)}</td></tr><tr><td><b>বকেয়া</b></td><td></td><td class="r ${f.balance > 0 ? "bad" : "ok"}">${money(Math.max(0, f.balance))}</td></tr></tbody></table>
         <table><thead><tr><th>তারিখ</th><th>রসিদ / মাস</th><th class="r">টাকা</th></tr></thead><tbody>
-          ${pays.slice(0, 12).map((p) => `<tr><td>${U.date(p.date)}</td><td>#${bn(p.receiptNo || "")}${p.month ? `<small>${U.month(p.month)} · ${esc(p.method || "")}</small>` : ""}</td><td class="r">${money(p.amount)}</td></tr>`).join("") || '<tr><td colspan="3">কোনো পেমেন্ট নেই</td></tr>'}</tbody></table></div></section>
+          ${pays.slice(0, 12).map((p) => `<tr><td>${U.date(p.date)}</td><td>#${bn(p.receiptNo || "")}${p.month ? `<small>${U.month(p.month)} · ${esc(p.method || "")}</small>` : ""}</td><td class="r">${money(p.amount)}${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="3">কোনো পেমেন্ট নেই</td></tr>'}</tbody></table></div></section>
 
       <section><h3 class="sr-h">৪. হাজিরা (মাস অনুযায়ী)</h3><table><thead><tr><th>মাস</th><th class="r">উপস্থিত</th><th class="r">অনুপস্থিত</th><th class="r">ছুটি</th><th class="r">হার</th></tr></thead><tbody>
         ${Object.keys(months).sort().reverse().map((mo) => { const o = months[mo]; return `<tr><td>${U.month(mo)}</td><td class="r">${bn(o.p)}</td><td class="r">${bn(o.a)}</td><td class="r">${bn(o.l)}</td><td class="r">${pc(o.p + o.a ? (o.p / (o.p + o.a)) * 100 : null)}</td></tr>`; }).join("") || '<tr><td colspan="5">এখনো হাজিরা নেই</td></tr>'}
@@ -430,7 +430,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     const last = thisMonth(), left = {};
     let mk = it.startDate.slice(0, 7), out = null, advance = 0;
     for (const x of pays) {
-      let amt = x.amount;
+      let amt = (x.amount || 0) + (x.discount || 0); // ছাড়ও মাসের ফি শোধ করে
       const mine = x.id === p.id ? [] : null;
       while (amt > 0) {
         if (!(mk in left)) left[mk] = feeOf(mk);
@@ -465,7 +465,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
           ${cell("শিক্ষার্থী আইডি", esc(p.studentId))}${cell("ফি-এর ধরন", esc(kind), esc(mod))}
           ${cell("সেশন / ব্যাচ", esc([s.session, batchName(s.batchId)].filter(Boolean).join(" · ") || "—"))}${cell("পেমেন্টের মাধ্যম", esc(p.method || "নগদ"), p.note ? esc(p.note) : "")}
           ${cov && (cov.list.length || cov.advance) ? `<div class="c cov"><small>এই টাকায় যে মাসের ফি শোধ হলো</small><b>${esc(coverageText(cov))}</b></div>` : ""}
-          <div class="c amt"><small>টাকার পরিমাণ</small><b>${money(p.amount)}</b></div>
+          <div class="c amt"><small>টাকার পরিমাণ</small><b>${money(p.amount)}</b>${p.discount > 0 ? `<i>এছাড়া ছাড়: ${money(p.discount)}</i>` : ""}</div>
           <div class="c ${due ? "unpaid" : "paid"}"><small>পেমেন্ট স্ট্যাটাস</small><b>${due ? `আংশিক পরিশোধ — বকেয়া ${money(due)}` : "পরিশোধিত (Paid)"}</b></div>
         </div>
         <div class="sg"><span><img class="receipt-signature" src="${location.origin}/images/signature.png" alt="শাহিন স্যারের স্বাক্ষর">গ্রহণকারীর স্বাক্ষর</span><span>প্রদানকারীর স্বাক্ষর</span></div></section>`;
@@ -1485,16 +1485,18 @@ ${list.map(receiptHtml).join("")}
     const student = studentById(id), pending = student?.pendingProfile;
     if (!pending) return toast("সংশোধনের অনুরোধ নেই", true);
     const value = v => typeof v === "boolean" ? v ? "হ্যাঁ" : "না" : String(v || "—");
-    let busy = false;
+    let busy = false, onClose = null;
+    // তালিকা থেকে খুললে: ✕ / বাতিল / Esc দিলেও পুরো বন্ধ না হয়ে অনুরোধের তালিকায় ফেরে (সিদ্ধান্ত বা "তালিকা" বোতামে নিজেই ফেরে, তাই তখন এটা খুলে ফেলা হয়)
+    const leave = () => { if (onClose) { modal.removeEventListener("close", onClose); onClose = null; } };
     const decide = async action => {
       if (busy) return true;
       busy = true; $("#modalSave").disabled = true; $("#rejectProfileChanges").disabled = true;
-      try { await api("/api/admin/student-profile-review",{body:{id,version:pending.version,action}}); await load(); route(); if (back) back(); else viewStudent(id); toast(action === "approve" ? "তথ্য সংশোধন অনুমোদিত হয়েছে" : "সংশোধন অনুমোদিত হয়নি"); return true; }
+      try { await api("/api/admin/student-profile-review",{body:{id,version:pending.version,action}}); leave(); await load(); route(); if (back) back(); else viewStudent(id); toast(action === "approve" ? "তথ্য সংশোধন অনুমোদিত হয়েছে" : "সংশোধন অনুমোদিত হয়নি"); return true; }
       finally { busy = false; if ($("#rejectProfileChanges")) { $("#rejectProfileChanges").disabled=false; $("#modalSave").disabled=false; } }
     };
     openModal({title:"তথ্য সংশোধনের অনুমোদন",wide:true,saveText:"✓ সংশোধন অনুমোদন করুন",onSave:()=>decide("approve"),body:`${back ? '<p><button type="button" class="btn line" id="backProfileList">‹ অনুরোধের তালিকা</button></p>' : ""}<p><b>${esc(student.name)}</b> · রোল ${esc(student.id)}</p><p class="muted">নিচের আগের তথ্যগুলো এখনো চালু আছে। অনুমোদন দিলে নতুন তথ্য বসবে।</p><div class="tbl-wrap"><table class="profile-change-table"><thead><tr><th>তথ্য</th><th>আগের তথ্য</th><th>নতুন তথ্য</th></tr></thead><tbody>${Object.entries(pending.changes).map(([key,change])=>`<tr><td><b>${esc(change.label || key)}</b></td><td>${esc(value(change.from))}</td><td><strong>${esc(value(change.to))}</strong></td></tr>`).join("")}</tbody></table></div><p><button type="button" class="btn line" id="rejectProfileChanges">অনুমোদন না দিন</button></p>`});
     $("#rejectProfileChanges").onclick=()=>decide("reject").catch(error=>toast(error.message,true));
-    if (back) $("#backProfileList").onclick = back;
+    if (back) { $("#backProfileList").onclick = () => { leave(); back(); }; onClose = () => { onClose = null; setTimeout(back, 0); }; modal.addEventListener("close", onClose, { once: true }); }
   }
   function reviewStudentPhotos(scopeIds) {
     const pending = () => DB.students.filter(s => scopeIds.has(s.id) && s.pendingPhoto);
@@ -1693,7 +1695,7 @@ ${list.map(receiptHtml).join("")}
     const scopeIds = SICStudentDirectory.ids(DB, mode);
     const scopedCourses = DB.courses.filter(m => modeOf(m) === mode);
     const listModules = sid => enrollmentsOf(sid).filter(e => e.status === "active" && modeOf(courseById(e.courseId)) === mode).map(e => courseById(e.courseId)?.name).filter(Boolean);
-    const scopedFees = s => { const items = (s.fees?.items || []).filter(i => modeOf(courseById(i.courseId)) === mode), enrollmentIds = new Set(items.map(i => i.enrollmentId)); const totalDue=items.reduce((n,i)=>n+i.due,0), paid=DB.payments.filter(p=>p.studentId===s.id&&(enrollmentIds.has(p.enrollmentId)||(!p.enrollmentId&&mode==="offline"))).reduce((n,p)=>n+Number(p.amount||0),0); return {items,totalDue,paid,balance:totalDue-paid}; };
+    const scopedFees = s => { const items = (s.fees?.items || []).filter(i => modeOf(courseById(i.courseId)) === mode), enrollmentIds = new Set(items.map(i => i.enrollmentId)); const totalDue=items.reduce((n,i)=>n+i.due,0), mine=DB.payments.filter(p=>p.studentId===s.id&&(enrollmentIds.has(p.enrollmentId)||(!p.enrollmentId&&mode==="offline"))), paid=mine.reduce((n,p)=>n+Number(p.amount||0),0), discounts=mine.reduce((n,p)=>n+Number(p.discount||0),0); return {items,totalDue,paid,discounts,balance:totalDue-paid-discounts}; };
     const linkedBatch = arg.startsWith("batch/") ? batchById(arg.slice(6)) : null;
     const filterKey = linkedBatch ? `${mode}/${linkedBatch.id}` : mode;
     const remembered = studentBatchFilters.get(filterKey);
@@ -2066,7 +2068,9 @@ ${list.map(receiptHtml).join("")}
         { name: "studentId", label: "শিক্ষার্থী", type: "select", options: [["", "বেছে নিন"], ...studs], required: true },
         { type: "html", html: '<div id="payInfo" style="color:var(--muted)"></div>' },
         { name: "enrollmentId", label: "কোন মডিউলের ফি", type: "select", options: [["", "সাধারণ"]], wide: true },
-        { name: "amount", label: "টাকার পরিমাণ", type: "number", min: 1, required: true },
+        { name: "amount", label: "টাকার পরিমাণ (নগদ জমা)", type: "number", min: 0, required: true },
+        { name: "discount", label: "ছাড় (টাকা) — ঐচ্ছিক", type: "number", min: 0, placeholder: "ছাড় দিলে লিখুন" },
+        { type: "html", html: '<div id="payAfter" class="wide" style="margin-top:-6px;font-weight:600"></div>' },
         { name: "month", label: "কোন মাসের ফি", type: "month", value: thisMonth() },
         { name: "method", label: "মাধ্যম", type: "select", options: METHODS },
         { name: "date", label: "তারিখ", type: "date", value: U.today() },
@@ -2075,6 +2079,9 @@ ${list.map(receiptHtml).join("")}
       values: { studentId, idQ: studentId },
       onSave: async (d) => {
         delete d.idQ;
+        if (!(d.amount > 0 || d.discount > 0)) throw new Error("টাকার পরিমাণ বা ছাড় দিন");
+        const st0 = studentById(d.studentId), owe = st0 ? Math.max(0, st0.fees.balance) : 0;
+        if (d.discount > owe) throw new Error("ছাড় বকেয়ার চেয়ে বেশি হতে পারে না (এখন বকেয়া " + money(owe) + ")");
         const r = await save("payments", d);
         await load();
         if (location.hash.startsWith("#fees")) route();
@@ -2083,18 +2090,27 @@ ${list.map(receiptHtml).join("")}
         printReceipt(DB.payments.find((p) => p.id === r.item.id));
       },
     });
-    const sel = $('#modalBody [name="studentId"]'), idQ = $('#modalBody [name="idQ"]'), amt = $('#modalBody [name="amount"]'), es = $('#modalBody [name="enrollmentId"]');
+    const sel = $('#modalBody [name="studentId"]'), idQ = $('#modalBody [name="idQ"]'), amt = $('#modalBody [name="amount"]'), es = $('#modalBody [name="enrollmentId"]'), dsc = $('#modalBody [name="discount"]');
+    let base = 0, touched = false; // base = নিজে থেকে বসা টাকা; touched = নিজে বদলালে আর ছাড় দিয়ে নিজে থেকে কমে না
+    const after = () => {
+      const s = studentById(sel.value), el = $("#payAfter"); if (!el) return; if (!s) { el.textContent = ""; return; }
+      const left = s.fees.balance - (Number(amt.value) || 0) - (Number(dsc.value) || 0);
+      el.innerHTML = left > 0 ? `এই পেমেন্টের পর বকেয়া থাকবে <b style="color:var(--bad)">${money(left)}</b>` : left < 0 ? `<span style="color:var(--bad)">বকেয়ার চেয়ে ${money(-left)} বেশি — অগ্রিম ধরা হবে</span>` : '<b style="color:#187460">এই পেমেন্টে সব বকেয়া শোধ হবে</b>';
+    };
     const info = () => {
       const s = studentById(sel.value), typed = idQ.value.trim();
       $("#payInfo").innerHTML = s ? `${esc(s.session || "")} · ${esc(batchName(s.batchId))} · ${balanceChip(s.fees)}` : typed ? `<span style="color:var(--bad)">এই আইডির কোনো সক্রিয় শিক্ষার্থী নেই</span>` : "";
       es.innerHTML = opt([["", "সাধারণ"], ...(s ? s.fees.items.filter((i) => i.status === "active").map((i) => [i.enrollmentId, `${i.course} — ${money(i.net)}${i.monthly ? "/মাস" : ""}`]) : [])], s && s.fees.items[0] ? s.fees.items[0].enrollmentId : "");
       const it = s && s.fees.items.find((i) => i.enrollmentId === es.value);
-      if (s && !amt.value) amt.value = Math.max(0, Math.min(s.fees.balance, it && it.monthly ? it.net : s.fees.balance)) || "";
+      if (s && !amt.value) { base = Math.max(0, Math.min(s.fees.balance, it && it.monthly ? it.net : s.fees.balance)); touched = false; amt.value = base ? String(Math.max(0, base - (Number(dsc.value) || 0))) : ""; }
+      after();
     };
     sel.addEventListener("change", () => { idQ.value = sel.value; amt.value = ""; info(); });
     // আইডি লিখলে (বাংলা অঙ্কেও) তালিকা নিজে থেকে সেই শিক্ষার্থীতে যায়
     idQ.addEventListener("input", () => { const id = idQ.value.trim().replace(/[০-৯]/g, (x) => "০১২৩৪৫৬৭৮৯".indexOf(x)); sel.value = studs.some(([k]) => k === id) ? id : ""; amt.value = ""; info(); });
     idQ.addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+    amt.addEventListener("input", () => { touched = true; after(); });
+    dsc.addEventListener("input", () => { if (!touched && base) amt.value = String(Math.max(0, base - (Number(dsc.value) || 0))); after(); });
     info();
   }
   // ---------- ব্লাড ব্যাংক: শিক্ষার্থীর তথ্য থেকে — রক্তের গ্রুপ আর শিক্ষার্থী / অভিভাবক / বাবা / মায়ের নম্বর ----------
@@ -2207,7 +2223,7 @@ ${list.map(receiptHtml).join("")}
       const out = {}, from = (it.startDate || "").slice(0, 7), to = thisMonth();
       if (!from) return out;
       const solo = s.fees.items.length === 1; // একটাই মডিউল হলে "সাধারণ" পেমেন্টও এই মডিউলের
-      let pool = DB.payments.filter((p) => p.studentId === s.id && (p.enrollmentId === it.enrollmentId || (solo && !p.enrollmentId))).reduce((t, p) => t + p.amount, 0);
+      let pool = DB.payments.filter((p) => p.studentId === s.id && (p.enrollmentId === it.enrollmentId || (solo && !p.enrollmentId))).reduce((t, p) => t + p.amount + (p.discount || 0), 0);
       let [Y, M] = from.split("-").map(Number);
       for (let mk = from; mk <= to; ) {
         const adj = (it.adjust || []).find((x) => x.month === mk), fee = adj ? adj.fee : it.net, got = Math.min(pool, fee);
@@ -2558,13 +2574,13 @@ ${list.map(receiptHtml).join("")}
     const modOf = (p) => { const e = DB.enrollments.find((x) => x.id === p.enrollmentId); return e ? (courseById(e.courseId) || {}).name || "" : "সাধারণ"; };
     const list = () => { const mo = $("#pm").value, qv = $("#pq").value.trim().toLowerCase(); return DB.payments.filter((p) => (!mo || (p.date || "").startsWith(mo)) && (!qv || (p.studentId + " " + studentName(p.studentId)).toLowerCase().includes(qv))).sort((a, b) => (b.date + String(b.receiptNo)).localeCompare(a.date + String(a.receiptNo))); };
     const draw = () => {
-      $("#prows").innerHTML = list().map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td><b>${esc(studentName(p.studentId))}</b><small>${esc(p.studentId)}</small></td><td>${esc(modOf(p))}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b></td>
+      $("#prows").innerHTML = list().map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td><b>${esc(studentName(p.studentId))}</b><small>${esc(p.studentId)}</small></td><td>${esc(modOf(p))}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td>
         <td class="num"><button class="icon-btn" title="রসিদ প্রিন্ট" data-print="${p.id}">প্রিন্ট</button><button class="icon-btn" title="মুছুন" data-del="${p.id}">✕</button></td></tr>`).join("") || `<tr><td colspan="8" class="empty">কোনো পেমেন্ট নেই</td></tr>`;
     };
     draw();
     $("#pm").oninput = draw; $("#pq").oninput = draw;
     $("#prows").onclick = (e) => { const t = e.target.closest("[data-print],[data-del]"); if (!t) return; if (t.dataset.print) printReceipt(DB.payments.find((p) => p.id === t.dataset.print)); if (t.dataset.del) remove("payments", t.dataset.del, "এই পেমেন্টটি"); };
-    $("#pcsv").onclick = () => U.xlsx(`payments-${U.today()}.xlsx`, ["রসিদ", "তারিখ", "আইডি", "নাম", "মডিউল", "মাস", "মাধ্যম", "টাকা", "নোট"], list().map((p) => [p.receiptNo, p.date, p.studentId, studentName(p.studentId), modOf(p), p.month, p.method, p.amount, p.note]));
+    $("#pcsv").onclick = () => U.xlsx(`payments-${U.today()}.xlsx`, ["রসিদ", "তারিখ", "আইডি", "নাম", "মডিউল", "মাস", "মাধ্যম", "টাকা", "ছাড়", "নোট"], list().map((p) => [p.receiptNo, p.date, p.studentId, studentName(p.studentId), modOf(p), p.month, p.method, p.amount, p.discount || 0, p.note]));
   }
 
   // ---------- পরীক্ষা: নতুন পরীক্ষা, নম্বর এন্ট্রি, ক্যালেন্ডার, সম্পন্ন, পরবর্তী, ডকুমেন্টস — admin-exams.js ফাইলে ----------

@@ -641,8 +641,9 @@ function feeSummary(s) {
     return { enrollmentId: e.id, courseId: e.courseId, course: c.name || "", status: e.status, chapters: e.chapters || [], fee: e.fee, discount: e.discount, startDate: e.startDate, ...enrollmentDue(e) };
   });
   const totalDue = items.reduce((t, i) => t + i.due, 0);
-  const paid = db.payments.filter((p) => p.studentId === s.id).reduce((t, p) => t + num(p.amount), 0);
-  return { items, totalDue, paid, balance: totalDue - paid };
+  const mine = db.payments.filter((p) => p.studentId === s.id); // ছাড় (discount) নগদ জমা নয়, কিন্তু বকেয়া কমায়
+  const paid = mine.reduce((t, p) => t + num(p.amount), 0), discounts = mine.reduce((t, p) => t + num(p.discount), 0);
+  return { items, totalDue, paid, discounts, balance: totalDue - paid - discounts };
 }
 
 // ব্যাচ বদলালেও আগের হাজিরা ও পরীক্ষা থাকে — শিক্ষার্থীর আইডি ধরে খোঁজা হয়
@@ -1300,7 +1301,7 @@ const CLEAN = {
   applications: (b) => ({ status: ["pending", "contacted", "approved", "rejected"].includes(b.status) ? b.status : "pending", note: str(b.note, 500) }),
   ratings: (b) => ({ hidden: !!b.hidden }), // শিক্ষার্থীদের মতামত — ওয়েবসাইটে দেখাবে কিনা
   onlineApps: (b) => ({ status: ["pending", "contacted", "approved", "rejected"].includes(b.status) ? b.status : "pending", note: str(b.note, 500) }),
-  payments: (b) => ({ studentId: str(b.studentId, 40), enrollmentId: str(b.enrollmentId, 60), amount: num(b.amount), month: str(b.month, 7), method: str(b.method, 30) || "নগদ", note: str(b.note, 300), date: str(b.date, 10) || today() }),
+  payments: (b) => ({ studentId: str(b.studentId, 40), enrollmentId: str(b.enrollmentId, 60), amount: num(b.amount), discount: Math.max(0, num(b.discount)), month: str(b.month, 7), method: str(b.method, 30) || "নগদ", note: str(b.note, 300), date: str(b.date, 10) || today() }),
   // পরীক্ষা: ধরন (Weekly / Monthly / Chapter Final / Model), প্রশ্নের ধরন (CQ / MCQ / দুটোই), বিষয় ও পূর্ণমান, পরীক্ষার্থী, নম্বর
   examRoutines: (b) => ({ title: str(b.title, 150), type: EC.TYPES.some(([k]) => k === b.type) ? b.type : "", session: str(b.session, 20), batchIds: (Array.isArray(b.batchIds) ? b.batchIds : []).map((x) => str(x, 60)).filter((x) => db.batches.some((bt) => bt.id === x)) }),
   exams: (b) => {
@@ -3608,7 +3609,7 @@ async function api(req, res, url) {
       }
       if (col === "payments") {
         if (!db.students.some((s) => s.id === clean.studentId)) return send(res, 400, { error: "শিক্ষার্থী বেছে নিন" });
-        if (clean.amount <= 0) return send(res, 400, { error: "টাকার পরিমাণ দিন" });
+        if (!(clean.amount > 0 || (clean.amount === 0 && clean.discount > 0))) return send(res, 400, { error: "টাকার পরিমাণ বা ছাড় দিন" });
       }
       if (col === "achievers" && !clean.name) return send(res, 400, { error: "শিক্ষার্থীর নাম লিখুন" });
       if (col === "books" && !clean.title) return send(res, 400, { error: "বই / শিটের নাম লিখুন" });
