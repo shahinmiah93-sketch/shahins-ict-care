@@ -2064,8 +2064,9 @@ ${list.map(receiptHtml).join("")}
     openForm({
       title: "পেমেন্ট নিন", saveText: "সেভ ও রসিদ প্রিন্ট",
       fields: [
-        { name: "idQ", label: "আইডি লিখুন", placeholder: "যেমন: 270001" },
+        { name: "idQ", label: "আইডি, নাম বা মোবাইল লিখুন", placeholder: "যেমন: 270001, রাহিম বা 017…" },
         { name: "studentId", label: "শিক্ষার্থী", type: "select", options: [["", "বেছে নিন"], ...studs], required: true },
+        { type: "html", html: '<div id="paySug" class="wide pay-sug"></div>' },
         { type: "html", html: '<div id="payInfo" style="color:var(--muted)"></div>' },
         { name: "enrollmentId", label: "কোন মডিউলের ফি", type: "select", options: [["", "সাধারণ"]], wide: true },
         { name: "amount", label: "টাকার পরিমাণ (নগদ জমা)", type: "number", min: 0, required: true },
@@ -2091,7 +2092,21 @@ ${list.map(receiptHtml).join("")}
       },
     });
     const sel = $('#modalBody [name="studentId"]'), idQ = $('#modalBody [name="idQ"]'), amt = $('#modalBody [name="amount"]'), es = $('#modalBody [name="enrollmentId"]'), dsc = $('#modalBody [name="discount"]');
-    let base = 0, touched = false; // base = নিজে থেকে বসা টাকা; touched = নিজে বদলালে আর ছাড় দিয়ে নিজে থেকে কমে না
+    let base = 0, touched = false, matches = []; // base = নিজে থেকে বসা টাকা; touched = নিজে বদলালে আর ছাড় দিয়ে নিজে থেকে কমে না
+    const digitsOf = (v) => String(v || "").replace(/\D/g, "");
+    const normQ = (v) => String(v || "").trim().replace(/[০-৯]/g, (x) => "০১২৩৪৫৬৭৮৯".indexOf(x)).toLowerCase();
+    const findStudents = (raw) => {
+      const q = normQ(raw), ql = String(raw || "").trim().toLowerCase(), dg = digitsOf(q); if (!q) return []; // ql: বাংলা অঙ্ক সহ নাম ("শিক্ষার্থী ৪") মেলাতে
+      const pool = DB.students.filter((x) => x.status !== "inactive" || x.id === studentId);
+      const exact = pool.filter((x) => String(x.id).toLowerCase() === q); if (exact.length) return exact;
+      return pool.filter((x) => String(x.id).toLowerCase().includes(q) || [x.name, x.nameEn].some((n) => { const t = String(n || "").toLowerCase(); return t.includes(q) || t.includes(ql) || normQ(t).includes(q); })
+        || (dg.length >= 3 && [x.phone, x.guardianPhone, x.fatherPhone, x.motherPhone].some((p) => digitsOf(p).includes(dg)))).slice(0, 8);
+    };
+    const drawSug = () => {
+      const box = $("#paySug"); if (!box) return;
+      box.innerHTML = matches.length > 1 && !studentById(sel.value) ? matches.map((x) => `<button type="button" class="btn line" data-pick="${esc(x.id)}">${esc(x.id)} — <b>${esc(x.name)}</b> <small>${esc([x.phone, x.guardianPhone].filter(Boolean)[0] || "")} · ${esc(batchName(x.batchId))}</small></button>`).join("") : "";
+    };
+    const pick = (id) => { sel.value = id; idQ.value = id; matches = []; amt.value = ""; info(); drawSug(); };
     const after = () => {
       const s = studentById(sel.value), el = $("#payAfter"); if (!el) return; if (!s) { el.textContent = ""; return; }
       const left = s.fees.balance - (Number(amt.value) || 0) - (Number(dsc.value) || 0);
@@ -2099,7 +2114,7 @@ ${list.map(receiptHtml).join("")}
     };
     const info = () => {
       const s = studentById(sel.value), typed = idQ.value.trim();
-      $("#payInfo").innerHTML = s ? `${esc(s.session || "")} · ${esc(batchName(s.batchId))} · ${balanceChip(s.fees)}` : typed ? `<span style="color:var(--bad)">এই আইডির কোনো সক্রিয় শিক্ষার্থী নেই</span>` : "";
+      $("#payInfo").innerHTML = s ? `${esc(s.session || "")} · ${esc(batchName(s.batchId))} · ${balanceChip(s.fees)}` : typed ? (matches.length > 1 ? `<span style="color:var(--muted)">${matches.length}জন মিলেছে — নিচ থেকে শিক্ষার্থী বেছে নিন</span>` : `<span style="color:var(--bad)">এই আইডি / নাম / মোবাইলের কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি</span>`) : "";
       es.innerHTML = opt([["", "সাধারণ"], ...(s ? s.fees.items.filter((i) => i.status === "active").map((i) => [i.enrollmentId, `${i.course} — ${money(i.net)}${i.monthly ? "/মাস" : ""}`]) : [])], s && s.fees.items[0] ? s.fees.items[0].enrollmentId : "");
       const it = s && s.fees.items.find((i) => i.enrollmentId === es.value);
       if (s && !amt.value) { base = Math.max(0, Math.min(s.fees.balance, it && it.monthly ? it.net : s.fees.balance)); touched = false; amt.value = base ? String(Math.max(0, base - (Number(dsc.value) || 0))) : ""; }
@@ -2107,8 +2122,9 @@ ${list.map(receiptHtml).join("")}
     };
     sel.addEventListener("change", () => { idQ.value = sel.value; amt.value = ""; info(); });
     // আইডি লিখলে (বাংলা অঙ্কেও) তালিকা নিজে থেকে সেই শিক্ষার্থীতে যায়
-    idQ.addEventListener("input", () => { const id = idQ.value.trim().replace(/[০-৯]/g, (x) => "০১২৩৪৫৬৭৮৯".indexOf(x)); sel.value = studs.some(([k]) => k === id) ? id : ""; amt.value = ""; info(); });
-    idQ.addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+    idQ.addEventListener("input", () => { matches = findStudents(idQ.value); sel.value = matches.length === 1 ? matches[0].id : ""; amt.value = ""; info(); drawSug(); });
+    $("#paySug").addEventListener("click", (e) => { const b = e.target.closest("[data-pick]"); if (b) pick(b.dataset.pick); });
+    idQ.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (matches.length > 1 && !studentById(sel.value)) pick(matches[0].id); } });
     amt.addEventListener("input", () => { touched = true; after(); });
     dsc.addEventListener("input", () => { if (!touched && base) amt.value = String(Math.max(0, base - (Number(dsc.value) || 0))); after(); });
     info();

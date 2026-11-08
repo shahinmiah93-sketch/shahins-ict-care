@@ -1054,3 +1054,5 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .student-photo-adjust{margin:12px 0 4px;padding:12px 14px;border-radius:14px;background:#f4f8fb;border:1px solid #dbe6ef}
 .student-photo-adjust p{margin:4px 0 8px}.student-photo-adjust .student-photo-current{margin:10px 0 0}
 .student-photo-dialog label small{font-weight:500;color:#617383}
+.pay-sug{display:grid;gap:6px;margin-top:-6px}.pay-sug:empty{display:none}
+.pay-sug .btn{justify-content:flex-start;text-align:left;font-weight:500}.pay-sug .btn small{color:var(--muted,#667085);margin-left:6px}
