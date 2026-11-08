@@ -425,7 +425,7 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .ln-up i{display:block;height:8px;border-radius:6px;background:linear-gradient(90deg,#f3c55d,#d9a441);transition:width .2s}
 @media(max-width:900px){.ls-row{grid-template-columns:28px 1fr}.ls-row>*:not(b){grid-column:2}}
 /* ভিডিও পপআপ (অ্যাডমিনেও) */
-.vp-dlg{width:min(960px,94vw);padding:0;border:0;border-radius:18px;overflow:hidden;background:#000;box-shadow:0 40px 90px rgba(0,0,0,.6)}.vp-dlg::backdrop{background:rgba(0,0,0,.72)}
+.vp-dlg{width:min(960px,94vw,calc((100vh - 160px) * 16 / 9));max-height:calc(100vh - 16px);padding:0;border:0;border-radius:18px;overflow:hidden;background:#000;box-shadow:0 40px 90px rgba(0,0,0,.6)}.vp-dlg::backdrop{background:rgba(0,0,0,.72)}
 .vp-head{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0b1f24;color:#fff}.vp-head b{flex:1;font-size:15px}.vp-head button{width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer}
 .vp-box{aspect-ratio:16/9;background:#000}.vp-box iframe,.vp-box video{width:100%;height:100%;border:0;display:block}
 /* ---------- নম্বর এন্ট্রি (Bulk) — সম্ভারুণের শিটের ফরম্যাট: সবুজ টাইটেল বার, নীল তথ্য-কলাম, সোনালি নম্বর-কলাম, হালকা হলুদ ঘরে সাদা ইনপুট ---------- */

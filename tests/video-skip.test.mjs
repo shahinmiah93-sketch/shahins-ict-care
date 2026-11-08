@@ -16,6 +16,9 @@ test('Skip script moves exactly 10 seconds and only touches controllable videos'
   assert.match(s, /bar\.remove\(\)/);         // YouTube না পেলে বোতাম সরে যায়
   assert.match(s, /gone\)/);                  // ভিডিও সরলে বোতামও সরে
 });
+test('Video popup is sized by screen height so the skip buttons are never cut off on short screens', () => {
+  for (const f of ['css/site.css', 'css/exams.css']) assert.match(read(f), /\.vp-dlg\{width:min\(960px,94vw,calc\(\(100vh - 160px\) \* 16 \/ 9\)\);max-height:calc\(100vh - 16px\);/, f);
+});
 test('Pages that show lesson / popup videos load the skip script', () => {
   for (const p of ['index', 'student', 'learn', 'module', 'admin']) assert.match(read(p + '.html'), /<script src="\/js\/video-skip\.js"><\/script>/, p);
 });
