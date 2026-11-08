@@ -2747,6 +2747,32 @@ async function api(req, res, url) {
     saveDb();
     return send(res, 200, { ok: true, item });
   }
+  // বকেয়া SMS তালিকা (ফি পাতা): একজনের বকেয়া SMS হাতে পাঠানো। বার্তার ছাঁচে {নাম} {আইডি} {বকেয়া} {ব্যাচ} সার্ভারেই বসে।
+  // to = guardian (অভিভাবক) | student (শিক্ষার্থী) | both; dry = শুধু দেখানো (নম্বর, বার্তা, আজ আগে গেছে কি না), পাঠানো নয়।
+  if (p === "/api/admin/due-sms" && m === "POST") {
+    const b = await readBody(req), sid = str(b.studentId, 40), to = b.to === "student" || b.to === "both" ? b.to : "guardian";
+    const s = db.students.find((x) => x.id === sid);
+    if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
+    const bal = feeSummary(s).balance;
+    if (!(bal > 0)) return send(res, 400, { error: "এই শিক্ষার্থীর কোনো বকেয়া নেই" });
+    const ok = (n) => /^01\d{9}$/.test(n), guardian = [s.guardianPhone, s.fatherPhone, s.motherPhone].map(phoneOf).find(ok) || "", own = ok(phoneOf(s.phone)) ? phoneOf(s.phone) : "";
+    const phones = [...new Set((to === "student" ? [own] : to === "both" ? [guardian, own] : [guardian]).filter(Boolean))];
+    if (!phones.length) return send(res, 400, { error: "মোবাইল নম্বর নেই" });
+    const tpl = str(b.template, 500) || "সম্মানিত অভিভাবক, {নাম}-এর বেতন বাবদ মোট {বকেয়া} টাকা বকেয়া রয়েছে। অনুগ্রহ করে পরিশোধ করবেন। — Shahin Sir";
+    const batch = (db.batches.find((x) => x.id === s.batchId) || {}).name || "";
+    const text = tpl.replaceAll("{নাম}", s.name).replaceAll("{আইডি}", s.id).replaceAll("{বকেয়া}", Math.round(bal).toLocaleString("bn-BD")).replaceAll("{ব্যাচ}", batch);
+    const already = db.smsLog.some((l) => l.ok && l.date === today() && l.filter === "DueManual" && String(l.text || "").includes(`— ${s.id}`));
+    if (b.dry) return send(res, 200, { ok: true, live: smsOn(), phones, text, already });
+    if (!smsOn()) return send(res, 400, { error: "SMS সার্ভিস চালু নেই — সেটআপ → সেটিংস থেকে চালু করুন" });
+    if (already && !b.force) return send(res, 409, { error: "আজ আগেই বকেয়ার SMS পাঠানো হয়েছে", already: true });
+    let sent = 0, err = "";
+    for (const phone of phones) {
+      try { await sendSms(phone, text, `বকেয়া SMS — ${s.id}, ${today()}`, "DueManual"); sent++; }
+      catch (er) { err = er.message; }
+    }
+    saveDb();
+    return sent ? send(res, 200, { ok: true, sent, of: phones.length, error: err }) : send(res, 502, { error: err || "SMS পাঠানো যায়নি" });
+  }
   // কল তালিকা থেকে অভিভাবককে সরাসরি SMS (BulkSMSBD দিয়ে): kind = absence (অনুপস্থিতি) বা due (বকেয়া)।
   // বার্তা সার্ভারেই তৈরি হয় (ক্লায়েন্টের লেখা বার্তা পাঠানো হয় না); dry = শুধু দেখানো (নম্বর, বার্তা, আজ আগে গেছে কি না), পাঠানো নয়।
   if (p === "/api/admin/call-sms" && m === "POST") {

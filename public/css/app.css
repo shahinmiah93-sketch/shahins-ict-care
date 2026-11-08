@@ -945,3 +945,20 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 @keyframes bdayUp{0%{transform:translateY(0) rotate(-6deg);opacity:0}15%{opacity:.75}100%{transform:translateY(-230px) rotate(8deg);opacity:0}}
 @media(prefers-reduced-motion:reduce){.bday-b{animation:none;bottom:10px;opacity:.5}}
 @media(max-width:560px){.bday{flex-direction:column;align-items:flex-start;gap:10px;padding:16px 16px 16px 22px}.bday-art{width:48px;height:48px;font-size:26px;border-radius:16px;margin-top:0}.bday h2{font-size:21px}.bday p{font-size:14.5px}.bday::after{width:30%}}
+/* ফি → বকেয়া SMS তালিকা */
+.ds-msg{display:grid;gap:10px;margin-bottom:12px;padding:16px}
+.ds-msg-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}.ds-ph{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ds-ph small{color:var(--muted)}.ds-ph .ab-btn{padding:5px 11px;font-size:13px}
+.ds-msg textarea{width:100%;min-height:78px;padding:10px 12px;border:1px solid #cbded7;border-radius:12px;background:#fff;color:var(--ink);font:inherit;line-height:1.6;resize:vertical}
+.ds-pv{display:grid;gap:4px}.ds-pv small{color:var(--muted)}
+.ds-bubble{max-width:560px;padding:10px 14px;border-radius:16px 16px 16px 4px;background:#e9f6ee;border:1px solid #cfe8d9;color:#17402f;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.ds-bar{margin-bottom:12px}.ds-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.ds-hint{color:var(--muted);font-size:13px}
+.ds-actions .ab-btn[disabled]{opacity:.5;cursor:not-allowed}
+.ds-prog{display:grid;gap:8px;padding:12px 14px;border:1px solid #d6e6df;border-radius:14px;background:#f4faf7}.ds-prog-t{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.ds-track{height:10px;border-radius:999px;background:#dfeae5;overflow:hidden}.ds-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2fc2a4,#0f5c4f);transition:width .25s}
+.ds-report{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid #cfe8d9;background:#f1fbf5;color:#17402f}.ds-report.bad{border-color:#f1b0b6;background:#fff4f5;color:#7a1f28}.ds-report ul{margin:6px 0 0;padding-left:18px}
+.ds-row{display:flex;align-items:center;gap:14px;padding:12px 16px;margin-bottom:8px;border:1px solid #e3dccb;border-radius:14px;background:#fff;cursor:pointer;transition:border-color .15s,background .15s}
+.ds-row:hover{border-color:#0f5c4f}.ds-row.on{border-color:#0f5c4f;background:#eef7f2}.ds-row.off{opacity:.6;cursor:not-allowed}
+.ds-row input[type=checkbox]{flex:none;width:20px;height:20px;accent-color:#0f5c4f}
+.ds-info{flex:1;min-width:0;display:grid;gap:4px}.ds-info b{font-size:15.5px}.ds-info small{display:block;color:var(--muted)}
+.ds-due{flex:none;text-align:right}.ds-due small{display:block;color:var(--muted);font-size:12px}.ds-due b{font-size:18px;color:#b4233c}
+@media(max-width:560px){.ds-row{align-items:flex-start;padding:12px}.ds-due{align-self:center}}

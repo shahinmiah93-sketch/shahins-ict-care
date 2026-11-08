@@ -2489,6 +2489,7 @@ ${list.map(receiptHtml).join("")}
           <a class="btn ${tab === "dues" ? "" : "line"}" href="#fees/dues">বকেয়া তালিকা</a>
           <a class="btn ${tab === "report" ? "" : "line"}" href="#fees/report">সেশন ও ব্যাচের হিসাব</a>
           <a class="btn ${tab === "calls" ? "" : "line"}" href="#fees/calls">📞 বকেয়া কল তালিকা${dcPending ? ` <span class="at-tabn">${bn(dcPending)}</span>` : ""}</a>
+          <a class="btn ${tab === "sms" ? "" : "line"}" href="#fees/sms">✉ বকেয়া SMS তালিকা</a>
           <span class="grow"></span>
           <button class="btn gold" id="newPay">+ একজনের পেমেন্ট</button>
           <a class="btn ${tab === "batch" ? "" : "gold"}" href="#fees/batch">+ ব্যাচ ভিত্তিক পেমেন্ট</a>
@@ -2499,6 +2500,7 @@ ${list.map(receiptHtml).join("")}
     const body = $("#feeBody");
     if (tab === "batch") return batchPay(body);
     if (tab === "calls") return dueCalls(body);
+    if (tab === "sms") return window.SICDueSms({ get DB() { return DB; }, batchName, load })(body);
     if (tab === "dues") {
       body.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>শিক্ষার্থী</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th class="num">মোট দেনা</th><th class="num">পরিশোধ</th><th class="num">বকেয়া</th><th></th></tr></thead><tbody>
         ${dues.map((s) => `<tr><td><b>${esc(s.name)}</b><small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(s.fees.totalDue)}</td><td class="num">${money(s.fees.paid)}</td><td class="num"><span class="chip bad">${money(s.fees.balance)}</span></td>
