@@ -2750,13 +2750,15 @@ async function api(req, res, url) {
   // বকেয়া SMS তালিকা (ফি পাতা): একজনের বকেয়া SMS হাতে পাঠানো। বার্তার ছাঁচে {নাম} {আইডি} {বকেয়া} {ব্যাচ} সার্ভারেই বসে।
   // to = guardian (অভিভাবক) | student (শিক্ষার্থী) | both; dry = শুধু দেখানো (নম্বর, বার্তা, আজ আগে গেছে কি না), পাঠানো নয়।
   if (p === "/api/admin/due-sms" && m === "POST") {
-    const b = await readBody(req), sid = str(b.studentId, 40), to = ["student", "both", "father", "mother"].includes(b.to) ? b.to : "guardian";
+    const b = await readBody(req), sid = str(b.studentId, 40), ROLES = ["guardian", "father", "mother", "student"];
+    let who = Array.isArray(b.who) ? [...new Set(b.who.filter((x) => ROLES.includes(x)))] : []; // কাকে কাকে: অভিভাবক / বাবা / মা / শিক্ষার্থী — একাধিক টিক দেওয়া যায়
+    if (!who.length) who = b.to === "both" ? ["guardian", "student"] : ROLES.includes(b.to) ? [b.to] : ["guardian"]; // পুরোনো ধরন: একটাই
     const s = db.students.find((x) => x.id === sid);
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
     const bal = feeSummary(s).balance;
     if (!(bal > 0)) return send(res, 400, { error: "এই শিক্ষার্থীর কোনো বকেয়া নেই" });
     const ok = (n) => /^01\d{9}$/.test(n), guardian = [s.guardianPhone, s.fatherPhone, s.motherPhone].map(phoneOf).find(ok) || "", own = ok(phoneOf(s.phone)) ? phoneOf(s.phone) : "", dad = ok(phoneOf(s.fatherPhone)) ? phoneOf(s.fatherPhone) : "", mom = ok(phoneOf(s.motherPhone)) ? phoneOf(s.motherPhone) : "";
-    const phones = [...new Set(({ student: [own], both: [guardian, own], father: [dad], mother: [mom], guardian: [guardian] }[to]).filter(Boolean))];
+    const phones = [...new Set(who.map((k) => ({ student: own, father: dad, mother: mom, guardian })[k]).filter(Boolean))];
     if (!phones.length) return send(res, 400, { error: "মোবাইল নম্বর নেই" });
     const tpl = str(b.template, 500) || "সম্মানিত অভিভাবক, {নাম}-এর বেতন বাবদ মোট {বকেয়া} টাকা বকেয়া রয়েছে। অনুগ্রহ করে পরিশোধ করবেন। — Shahin Sir";
     const batch = (db.batches.find((x) => x.id === s.batchId) || {}).name || "";

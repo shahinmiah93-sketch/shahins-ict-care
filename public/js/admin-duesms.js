@@ -12,16 +12,19 @@ window.SICDueSms = function (X) {
   const DEFAULT_TPL = "সম্মানিত অভিভাবক, {নাম}-এর বেতন বাবদ মোট {বকেয়া} টাকা বকেয়া রয়েছে। অনুগ্রহ করে পরিশোধ করবেন। — Shahin Sir";
   const savedTpl = () => { try { return localStorage.getItem("sic-due-sms-tpl") || ""; } catch (e) { return ""; } };
   // ফি পাতা আবার আঁকা হলেও ফিল্টার, বার্তা আর বাছাই থেকে যায়
-  const S = (window.__sicDueSmsState ||= { session: "", batch: "", q: "", min: 0, to: "guardian", inactive: true, again: false, tpl: savedTpl() || DEFAULT_TPL, sel: new Set(), running: false, stop: false });
+  const S = (window.__sicDueSmsState ||= { session: "", batch: "", q: "", min: 0, who: ["guardian"], inactive: true, again: false, tpl: savedTpl() || DEFAULT_TPL, sel: new Set(), running: false, stop: false });
 
   const batchOf = (id) => DB().batches.find((b) => b.id === id);
-  // কাকে পাঠাবেন: অভিভাবক (অভিভাবক → বাবা → মা, প্রথম নম্বর) | বাবা | মা | শিক্ষার্থী নিজে | অভিভাবক + শিক্ষার্থী — না থাকলে খালি
+  // কাকে পাঠাবেন: অভিভাবক (অভিভাবক → বাবা → মা, প্রথম নম্বর) · বাবা · মা · শিক্ষার্থী নিজে — এক বা একাধিক টিক; একই নম্বর একবারই
+  const ROLES = [["guardian", "অভিভাবক"], ["father", "বাবা"], ["mother", "মা"], ["student", "শিক্ষার্থী"]];
+  if (!Array.isArray(S.who)) S.who = ["guardian"];
   const targets = (s) => {
     const one = (v) => (okPhone(cleanPhone(v)) ? cleanPhone(v) : "");
-    const g = [s.guardianPhone, s.fatherPhone, s.motherPhone].map(cleanPhone).find(okPhone) || "", own = one(s.phone);
-    return [...new Set(({ student: [own], both: [g, own], father: [one(s.fatherPhone)], mother: [one(s.motherPhone)], guardian: [g] }[S.to] || [g]).filter(Boolean))];
+    const map = { guardian: [s.guardianPhone, s.fatherPhone, s.motherPhone].map(cleanPhone).find(okPhone) || "", father: one(s.fatherPhone), mother: one(s.motherPhone), student: one(s.phone) };
+    return [...new Set(S.who.map((k) => map[k]).filter(Boolean))];
   };
-  const WHO = { guardian: "অভিভাবকের", student: "শিক্ষার্থীর", father: "বাবার", mother: "মায়ের", both: "অভিভাবক বা শিক্ষার্থীর" };
+  const whoNames = () => ROLES.filter(([k]) => S.who.includes(k)).map(([, t]) => t);
+  const whoText = () => { const n = whoNames(); return !n.length ? "কেউ না" : n.length <= 2 ? n.join(", ") : `${bn(n.length)}জন বাছা`; };
   const inScope = (s) => {
     const b = batchOf(s.batchId), q = S.q.trim().toLowerCase();
     return (S.inactive || s.status !== "inactive") && (!S.session || (b && b.session === S.session)) && (!S.batch || s.batchId === S.batch)
@@ -48,7 +51,7 @@ window.SICDueSms = function (X) {
     host.innerHTML = `<div class="card ab-ctl ab-ctl-dues ab-ctl-sms">
         <label>সেশন<select id="dsSe"><option value="">সব সেশন</option>${sessions.map((x) => `<option value="${esc(x.name)}"${x.name === S.session ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label>ব্যাচ<select id="dsBa"></select></label>
-        <label>কাকে পাঠাবেন<select id="dsTo"><option value="guardian"${S.to === "guardian" ? " selected" : ""}>অভিভাবক</option><option value="father"${S.to === "father" ? " selected" : ""}>বাবা</option><option value="mother"${S.to === "mother" ? " selected" : ""}>মা</option><option value="student"${S.to === "student" ? " selected" : ""}>শিক্ষার্থী</option><option value="both"${S.to === "both" ? " selected" : ""}>অভিভাবক + শিক্ষার্থী</option></select></label>
+        <div class="ds-who"><span class="ds-who-t">কাকে পাঠাবেন</span><details class="ds-who-dd" id="dsWho"><summary id="dsWhoSum" title="${esc(whoNames().join(", ") || "কেউ না")}">${esc(whoText())}</summary><div class="ds-who-menu">${ROLES.map(([k, tx]) => `<label class="ds-opt"><input type="checkbox" data-who="${k}"${S.who.includes(k) ? " checked" : ""}> ${tx}</label>`).join("")}</div></details></div>
         <label>খুঁজুন<input id="dsQ" class="dc-q" placeholder="নাম বা আইডি" value="${esc(S.q)}"></label>
         <label>সর্বনিম্ন বকেয়া (৳)<input id="dsMin" class="dc-q" type="number" min="0" step="100" value="${S.min || ""}" placeholder="যেকোনো"></label>
         <label class="ab-switch"><input type="checkbox" id="dsInact"${S.inactive ? " checked" : ""}><i class="ab-sw"></i><span>পড়া বন্ধ শিক্ষার্থীও</span></label>
@@ -82,7 +85,7 @@ window.SICDueSms = function (X) {
         const tg = targets(s), b = batchOf(s.batchId), lastSms = last[s.id];
         return `<label class="ds-row${tg.length ? "" : " off"}${S.sel.has(s.id) && tg.length ? " on" : ""}"><input type="checkbox" data-sid="${esc(s.id)}"${S.sel.has(s.id) && tg.length ? " checked" : ""}${tg.length ? "" : " disabled"}>
           <div class="ds-info"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(b ? b.name : "ব্যাচ নেই")}${s.status === "inactive" ? ` · <span class="chip warn">পড়া বন্ধ</span>` : ""}</small>
-            <small>${tg.length ? tg.map((p) => `<span class="chip">${bn(p)}</span>`).join(" ") : `<span class="chip bad">${WHO[S.to] || "অভিভাবকের"} নম্বর নেই</span>`}${lastSms ? ` <span class="chip ${lastSms === today() ? "ok" : ""}" title="শেষ বকেয়ার SMS">শেষ SMS ${esc(U.date(lastSms))}</span>` : ""}${todaySent.has(s.id) ? ` <span class="chip ok">✉ আজ গেছে</span>` : ""}</small></div>
+            <small>${tg.length ? tg.map((p) => `<span class="chip">${bn(p)}</span>`).join(" ") : `<span class="chip bad">${esc(whoNames().join("/") || "কেউ না")} — নম্বর নেই</span>`}${lastSms ? ` <span class="chip ${lastSms === today() ? "ok" : ""}" title="শেষ বকেয়ার SMS">শেষ SMS ${esc(U.date(lastSms))}</span>` : ""}${todaySent.has(s.id) ? ` <span class="chip ok">✉ আজ গেছে</span>` : ""}</small></div>
           <div class="ds-due"><small>বকেয়া</small><b>${U.money(s.fees.balance)}</b></div></label>`;
       }).join("") || `<div class="card empty">${DB().students.some((s) => s.fees && s.fees.balance > 0) ? "এই ফিল্টারে কোনো শিক্ষার্থী নেই" : "কোনো বকেয়া নেই 🎉"}</div>`;
     };
@@ -92,7 +95,8 @@ window.SICDueSms = function (X) {
     $("#dsBa").onchange = (e) => { S.batch = e.target.value; draw(); };
     $("#dsQ").oninput = (e) => { S.q = e.target.value; draw(); };
     $("#dsMin").oninput = (e) => { S.min = Number(e.target.value) || 0; draw(); };
-    $("#dsTo").onchange = (e) => { S.to = e.target.value; draw(); };
+    $("#dsWho").addEventListener("change", (e) => { const c = e.target.closest("[data-who]"); if (!c) return; if (c.checked) { if (!S.who.includes(c.dataset.who)) S.who.push(c.dataset.who); } else S.who = S.who.filter((k) => k !== c.dataset.who); S.who = ROLES.map(([k]) => k).filter((k) => S.who.includes(k)); $("#dsWhoSum").textContent = whoText(); $("#dsWhoSum").title = whoNames().join(", ") || "কেউ না"; draw(); });
+    if (!window.__sicDueSmsClose) { window.__sicDueSmsClose = true; document.addEventListener("click", (e) => { const d = document.querySelector("#dsWho"); if (d && d.open && !d.contains(e.target)) d.open = false; }); }
     $("#dsInact").onchange = (e) => { S.inactive = e.target.checked; draw(); };
     $("#dsAgain").onchange = (e) => { S.again = e.target.checked; draw(); };
     $("#dsTpl").oninput = (e) => { S.tpl = e.target.value; try { localStorage.setItem("sic-due-sms-tpl", S.tpl); } catch (er) { /* ঠিক আছে */ } draw(); };
@@ -111,7 +115,7 @@ window.SICDueSms = function (X) {
         $("#dsProgT") && ($("#dsProgT").textContent = `পাঠানো হচ্ছে… ${bn(i)} / ${bn(sel.length)} — ${s.name}`);
         $("#dsProgBar") && ($("#dsProgBar").style.width = Math.round((i / sel.length) * 100) + "%");
         try {
-          const r = await api("/api/admin/due-sms", { body: { studentId: s.id, template: S.tpl, to: S.to, force: S.again } });
+          const r = await api("/api/admin/due-sms", { body: { studentId: s.id, template: S.tpl, who: S.who, force: S.again } });
           ok++; sentNums += r.sent || 0; bad = 0; if (r.error) failed.push(`${s.name}: একটা নম্বরে যায়নি (${r.error})`);
         } catch (er) {
           if (/আগেই/.test(er.message)) skipped++;
