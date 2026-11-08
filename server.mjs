@@ -3759,15 +3759,14 @@ const monthlyTick = () => sendMonthlyProgress().catch((e) => console.error("ম�
 monthlyTick(); setInterval(monthlyTick, 60e3).unref();
 
 // ---------- মাসের ১ তারিখের বকেয়ার SMS ----------
-// ১ তারিখ সকাল ১০টা থেকে রাত ১০টার মধ্যে (সার্ভার দেরিতে চালু হলে তখনই), মাসে একবার: মাসিক বেতনের মডিউলে পড়ছে আর বকেয়া আছে এমন সক্রিয় শিক্ষার্থী ও অভিভাবকের নম্বরে
+// ১ তারিখ সকাল ১০টা থেকে রাত ১০টার মধ্যে (সার্ভার দেরিতে চালু হলে তখনই), মাসে একবার: যেকোনো মডিউলে (মাসিক, এককালীন, অধ্যায়ভিত্তিক …) বকেয়া আছে এমন সক্রিয় শিক্ষার্থী ও অভিভাবকের নম্বরে
 const FEE_FROM = 10, FEE_UNTIL = 22;
 let feeBusy = false;
 async function sendFeeDue() {
   const now = new Date(), hour = now.getHours();
   if (feeBusy || now.getDate() !== 1 || hour < FEE_FROM || hour >= FEE_UNTIL || !smsOn()) return;
   const month = today().slice(0, 7), sent = (db.feeSent || {})[month] || [];
-  const monthly = (s) => db.enrollments.some((e) => e.studentId === s.id && e.status === "active" && (db.courses.find((c) => c.id === e.courseId) || {}).feeType === "monthly");
-  const list = db.students.filter((s) => s.status !== "inactive" && !sent.includes(s.id) && monthly(s));
+  const list = db.students.filter((s) => s.status !== "inactive" && !sent.includes(s.id));
   if (!list.length) return;
   feeBusy = true;
   try {
