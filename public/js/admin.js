@@ -3438,6 +3438,7 @@ ${list.map(receiptHtml).join("")}
         <p style="margin:0 0 10px;color:var(--muted)">অতিথি অ্যাকাউন্ট খোলার সময় আর PIN ভুলে গেলে মোবাইলে যাচাই কোড (OTP) যায়। BulkSMSBD-র প্যানেল থেকে API key আর Sender ID এনে এখানে বসান।
           এখন: <b id="smsState">দেখা হচ্ছে…</b></p>
         <div class="toolbar" style="margin:0"><button type="button" class="btn line" id="smsBal">ব্যালেন্স দেখুন</button><button type="button" class="btn line" id="smsTest">পরীক্ষার SMS পাঠান</button></div></div>
+      <div class="card" id="smsCost"></div>
       <div class="card"><div class="card-head"><h2>মেন্টরের ছবি (ওয়েবসাইটের উপরের বড় গোল ছবি)</h2></div>
         <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
           <img id="mentorPrev" src="${esc(S.mentorPhoto ? `/api/mentor-photo?v=${S.mentorPhoto.v}` : "/images/teachers/shahin-hero.webp")}" alt="মেন্টরের ছবি" style="width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:50% 18%;border:3px solid #818cf8">
@@ -3486,6 +3487,7 @@ ${list.map(receiptHtml).join("")}
         },
       });
     };
+    window.SICSmsCost({ get DB() { return DB; } }).mount($("#smsCost"));
     $("#smsBal").onclick = async () => { try { const r = await api("/api/admin/sms-balance"); toast(`BulkSMSBD ব্যালেন্স: ${r.balance}`); } catch (e) { toast(e.message, true); } };
     $("#smsTest").onclick = () => openForm({
       title: "পরীক্ষার SMS",

@@ -795,13 +795,15 @@ let smsCfg = readJson(SMS_FILE, null) || { apiKey: "", senderId: "", enabled: fa
 const smsOn = () => !!(smsCfg.enabled && smsCfg.apiKey && smsCfg.senderId);
 const SMS_BASE = process.env.SMS_BASE || "https://bulksmsbd.net/api"; // পরীক্ষার সময় নকল সার্ভারে পাঠাতে
 const SMS_CODES = { 1001: "নম্বর ঠিক নেই", 1002: "Sender ID ঠিক নেই বা চালু হয়নি", 1003: "সব তথ্য দেওয়া হয়নি", 1005: "BulkSMSBD-এর ভেতরের সমস্যা", 1006: "ব্যালেন্সের মেয়াদ শেষ", 1007: "ব্যালেন্স নেই — রিচার্জ করুন", 1011: "API key ঠিক নেই", 1031: "অ্যাকাউন্ট এখনো যাচাই হয়নি", 1032: "এই কম্পিউটারের IP BulkSMSBD-তে whitelist করা নেই" };
+// SMS-এর ভাগ (যে ভাগ ধরে BulkSMSBD ব্যালেন্স কাটে): বাংলা ৭০ অক্ষরে ১টা, বড় হলে ৬৭-তে ১টা; শুধু ইংরেজি ১৬০ / ১৫৩
+const smsParts = (t) => { const n = [...String(t || "")].length, uni = /[^\x00-\x7f]/.test(t || ""); return !n ? 1 : uni ? (n <= 70 ? 1 : Math.ceil(n / 67)) : n <= 160 ? 1 : Math.ceil(n / 153); };
 async function sendSms(phone, message, logText, filter = "OTP", canSend = () => true) {
   if (!smsOn()) throw new Error("SMS সার্ভিস চালু নেই");
   const q = new URLSearchParams({ api_key: smsCfg.apiKey, type: "text", number: "88" + phone, senderid: smsCfg.senderId, message });
   // POST avoids cached GET acknowledgements; never put API keys or login PINs in URLs.
   for (let attempt = 1; attempt <= 2; attempt++) {
     if (!canSend()) return { status: "skipped" };
-    const log = { id: uid("sms"), date: today(), at: new Date().toISOString(), text: logText || message.replace(/\d{6}/, "••••••"), filter, leadIds: [], count: 1, phone, attempt, ok: false, status: "unknown", code: null };
+    const log = { id: uid("sms"), date: today(), at: new Date().toISOString(), text: logText || message.replace(/\d{6}/, "••••••"), filter, leadIds: [], count: 1, segments: smsParts(message), phone, attempt, ok: false, status: "unknown", code: null };
     let r, j;
     try {
       r = await fetch(`${SMS_BASE}/smsapi`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", "Cache-Control": "no-store" }, body: q.toString(), cache: "no-store", signal: AbortSignal.timeout(15000) });
@@ -2692,10 +2694,10 @@ async function api(req, res, url) {
   if (p === "/api/admin/sms-config") {
     if (m === "POST") {
       const b = await readBody(req, 5000);
-      smsCfg = { apiKey: b.apiKey ? str(b.apiKey, 200) : smsCfg.apiKey, senderId: str(b.senderId, 40), enabled: !!b.enabled };
+      smsCfg = { ...smsCfg, apiKey: b.apiKey ? str(b.apiKey, 200) : smsCfg.apiKey, senderId: b.senderId !== undefined ? str(b.senderId, 40) : smsCfg.senderId, enabled: b.enabled !== undefined ? !!b.enabled : smsCfg.enabled, rate: b.rate !== undefined ? Math.min(100, Math.max(0, Math.round(num(b.rate) * 1000) / 1000)) : smsCfg.rate };
       writeJsonAtomic(SMS_FILE, smsCfg);
     }
-    return send(res, 200, { senderId: smsCfg.senderId, hasKey: !!smsCfg.apiKey, enabled: smsCfg.enabled, live: smsOn() });
+    return send(res, 200, { senderId: smsCfg.senderId, hasKey: !!smsCfg.apiKey, enabled: smsCfg.enabled, live: smsOn(), rate: Number(smsCfg.rate) || 0 });
   }
   if (p === "/api/admin/sms-test" && m === "POST") {
     const b = await readBody(req, 2000), phone = phoneOf(b.phone);
