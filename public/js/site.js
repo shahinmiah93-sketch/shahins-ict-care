@@ -459,9 +459,20 @@
   sOut.addEventListener("click", (e) => { const a = e.target.closest("a[data-i]"); if (a) { e.preventDefault(); go(hits[a.dataset.i]); } });
 
   // শিক্ষক
-  $("#teachers").innerHTML = data.teachers.map((t) => `
-    <article class="person reveal"><div class="ph">${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.name)}">` : esc(t.name.slice(0, 1))}</div>
-    <h4>${esc(t.name)}</h4><p class="sub">${esc(t.subject)}</p><p>${esc(t.bio)}</p></article>`).join("");
+  // কার্ডে শুধু ছবি, নাম, পদ; পরিচিতি (bio) চাপলে পপআপে দেখায়
+  $("#teachers").innerHTML = data.teachers.map((t, i) => `
+    <article class="person reveal${t.bio ? " openable" : ""}"${t.bio ? ` data-person="${i}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${esc(t.name)} — বিস্তারিত দেখুন"` : ""}><div class="ph">${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.name)}">` : esc(t.name.slice(0, 1))}</div>
+    <h4>${esc(t.name)}</h4><p class="sub">${esc(t.subject)}</p>${t.bio ? '<span class="person-more">বিস্তারিত দেখুন <i aria-hidden="true">→</i></span>' : ""}</article>`).join("");
+  const openPerson = (t) => {
+    const d = document.createElement("dialog"); d.className = "person-dialog";
+    d.innerHTML = `<button type="button" class="pd-x" aria-label="বন্ধ করুন">✕</button><div class="pd-ph">${t.photo ? `<img src="${esc(t.photo)}" alt="${esc(t.name)}">` : esc(t.name.slice(0, 1))}</div><div class="pd-body"><h3>${esc(t.name)}</h3><p class="pd-sub">${esc(t.subject)}</p>${String(t.bio || "").split(/\n{2,}|\r?\n/).map((x) => x.trim()).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join("")}</div>`;
+    document.body.append(d); d.addEventListener("close", () => d.remove());
+    d.addEventListener("click", (e) => { if (e.target === d || e.target.closest(".pd-x")) d.close(); });
+    d.showModal();
+  };
+  const personCard = (el) => { const c = el.closest("[data-person]"); if (c) openPerson(data.teachers[Number(c.dataset.person)]); };
+  $("#teachers").addEventListener("click", (e) => personCard(e.target));
+  $("#teachers").addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.closest("[data-person]")) { e.preventDefault(); personCard(e.target); } });
 
   // যোগাযোগ
   if ($("#footAddr")) $("#footAddr").innerHTML = `${esc(S.address)}<br>${esc([S.phone, S.phone2].filter(Boolean).join(" · "))}`;
