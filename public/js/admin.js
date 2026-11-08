@@ -3151,7 +3151,7 @@ ${list.map(receiptHtml).join("")}
         { name: "category", label: "ক্যাটাগরি", type: "select", options: DAILY_CATS },
         { name: "date", label: "প্রকাশের তারিখ (সামনের তারিখ দিলে সেদিন নিজে থেকে দেখা দেবে)", type: "date", value: U.today() },
         { name: "title", label: "শিরোনাম", required: true, wide: true, placeholder: "যেমন: আজকের শব্দ — Resilient" },
-        { name: "body", label: "বিস্তারিত (Description) — নতুন লাইনে নতুন অনুচ্ছেদ", type: "textarea", wide: true, rows: 9 },
+        { type: "html", html: SICRich.html("dBody", d ? (d.bodyHtml || SICRich.fromPlain(d.body)) : "", "বিস্তারিত (Description)") },
         { name: "status", label: "অবস্থা", type: "select", options: [["published", "প্রকাশিত"], ["draft", "খসড়া (ওয়েবসাইটে দেখাবে না)"]] },
         { type: "html", html: `<label>ছবি (ঐচ্ছিক — চওড়া, ১৬:৯ হলে সবচেয়ে ভালো)<input type="file" id="dImg" accept="image/jpeg,image/png,image/webp"></label>
           ${d && d.image ? `<p style="margin:4px 0 0"><img src="/api/dimage/${d.id}/image?v=${d.image.v}" alt="" style="height:70px;border-radius:8px"> এখন আছে — নতুন দিলে বদলাবে</p>` : ""}` },
@@ -3174,7 +3174,8 @@ ${list.map(receiptHtml).join("")}
         }
         const img = $("#dImg").files[0];
         if (img && img.size > 8 * 1024 * 1024) throw new Error("ছবি ৮ MB-এর মধ্যে দিন");
-        const r = await save("daily", { ...v, quiz }, d && d.id), id = (d && d.id) || r.item.id;
+        const bodyHtml = SICRich.isEmpty(document.getElementById("modalBody"), "dBody") ? "" : SICRich.value(document.getElementById("modalBody"), "dBody");
+        const r = await save("daily", { ...v, bodyHtml, quiz }, d && d.id), id = (d && d.id) || r.item.id;
         if (img) {
           const x = await fetch(`/api/admin/daily/${encodeURIComponent(id)}/image?ext=${(img.name.match(/\.[a-z]+$/i) || [".jpg"])[0].toLowerCase().replace(".jpeg", ".jpg")}`, { method: "POST", body: img });
           if (!x.ok) { await load(); route(); throw new Error("পোস্ট সেভ হয়েছে, কিন্তু ছবি জমা হয়নি: " + ((await x.json().catch(() => ({}))).error || "")); }
@@ -3184,6 +3185,7 @@ ${list.map(receiptHtml).join("")}
     });
     // কুইজের প্রশ্ন যোগ / বাদ
     const box = document.getElementById("modalBody");
+    SICRich.init(box, "dBody");
     box.onclick = (e) => {
       if (e.target.closest("[data-dq-add]")) { const list = $("#dqList"); list.insertAdjacentHTML("beforeend", dqRow({}, list.children.length)); list.lastElementChild.querySelector("[data-dq-q]").focus(); }
       const del = e.target.closest("[data-dq-del]"); if (del) del.closest("[data-dq]").remove();

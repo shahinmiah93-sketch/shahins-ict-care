@@ -65,13 +65,24 @@
       <div class="wrap">${html}</div>`;
   }
   // ---------- পুরো পোস্ট + কুইজ ----------
+  function plainHtml(text) {
+    const inline = (t) => esc(t).replace(/\*\*([^*\r\n]+?)\*\*/g, "<strong>$1</strong>"), out = []; let list = false;
+    for (const raw of String(text || "").split(/\r?\n/)) {
+      const line = raw.trim(), li = line.match(/^[-•]\s+(.*)$/);
+      if (li) { if (!list) { out.push("<ul>"); list = true; } out.push(`<li>${inline(li[1])}</li>`); continue; }
+      if (list) { out.push("</ul>"); list = false; }
+      if (line) out.push(`<p>${inline(line)}</p>`);
+    }
+    if (list) out.push("</ul>");
+    return out.join("");
+  }
   async function post(id) {
     let r;
     try { r = await U.api(`/api/daily/${encodeURIComponent(id)}`); }
     catch { main.innerHTML = `${hero()}<div class="wrap">${empty('পোস্টটি পাওয়া যায়নি। <a href="/daily">সব পোস্ট দেখুন</a>')}</div>`; return; }
     const p = r.item, c = CATS[p.category];
     document.title = `${p.title} — ${c.name}`;
-    const paras = String(p.body || "").split(/\n{2,}|\r?\n/).map((x) => x.trim()).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join("");
+    const paras = p.html || plainHtml(p.body); // সাজানো লেখা (সার্ভার পরিষ্কার করে দেয়); পুরোনো সাধারণ লেখা হলে **মোটা** আর "- " তালিকা সহ
     main.innerHTML = `<div class="wrap dl-post-wrap"><article class="dl-post" style="--c1:${c.c[0]};--c2:${c.c[1]}">
         <nav class="dl-crumb"><a href="/daily">প্রতিদিন শিখি</a> › <a href="${link({ cat: p.category })}">${c.name}</a></nav>
         <div class="dl-post-meta">${icon(p.category)}<div><b>${c.name}</b><small>${date(p.date)}</small></div></div>

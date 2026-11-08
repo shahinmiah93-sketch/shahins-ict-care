@@ -964,6 +964,45 @@ function otpCheck(phone, purpose, code) {
 // ---------- প্রতিদিন শিখি (Daily Learning) — সবার জন্য ফ্রি, লগইন লাগে না ----------
 // প্রকাশিত আর প্রকাশের তারিখ আজ বা আগের পোস্টই শুধু দেখা যায় (সামনের তারিখ দিলে সেদিন নিজে থেকে দেখা দেয়); খসড়া কখনো না
 const DAILY_CATS = ["bangla", "ict", "gk", "english", "fact", "brain"];
+// ---------- সাজানো লেখা (MS Word-এর মতো) — শুধু নিরাপদ ট্যাগ ও স্টাইল রাখা হয়; বাকি সব বাদ ----------
+const RICH_TAGS = { b: "b", strong: "b", i: "i", em: "i", u: "u", s: "s", strike: "s", del: "s", span: "span", font: "span", p: "p", div: "p", h1: "h2", h2: "h2", h3: "h3", h4: "h3", ul: "ul", ol: "ol", li: "li", blockquote: "blockquote", br: "br", hr: "hr" };
+function richStyle(raw) {
+  const out = [];
+  for (const part of String(raw || "").split(";")) {
+    const i = part.indexOf(":"); if (i < 0) continue;
+    const k = part.slice(0, i).trim().toLowerCase(), v = part.slice(i + 1).trim().toLowerCase();
+    if ((k === "color" || k === "background-color") && /^(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*[\d.]+\s*)?\)|[a-z]{3,20})$/.test(v)) out.push(k + ":" + v);
+    else if (k === "font-size" && (/^\d{1,3}(\.\d+)?(px|em|rem|%)$/.test(v) || /^(x-small|small|medium|large|x-large|xx-large|xxx-large)$/.test(v))) out.push(k + ":" + (v === "xxx-large" ? "32px" : v));
+    else if (k === "text-align" && /^(left|right|center|justify)$/.test(v)) out.push(k + ":" + v);
+    else if (k === "font-weight" && /^(bold|normal|[1-9]00)$/.test(v)) out.push(k + ":" + v);
+    else if (k === "font-style" && /^(italic|normal)$/.test(v)) out.push(k + ":" + v);
+    else if ((k === "text-decoration" || k === "text-decoration-line") && /^(underline|line-through|none)( (underline|line-through))?$/.test(v)) out.push("text-decoration:" + v);
+  }
+  return out.join(";");
+}
+function cleanRichHtml(input, max = 40000) {
+  let src = String(input || "").slice(0, max * 2).replace(/<!--[\s\S]*?-->/g, "").replace(/<(script|style|iframe|object|embed|svg|math|template|textarea|title)\b[\s\S]*?<\/\1\s*>/gi, "");
+  const out = [], stack = [], re = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g;
+  const text = (t) => t.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/&(?!(?:[a-zA-Z]{2,10}|#\d{1,6});)/g, "&amp;");
+  let last = 0, m;
+  while ((m = re.exec(src))) {
+    out.push(text(src.slice(last, m.index))); last = re.lastIndex;
+    const tag = RICH_TAGS[m[2].toLowerCase()]; if (!tag) continue;
+    if (m[1]) { const k = stack.lastIndexOf(tag); if (k >= 0) while (stack.length > k) out.push("</" + stack.pop() + ">"); continue; }
+    if (tag === "br" || tag === "hr") { out.push("<" + tag + ">"); continue; }
+    if (stack.length >= 20) continue;
+    const sm = m[3].match(/style\s*=\s*(?:"([^"]*)"|'([^']*)')/i), style = sm ? richStyle(sm[1] ?? sm[2]) : "";
+    out.push("<" + tag + (style ? ' style="' + style + '"' : "") + ">"); stack.push(tag);
+  }
+  out.push(text(src.slice(last)));
+  while (stack.length) out.push("</" + stack.pop() + ">");
+  const html = out.join("").trim();
+  return !html.replace(/<(?!hr)[^>]*>|&nbsp;|\s/g, "") && !/<hr/.test(html) ? "" : html.slice(0, max);
+}
+function richToText(html) {
+  return String(html || "").replace(/<\/(p|h2|h3|li|blockquote)>|<br>|<hr>/g, "\n").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+const dailyBody = (b) => { const bodyHtml = cleanRichHtml(b.bodyHtml); return { bodyHtml, body: bodyHtml ? richToText(bodyHtml).slice(0, 20000) : str(b.body, 20000) }; };
 const dailyLive = () => db.daily.filter((d) => d.status !== "draft" && d.title && (d.date || "") <= today()).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)));
 const dailyCard = (d) => ({ id: d.id, category: d.category, title: d.title, date: d.date, excerpt: String(d.body || "").replace(/\s+/g, " ").slice(0, 180), img: d.image ? `/api/dimage/${d.id}/image?v=${d.image.v}` : "", quiz: (d.quiz || []).length });
 // ---------- প্রশ্নোত্তর বক্স (মূল পাতার "প্রশ্ন ও উত্তর") ----------
@@ -1343,7 +1382,7 @@ const CLEAN = {
   },
   enquiries: (b) => ({ name: str(b.name, 120), phone: phoneOf(b.phone), course: str(b.course, 120), klass: str(b.klass, 60), college: str(b.college, 150), message: str(b.message, 1000), status: ["new", "called", "admitted", "closed"].includes(b.status) ? b.status : "new", note: str(b.note, 500) }),
   daily: (b) => ({
-    category: DAILY_CATS.includes(b.category) ? b.category : "ict", title: str(b.title, 200), body: str(b.body, 20000),
+    category: DAILY_CATS.includes(b.category) ? b.category : "ict", title: str(b.title, 200), ...dailyBody(b),
     date: /^\d{4}-\d{2}-\d{2}$/.test(str(b.date, 10)) ? str(b.date, 10) : today(), status: b.status === "draft" ? "draft" : "published",
     quiz: (Array.isArray(b.quiz) ? b.quiz : []).slice(0, 50).map((q) => {
       const options = (Array.isArray(q && q.options) ? q.options : []).map((o) => str(o, 300)).filter(Boolean).slice(0, 6);
@@ -2037,7 +2076,7 @@ async function api(req, res, url) {
     const live = dailyLive(), i = live.findIndex((x) => x.id === dpm[1]), d = live[i];
     if (!d) return send(res, 404, { error: "পোস্টটি পাওয়া যায়নি" });
     const same = live.filter((x) => x.category === d.category), j = same.indexOf(d);
-    return send(res, 200, { item: { ...dailyCard(d), body: d.body, quiz: d.quiz || [] }, newer: j > 0 ? dailyCard(same[j - 1]) : null, older: j < same.length - 1 ? dailyCard(same[j + 1]) : null, more: same.filter((x) => x !== d).slice(0, 4).map(dailyCard) });
+    return send(res, 200, { item: { ...dailyCard(d), body: d.body, html: d.bodyHtml || "", quiz: d.quiz || [] }, newer: j > 0 ? dailyCard(same[j - 1]) : null, older: j < same.length - 1 ? dailyCard(same[j + 1]) : null, more: same.filter((x) => x !== d).slice(0, 4).map(dailyCard) });
   }
   // ---- প্রশ্নোত্তর বক্স (ওয়েবসাইট) ----
   if (p === "/api/qna/join" && m === "POST") {

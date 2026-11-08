@@ -988,3 +988,23 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .student-photo-dialog label{display:grid;gap:8px;margin:16px 0 4px;color:#173d42;font-size:15px;font-weight:700;line-height:1.5}
 .student-photo-dialog label input[type=file]{width:100%;margin:0;padding:8px;border:1px dashed #9fb8b0;border-radius:12px;background:#f6faf8;color:#4a625b;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer}
 .student-photo-dialog label input[type=file]::file-selector-button{margin-right:10px;padding:8px 14px;border:0;border-radius:999px;background:#0f5c4f;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+/* MS Word-এর মতো লেখার বাক্স (প্রতিদিন শিখি) */
+.rt{display:block}.rt-label{font-weight:600;margin-bottom:6px}
+.rt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1px solid var(--line,#d9dee7);border-bottom:0;border-radius:12px 12px 0 0;background:var(--soft,#f4f6fa)}
+.rt-sep{width:1px;align-self:stretch;background:var(--line,#d9dee7);margin:0 2px}
+.rt-b{min-width:34px;height:34px;padding:0 9px;border:1px solid var(--line,#d9dee7);border-radius:9px;background:#fff;color:#1b2430;font:600 14px var(--sans,inherit);cursor:pointer}
+.rt-b:hover{border-color:#8aa0c0}.rt-b.on{background:#1b3a6b;color:#fff;border-color:#1b3a6b}
+.rt-sel{height:34px;margin:0!important;width:auto!important;padding:0 8px!important;border-radius:9px!important;background:#fff;font-size:14px}
+.rt-pal{display:inline-flex;align-items:center;gap:4px;padding:0 4px}
+.rt-lab{font:800 15px var(--sans,inherit);font-style:normal;color:#1b2430;margin-right:2px}.rt-lab.hl{background:#fff3a3;padding:0 4px;border-radius:4px;font-size:12px}
+.rt-sw{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #9aa6b8;cursor:pointer;font-size:11px;line-height:1;color:#555;background:#fff}
+.rt-sw:hover{transform:scale(1.15)}
+.rt-pick{width:28px!important;height:28px!important;margin:0!important;padding:0!important;border:0!important;background:none!important;cursor:pointer}
+.rt-area{min-height:240px;max-height:56vh;overflow:auto;padding:16px 18px;border:1px solid var(--line,#d9dee7);border-radius:0 0 12px 12px;background:#111114;color:#dcdce3;font-size:17px;line-height:1.95;outline:0}
+.rt-area:focus{border-color:#4a76c0;box-shadow:0 0 0 3px rgba(74,118,192,.2)}
+.rt-area.empty::before{content:attr(data-ph);color:#7d7d89;pointer-events:none}
+.rt-area p,.rt-area div{margin:0 0 12px}
+.rt-area b,.rt-area strong{color:#fff}
+.rt-area h2{margin:18px 0 8px;color:#fff;font:800 24px/1.45 var(--sans,inherit)}.rt-area h3{margin:14px 0 6px;color:#f3c55d;font:800 19px/1.5 var(--sans,inherit)}
+.rt-area ul,.rt-area ol{margin:0 0 12px;padding-left:1.5em}.rt-area hr{border:0;height:1px;background:rgba(255,255,255,.2);margin:16px 0}
+.rt-note{display:block;margin-top:6px;color:var(--muted,#667085)}

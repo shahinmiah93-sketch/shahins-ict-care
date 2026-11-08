@@ -86,3 +86,13 @@ body.daily-page{background:#07070a;color:#e9e9ef}
 .dl-foot{padding:26px 0}.dl-foot .credit{margin:0}
 @media(max-width:980px){.dl-cats,.dl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.dl-hero{padding:110px 0 30px}.dl-cats,.dl-grid{grid-template-columns:1fr;gap:12px}.dl-post{padding:18px}.dq-os{grid-template-columns:1fr}.dl-nav{grid-template-columns:1fr}.dl-nav a.r{text-align:left}.dl-cat-title{flex-direction:column;align-items:flex-start}.dl-body p{font-size:16px}.dl-post-wrap{padding-top:96px}}
+/* সাজানো লেখা: তালিকা, শিরোনাম, উদ্ধৃতি, আলাদা দাগ */
+.dl-body{overflow-wrap:anywhere}
+.dl-body strong,.dl-body b{color:#fff;font-weight:800}
+.dl-body h2{margin:26px 0 10px;color:#fff;font:800 clamp(21px,2.6vw,26px)/1.45 var(--sans)}
+.dl-body h3{margin:20px 0 8px;color:var(--c1,#f3c55d);font:800 19px/1.5 var(--sans)}
+.dl-body ul,.dl-body ol{margin:0 0 16px;padding-left:1.5em;color:#dcdce3;font-size:17px;line-height:1.95}
+.dl-body li{margin:0 0 4px;padding-left:4px}.dl-body li::marker{color:var(--c1,#f3c55d)}
+.dl-body blockquote{margin:0 0 16px;padding:10px 16px;border-left:4px solid var(--c1,#f3c55d);background:rgba(255,255,255,.05);border-radius:0 12px 12px 0}
+.dl-body hr{border:0;height:1px;margin:22px 0;background:rgba(255,255,255,.14)}
+@media(max-width:640px){.dl-body ul,.dl-body ol{font-size:16px}}
