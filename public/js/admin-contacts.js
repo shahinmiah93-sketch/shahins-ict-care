@@ -27,16 +27,18 @@ window.SICContacts = (function () {
   // extra = নম্বরের পাশে বাড়তি বাটন (যেমন "💵 পেমেন্ট নিন")
   function html(s, key, msg, extra = "") {
     const l = list(s), idx = l.length ? Math.min(picked.get(key) || 0, l.length - 1) : -1, now = idx >= 0 ? l[idx] : null;
-    if (!now) return `<div class="ab-guard"><span class="ab-warn">কোনো মোবাইল নম্বর নেই — শিক্ষার্থীর প্রোফাইলে নম্বর যোগ করুন</span>${extra ? `<div class="ab-call-row">${extra}</div>` : ""}</div>`;
-    return `<div class="ab-guard">
+    if (!now) return `<div class="ab-guard ab-card"><span class="ab-warn">কোনো মোবাইল নম্বর নেই — শিক্ষার্থীর প্রোফাইলে নম্বর যোগ করুন</span>${extra ? `<div class="ab-call-row">${extra}</div>` : ""}</div>`;
+    // নকশা: ওপরে "কাকে কল করবেন" বাছার সুইচ → মাঝে তিনটা বড় বাটন (কল / WhatsApp / SMS) → নিচে সবুজ পট্টিতে যাকে বাছা তার নাম ও নম্বর
+    const icon = { "অভিভাবক": "👤", "বাবা": "👨", "মা": "👩", "শিক্ষার্থী": "🎓" }[now.label.split(" · ")[0]] || "📱";
+    return `<div class="ab-guard ab-card">
       ${l.length > 1 ? `<div class="ab-who" role="group" aria-label="কাকে কল করবেন">${l.map((o, i) => `<button type="button" class="${i === idx ? "on" : ""}" data-who="${i}" title="${esc(o.name || "")}"><b>${esc(o.label)}</b><small>${bn(o.p)}</small></button>`).join("")}</div>` : ""}
-      <div class="ab-call-row">
-        <div><small>${esc(now.label)}${now.name ? ` · ${esc(now.name)}` : ""}</small><br><a class="ab-num" href="tel:${now.p}">${bn(now.p)}</a></div>
+      <div class="ab-actions">
         <a class="ab-btn call" href="tel:${now.p}">📞 কল</a>
         <a class="ab-btn wa" target="_blank" rel="noopener" href="https://wa.me/88${now.p}?text=${encodeURIComponent(msg)}">🟢 WhatsApp</a>
         <button type="button" class="ab-btn" data-sms data-phone="${now.p}" title="${esc(now.label)}-এর মোবাইলে সরাসরি SMS পাঠান">✉ SMS পাঠান</button>
         ${extra}
       </div>
+      <div class="ab-ident"><i class="ab-av">${icon}</i><div><small>${esc(now.label)}${now.name ? ` · ${esc(now.name)}` : ""}</small><a class="ab-num" href="tel:${now.p}">${bn(now.p)}</a></div></div>
     </div>`;
   }
   return { list, current, pick, html };
