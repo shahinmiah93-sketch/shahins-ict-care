@@ -1829,6 +1829,24 @@ async function studentPhotoRequest(req, res, student) {
     return send(res, 200, { ok: true, pendingPhoto: student.pendingPhoto });
   } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(file, old); else removePhoto("p", student.id); if (oldO) fs.writeFileSync(ofile, oldO); else removePhoto("po", student.id); throw error; }
 }
+// অনুমোদিত ছবিটাই সরিয়ে / ছোট-বড় করে ঠিক করা — নতুন ছবি নয়, তাই অনুমোদন লাগে না। অনুমোদিত ছবি থাকতে হবে; দিনে সর্বোচ্চ ৫ বার
+async function studentPhotoAdjust(req, res, student) {
+  const file = photoFile("s", student.id);
+  if (!student.photo || !fs.existsSync(file)) return send(res, 400, { error: "ঠিক করার মতো অনুমোদিত ছবি নেই। নতুন ছবি পাঠান" });
+  const b = await readBody(req, 600 * 1024);
+  const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.photo || ""));
+  const bytes = match && Buffer.from(match[1], "base64");
+  if (!bytes || bytes.length < 100 || bytes.length > 400 * 1024 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[2] !== 255) return send(res, 400, { error: "সঠিক JPG ছবি দিন (৪০০ KB-এর মধ্যে)" });
+  const now = Date.now(), recent = (student.photoAdjusts || []).filter((t) => now - Date.parse(t) < 864e5);
+  if (recent.length >= 5) return send(res, 429, { error: "আজ অনেকবার ছবি ঠিক করা হয়েছে — কাল আবার চেষ্টা করুন" });
+  const old = fs.readFileSync(file), original = JSON.stringify(student);
+  try {
+    fs.writeFileSync(file, bytes);
+    student.photoAdjusts = [...recent, new Date(now).toISOString()];
+    saveDb();
+    return send(res, 200, { ok: true });
+  } catch (error) { Object.keys(student).forEach((k) => delete student[k]); Object.assign(student, JSON.parse(original)); fs.writeFileSync(file, old); throw error; }
+}
 async function reviewStudentPhoto(req, res) {
   const b = await readBody(req), student = db.students.find(s => s.id === str(b.id, 40));
   if (!student?.pendingPhoto || !["approve", "reject"].includes(b.action)) return send(res, 400, { error: "অনুমোদনের অপেক্ষায় থাকা ছবি পাওয়া যায়নি" });
@@ -2542,6 +2560,12 @@ async function api(req, res, url) {
     if (m === "POST") return studentPhotoRequest(req, res, student);
     if (m === "GET" && student.pendingPhoto) return sendPhoto(res, "p", student.id);
     return send(res, 404, { error: "ছবি পাওয়া যায়নি" });
+  }
+  if (p === "/api/student/photo-adjust" && m === "POST") {
+    const session = getLogin(req, "student");
+    const student = session && db.students.find(s => s.id === session.sid && s.status !== "inactive");
+    if (!student) return send(res, 401, { error: "শিক্ষার্থী হিসেবে লগইন করুন" });
+    return studentPhotoAdjust(req, res, student);
   }
   if (p === "/api/student/photo" && m === "GET") {
     const ps = panelStudent();

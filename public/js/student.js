@@ -7,23 +7,38 @@
     if (AS) return;
     const dialog = document.createElement("dialog"); dialog.className = "student-photo-dialog";
     const have = !!(D.profile && D.profile.photo);
-    dialog.innerHTML = `<h2>নিজের ছবি পাঠান</h2><p>মুখ পরিষ্কার বোঝা যায় এমন ছবি দিন। অ্যাডমিন অনুমোদন দিলে প্রোফাইল ও আইডি কার্ডে দেখাবে।</p>${have ? '<p class="student-photo-current"><a href="/api/student/photo-original" target="_blank" rel="noopener">🔍 এখনকার মূল ছবি বড় করে দেখুন</a><a href="/api/student/photo-original?download=1" download>⬇ সেভ করুন</a></p>' : ""}<label>ছবি বেছে নিন<input type="file" accept="image/jpeg,image/png,image/webp"></label><div class="pc-box" hidden></div><p class="student-photo-error" role="alert"></p><div class="student-photo-actions"><button type="button" class="btn line" data-cancel>বাতিল</button><button type="button" class="btn gold" data-send disabled>অনুমোদনের জন্য পাঠান</button></div>`;
-    document.body.append(dialog); const input = dialog.querySelector("input"), error = dialog.querySelector('[role="alert"]'), sendButton = dialog.querySelector('[data-send]');
+    dialog.innerHTML = `<h2>আমার ছবি</h2>${have ? '<div class="student-photo-adjust"><b>এখনকার ছবি ঠিক করুন</b><p>ছবিটা সরিয়ে বা ছোট-বড় করে গোল ফ্রেমে সাজান — <u>অনুমোদন লাগবে না</u>, সাথে সাথে বদলে যাবে।</p><button type="button" class="btn line" data-adjust>✥ এখনকার ছবি ঠিক করুন</button><p class="student-photo-current"><a href="/api/student/photo-original" target="_blank" rel="noopener">🔍 মূল ছবি বড় করে দেখুন</a><a href="/api/student/photo-original?download=1" download>⬇ সেভ করুন</a></p></div>' : ""}<label>${have ? "অথবা নতুন ছবি বেছে নিন <small>(অ্যাডমিনের অনুমোদন লাগবে)</small>" : "ছবি বেছে নিন"}<input type="file" accept="image/jpeg,image/png,image/webp"></label>${have ? "" : "<p>মুখ পরিষ্কার বোঝা যায় এমন ছবি দিন। অ্যাডমিন অনুমোদন দিলে প্রোফাইল ও আইডি কার্ডে দেখাবে।</p>"}<div class="pc-box" hidden></div><p class="student-photo-error" role="alert"></p><div class="student-photo-actions"><button type="button" class="btn line" data-cancel>বাতিল</button><button type="button" class="btn gold" data-send disabled>অনুমোদনের জন্য পাঠান</button></div>`;
+    document.body.append(dialog); const input = dialog.querySelector("input"), error = dialog.querySelector('[role="alert"]'), sendButton = dialog.querySelector('[data-send]'), adjustButton = dialog.querySelector("[data-adjust]");
     const crop = SICPhotoCrop.create(dialog.querySelector(".pc-box"));
-    let ready = false, busy = false, revision = 0;
+    let ready = false, busy = false, revision = 0, mode = "new"; // new = নতুন ছবি (অনুমোদন লাগে) · adjust = এখনকার ছবি ঠিক করা (লাগে না)
+    const setMode = (m) => { mode = m; sendButton.textContent = m === "adjust" ? "✓ সেভ করুন" : "অনুমোদনের জন্য পাঠান"; };
     dialog.addEventListener("close", () => { crop.destroy(); dialog.remove(); });
     dialog.addEventListener("cancel", e => { if (busy) e.preventDefault(); });
     dialog.querySelector('[data-cancel]').onclick = () => { if (!busy) dialog.close(); };
     input.onchange = async () => {
-      const current = ++revision; ready = false; sendButton.disabled = true; error.textContent = "";
+      const current = ++revision; ready = false; sendButton.disabled = true; error.textContent = ""; setMode("new");
       const file = input.files[0]; if (!file) return;
       if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) { error.textContent = "JPG, PNG বা WEBP ছবি দিন (১০ MB-এর মধ্যে)।"; return; }
       try { await crop.load(file); if (current !== revision || !dialog.isConnected) return; ready = true; sendButton.disabled = false; }
       catch { if (current === revision) error.textContent = "ছবিটি খোলা যায়নি। অন্য ছবি দিন।"; }
     };
+    if (adjustButton) adjustButton.onclick = async () => {
+      const current = ++revision; ready = false; sendButton.disabled = true; error.textContent = ""; input.value = ""; setMode("adjust"); adjustButton.disabled = true;
+      try { const blob = await (await fetch("/api/student/photo-original", { cache: "no-store" })).blob(); await crop.load(blob); if (current !== revision || !dialog.isConnected) return; ready = true; sendButton.disabled = false; }
+      catch { if (current === revision) error.textContent = "ছবিটি খোলা যায়নি। পরে আবার চেষ্টা করুন।"; }
+      finally { adjustButton.disabled = false; }
+    };
     sendButton.onclick = async () => {
       if (!ready || busy) return; busy = true; sendButton.disabled = true; input.disabled = true; error.textContent = "";
-      try { const r = crop.result(); const result = await api("/api/student/photo-request", { body: { photo: r.photo, original: r.original } }); D.profile.pendingPhoto = result.pendingPhoto; $("#studentPhotoStatus").textContent = "ছবি পাঠানো হয়েছে — অ্যাডমিনের অনুমোদনের অপেক্ষায়।"; dialog.close(); }
+      try {
+        const r = crop.result();
+        if (mode === "adjust") {
+          await api("/api/student/photo-adjust", { body: { photo: r.photo } });
+          $("#av").style.cssText = `background:url('/api/student/photo${Q ? Q + "&" : "?"}t=${Date.now()}') center/cover`; $("#studentPhotoStatus").textContent = "ছবি ঠিক করা হয়েছে।"; dialog.close();
+        } else {
+          const result = await api("/api/student/photo-request", { body: { photo: r.photo, original: r.original } }); D.profile.pendingPhoto = result.pendingPhoto; $("#studentPhotoStatus").textContent = "ছবি পাঠানো হয়েছে — অ্যাডমিনের অনুমোদনের অপেক্ষায়।"; dialog.close();
+        }
+      }
       catch (e) { error.textContent = e.message; }
       finally { busy = false; sendButton.disabled = false; input.disabled = false; }
     };
