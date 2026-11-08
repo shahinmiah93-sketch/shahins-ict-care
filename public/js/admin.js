@@ -1480,7 +1480,8 @@ ${list.map(receiptHtml).join("")}
       finally { button.disabled = false; }
     };
   }
-  function reviewProfileChanges(id) {
+  // back: অনুরোধের তালিকা থেকে খুললে সিদ্ধান্তের পর আবার সেই তালিকায় ফেরে (না দিলে শিক্ষার্থীর প্রোফাইলে যায়)
+  function reviewProfileChanges(id, back) {
     const student = studentById(id), pending = student?.pendingProfile;
     if (!pending) return toast("সংশোধনের অনুরোধ নেই", true);
     const value = v => typeof v === "boolean" ? v ? "হ্যাঁ" : "না" : String(v || "—");
@@ -1488,7 +1489,7 @@ ${list.map(receiptHtml).join("")}
     const decide = async action => {
       if (busy) return true;
       busy = true; $("#modalSave").disabled = true; $("#rejectProfileChanges").disabled = true;
-      try { await api("/api/admin/student-profile-review",{body:{id,version:pending.version,action}}); await load(); route(); viewStudent(id); toast(action === "approve" ? "তথ্য সংশোধন অনুমোদিত হয়েছে" : "সংশোধন অনুমোদিত হয়নি"); return true; }
+      try { await api("/api/admin/student-profile-review",{body:{id,version:pending.version,action}}); await load(); route(); if (back) back(); else viewStudent(id); toast(action === "approve" ? "তথ্য সংশোধন অনুমোদিত হয়েছে" : "সংশোধন অনুমোদিত হয়নি"); return true; }
       finally { busy = false; if ($("#rejectProfileChanges")) { $("#rejectProfileChanges").disabled=false; $("#modalSave").disabled=false; } }
     };
     openModal({title:"তথ্য সংশোধনের অনুমোদন",wide:true,saveText:"✓ সংশোধন অনুমোদন করুন",onSave:()=>decide("approve"),body:`<p><b>${esc(student.name)}</b> · রোল ${esc(student.id)}</p><p class="muted">নিচের আগের তথ্যগুলো এখনো চালু আছে। অনুমোদন দিলে নতুন তথ্য বসবে।</p><div class="tbl-wrap"><table class="profile-change-table"><thead><tr><th>তথ্য</th><th>আগের তথ্য</th><th>নতুন তথ্য</th></tr></thead><tbody>${Object.entries(pending.changes).map(([key,change])=>`<tr><td><b>${esc(change.label || key)}</b></td><td>${esc(value(change.from))}</td><td><strong>${esc(value(change.to))}</strong></td></tr>`).join("")}</tbody></table></div><p><button type="button" class="btn line" id="rejectProfileChanges">অনুমোদন না দিন</button></p>`});
@@ -1716,11 +1717,12 @@ ${list.map(receiptHtml).join("")}
       </div>
       <div class="tbl-wrap"><table class="students-table"><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>${mode === "online" ? '<div id="sdLegacyOnline"></div>' : ""}`;
-    $("#reviewStudentProfiles").onclick = () => {
+    const openProfileRequests = () => {
       const pending=DB.students.filter(s=>scopeIds.has(s.id)&&s.pendingProfile);
       openModal({title:`তথ্য সংশোধনের অনুরোধ (${bn(pending.length)})`,body:pending.length ? `<div style="display:grid;gap:10px">${pending.map(s=>`<button type="button" class="btn line" data-review-profile="${esc(s.id)}">${esc(s.name)} · ${esc(s.id)} · ${bn(Object.keys(s.pendingProfile.changes).length)}টি সংশোধন →</button>`).join("")}</div>` : '<p class="empty">এখন কোনো সংশোধন অনুমোদনের অপেক্ষায় নেই।</p>'});
-      $$("#modalBody [data-review-profile]").forEach(b=>b.onclick=()=>reviewProfileChanges(b.dataset.reviewProfile));
+      $$("#modalBody [data-review-profile]").forEach(b=>b.onclick=()=>reviewProfileChanges(b.dataset.reviewProfile, openProfileRequests));
     };
+    $("#reviewStudentProfiles").onclick = openProfileRequests;
     $("#reviewStudentPhotos").onclick = () => reviewStudentPhotos(scopeIds);
     const drawBatchSel = (keep) => { $("#fbWrap").innerHTML = batchSelectHtml("fb", keep || "", "সব ব্যাচ", $("#fse").value); $("#fbSel").onchange = rememberAndDraw; };
     const list = () => {
