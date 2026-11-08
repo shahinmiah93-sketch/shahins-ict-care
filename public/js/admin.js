@@ -2494,15 +2494,16 @@ ${list.map(receiptHtml).join("")}
         <div class="tile"><small>মোট পেমেন্ট</small><b>${bn(DB.payments.length)}টি</b></div>
       </div>
       <div class="card">
-        <div class="toolbar">
+        <div class="toolbar fee-top">
+          <button class="btn gold" id="newPay">+ একজনের পেমেন্ট</button>
+          <a class="btn ${tab === "batch" ? "" : "gold"}" href="#fees/batch">+ ব্যাচ ভিত্তিক পেমেন্ট</a>
+        </div>
+        <div class="toolbar fee-top">
           <a class="btn ${!tab ? "" : "line"}" href="#fees">পেমেন্টের তালিকা</a>
           <a class="btn ${tab === "dues" ? "" : "line"}" href="#fees/dues">বকেয়া তালিকা</a>
           <a class="btn ${tab === "report" ? "" : "line"}" href="#fees/report">সেশন ও ব্যাচের হিসাব</a>
           <a class="btn ${tab === "calls" ? "" : "line"}" href="#fees/calls">📞 বকেয়া কল তালিকা${dcPending ? ` <span class="at-tabn">${bn(dcPending)}</span>` : ""}</a>
           <a class="btn ${tab === "sms" ? "" : "line"}" href="#fees/sms">✉ বকেয়া SMS তালিকা</a>
-          <span class="grow"></span>
-          <button class="btn gold" id="newPay">+ একজনের পেমেন্ট</button>
-          <a class="btn ${tab === "batch" ? "" : "gold"}" href="#fees/batch">+ ব্যাচ ভিত্তিক পেমেন্ট</a>
         </div>
         <div id="feeBody"></div>
       </div>`;
