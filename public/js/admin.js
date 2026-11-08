@@ -1920,7 +1920,7 @@ ${list.map(receiptHtml).join("")}
         <p class="at-note">পয়েন্ট: উপস্থিত ১ + বাড়ির কাজ ১ + পড়া পারা ১ = দিনে সর্বোচ্চ ৩ · ছুটি উপস্থিতির হিসাবে ধরা হয় না · একই বোতামে আবার চাপলে চিহ্ন উঠে যায়</p>
       </div>`;
     // ট্যাব: হাজিরা দিন | 📞 অনুপস্থিতি কল তালিকা (অনুপস্থিতদের অভিভাবককে কল — admin-absence.js)
-    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load });
+    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save });
     const callBadge = () => { const b = $("#attCallN"); if (b) b.textContent = absCalls.pending() || ""; };
     c.classList.remove("at-show-calls");
     c.querySelector(".at-head").insertAdjacentHTML("afterend", '<div class="at-tabs" id="attTabs"><button type="button" class="on" data-at-tab="reg">✓ হাজিরা দিন</button><button type="button" data-at-tab="calls">📞 অনুপস্থিতি কল তালিকা <span class="at-tabn" id="attCallN"></span></button></div>');

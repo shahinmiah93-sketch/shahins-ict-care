@@ -912,3 +912,7 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-opt input[type=radio]{margin:4px 0 0;width:auto;flex:none}.ab-opt span{display:flex;flex-direction:column;gap:4px;line-height:1.4}.ab-opt small{color:var(--muted);font-size:12px}
 .ab-opt:has(input:checked){border-color:#d9444e;background:#fff0f1}
 .ab-stop-reason{width:100%}.ab-stop-acts{display:flex;flex-wrap:wrap;gap:8px}
+.ab-st button.move{border-style:dashed;color:#0b4f78;background:#f4faff}.ab-st button.move:hover{background:#e6f3fc}
+.ab-move{display:grid;gap:10px;padding:14px;border:1px solid #b9d6e8;border-radius:14px;background:#f4faff}.ab-move[hidden]{display:none}
+.ab-move label{display:grid;gap:6px;color:var(--muted);font-size:14px;font-weight:600}
+.ab-move select{width:100%;height:44px;padding:0 12px;border:1px solid #cbded7;border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-weight:600}

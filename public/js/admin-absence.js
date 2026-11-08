@@ -11,7 +11,7 @@ window.SICAbsence = function (X) {
   const addDays = (d, n) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("en-CA"); };
 
   const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"]];
-  const REASONS = ["অসুস্থ", "বাইরে গেছে", "পারিবারিক কাজ", "স্কুল / কলেজের কাজ", "আগ্রহ কমে গেছে", "জানতেন না", "আর পড়বে না", "অন্যান্য"];
+  const REASONS = ["অসুস্থ", "বাইরে গেছে", "পারিবারিক কাজ", "স্কুল / কলেজের কাজ", "আগ্রহ কমে গেছে", "জানতেন না", "অন্য ব্যাচে পড়ে", "আর পড়বে না", "অন্যান্য"];
   const S = { date: today(), session: "", batch: "", hideDone: false };
 
   const calls = () => (DB().absenceCalls ||= {});
@@ -46,11 +46,13 @@ window.SICAbsence = function (X) {
   const absentRows = (date) => {
     const att = DB().attendance || {}, seen = new Set(), rows = [];
     for (const [key, marks] of Object.entries(att)) {
-      if (key.split("|")[0] !== date) continue;
+      const [d, bid] = key.split("|");
+      if (d !== date) continue;
       for (const [sid, st] of Object.entries(marks)) {
         if (st !== "A" || seen.has(sid)) continue;
         const s = DB().students.find((x) => x.id === sid);
         if (!s || s.status === "inactive") continue;
+        if (bid !== s.batchId) continue; // এখন অন্য ব্যাচে (ব্যাচ বদলেছে) — পুরোনো ব্যাচের অনুপস্থিতি আর গোনা হয় না
         if (Object.entries(att).some(([k2, m2]) => k2.startsWith(date + "|") && m2[sid] === "P")) continue;
         seen.add(sid);
         rows.push({ s, key: `${date}|${sid}`, date });
@@ -91,6 +93,18 @@ window.SICAbsence = function (X) {
       <small>পরে আবার চালু করতে: শিক্ষার্থীর পাতা বা হাজিরা পাতার "পড়া বন্ধ" বোতাম।</small>
     </div>`;
 
+  // ব্যাচ বদলের পপ-আপ: শিক্ষার্থী আসলে অন্য ব্যাচে পড়ে — একই সেশনের অন্য ব্যাচে নেওয়া (আগের হাজিরা, পরীক্ষা, পেমেন্ট থেকে যায়)
+  const moveHtml = (s) => {
+    const others = DB().batches.filter((b) => b.session === s.session && b.id !== s.batchId && b.active !== false);
+    return `<div class="ab-move" hidden>
+      <b>🔄 ${esc(s.name)}-কে অন্য ব্যাচে নিন</b>
+      ${others.length ? `<label>নতুন ব্যাচ<select class="ab-move-to"><option value="">— ব্যাচ বাছুন —</option>${others.map((b) => `<option value="${esc(b.id)}">${esc(U.batchLabel(b))}</option>`).join("")}</select></label>
+      <div class="ab-stop-acts"><button type="button" class="ab-btn call" data-abmove-ok>ব্যাচ বদল করুন</button><button type="button" class="ab-btn" data-abmove-cancel>বাতিল</button></div>
+      <small>${esc(s.session || "")} সেশনের এখনকার ব্যাচ: ${esc(X.batchName(s.batchId))}। বদলালে আগের হাজিরা, পরীক্ষা আর পেমেন্ট থেকে যায়, আর ঐ অনুপস্থিতি এই তালিকা থেকে সরে যায়।</small>`
+        : `<p class="ab-warn">এই সেশনে আর কোনো ব্যাচ নেই।</p><div class="ab-stop-acts"><button type="button" class="ab-btn" data-abmove-cancel>বন্ধ করুন</button></div>`}
+    </div>`;
+  };
+
   const rowHtml = (r) => {
     const { s, key, date } = r, c = calls()[key] || {}, ph = phones(s), main = ph[0], gn = guardianName(s);
     const pending = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
@@ -109,8 +123,8 @@ window.SICAbsence = function (X) {
           : `<span class="ab-warn">অভিভাবকের মোবাইল নম্বর নেই — শিক্ষার্থীর প্রোফাইলে নম্বর যোগ করুন</span>`}</div>
       </div>
       ${ph.length > 1 ? `<div class="ab-more"><small>অন্য নম্বর:</small> ${ph.slice(1).map((o) => `<a href="tel:${o.p}">${esc(o.label)} ${bn(o.p)}</a>`).join(" · ")}</div>` : ""}
-      <div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>
-      ${pending ? "" : stopHtml(s, uid)}
+      <div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>
+      ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
       <div class="ab-note-row">
         <select class="ab-reason" aria-label="অনুপস্থিতির কারণ"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>
         <input class="ab-note" placeholder="নোট (ঐচ্ছিক) — কী কথা হলো" maxlength="300" value="${esc(c.note || "")}">
@@ -190,9 +204,31 @@ window.SICAbsence = function (X) {
         toast(d > today() ? `${U.date(d)} থেকে পড়া বন্ধ হবে` : "পড়া বন্ধ রাখা হয়েছে");
       } catch (er) { toast(er.message, true); }
     };
+    // "ব্যাচ বদল" → শিক্ষার্থীকে একই সেশনের অন্য ব্যাচে নেওয়া আর কলের হিসাবে লিখে রাখা
+    const moveStudent = async (row) => {
+      const panel = $(".ab-move", row), sid = row.dataset.sid, s = DB().students.find((x) => x.id === sid), to = $(".ab-move-to", panel).value;
+      if (!s) return;
+      if (!to) return toast("নতুন ব্যাচ বেছে নিন", true);
+      const fromName = X.batchName(s.batchId), toName = X.batchName(to);
+      if (!confirm(`"${s.name}"-কে ${fromName} থেকে ${toName} ব্যাচে নেবেন?`)) return;
+      try {
+        await X.save("students", { ...s, batchId: to }, sid);
+        const prevNote = $(".ab-note", row).value.trim();
+        const r = await api("/api/admin/absence-call", { body: { date: row.dataset.date, studentId: sid, status: "talked", reason: "অন্য ব্যাচে পড়ে",
+          note: `${prevNote ? prevNote + " · " : ""}ব্যাচ বদল — ${fromName} থেকে ${toName}`.slice(0, 300), followUp: "" } });
+        calls()[row.dataset.key] = r.item;
+        await X.load();
+        render(host);
+        toast(`${s.name} এখন ${toName} ব্যাচে`);
+      } catch (er) { toast(er.message, true); }
+    };
     host.onclick = (e) => {
+      const moveBtn = e.target.closest("[data-abmove]");
+      if (moveBtn) { const row = moveBtn.closest(".ab-row"), p = $(".ab-move", row), sp = $(".ab-stop", row); if (sp) sp.hidden = true; p.hidden = !p.hidden; return; }
+      if (e.target.closest("[data-abmove-cancel]")) { $(".ab-move", e.target.closest(".ab-row")).hidden = true; return; }
+      if (e.target.closest("[data-abmove-ok]")) return moveStudent(e.target.closest(".ab-row"));
       const stopBtn = e.target.closest("[data-abstop]");
-      if (stopBtn) { const p = $(".ab-stop", stopBtn.closest(".ab-row")); p.hidden = !p.hidden; return; }
+      if (stopBtn) { const row = stopBtn.closest(".ab-row"), p = $(".ab-stop", row); $(".ab-move", row).hidden = true; p.hidden = !p.hidden; return; }
       if (e.target.closest("[data-abstop-cancel]")) { $(".ab-stop", e.target.closest(".ab-row")).hidden = true; return; }
       if (e.target.closest("[data-abstop-ok]")) return stopStudent(e.target.closest(".ab-row"));
       const b = e.target.closest("[data-abst]"); if (!b) return;
