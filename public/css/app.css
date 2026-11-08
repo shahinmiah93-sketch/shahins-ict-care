@@ -982,3 +982,5 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 @media(max-width:520px){.ab-ctl-sms>.ds-who{flex:1 1 100%}}
 /* ফি পাতার ওপরের দুই সারি: প্রথমে পেমেন্টের বাটন, তারপর ট্যাব — দুটোই মাঝে সাজানো */
 .fee-top{justify-content:center}.fee-top+.fee-top{margin-top:-4px}
+/* বকেয়া SMS তালিকার নিচের দুই সুইচ: আলাদা সারিতে, মাঝে */
+.ds-switches{flex:1 1 100%;display:flex;flex-wrap:wrap;justify-content:center;gap:12px}

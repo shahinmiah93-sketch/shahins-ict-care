@@ -54,8 +54,10 @@ window.SICDueSms = function (X) {
         <div class="ds-who"><span class="ds-who-t">কাকে পাঠাবেন</span><details class="ds-who-dd" id="dsWho"><summary id="dsWhoSum" title="${esc(whoNames().join(", ") || "কেউ না")}">${esc(whoText())}</summary><div class="ds-who-menu">${ROLES.map(([k, tx]) => `<label class="ds-opt"><input type="checkbox" data-who="${k}"${S.who.includes(k) ? " checked" : ""}> ${tx}</label>`).join("")}</div></details></div>
         <label>খুঁজুন<input id="dsQ" class="dc-q" placeholder="নাম বা আইডি" value="${esc(S.q)}"></label>
         <label>সর্বনিম্ন বকেয়া (৳)<input id="dsMin" class="dc-q" type="number" min="0" step="100" value="${S.min || ""}" placeholder="যেকোনো"></label>
+        <div class="ds-switches">
         <label class="ab-switch"><input type="checkbox" id="dsInact"${S.inactive ? " checked" : ""}><i class="ab-sw"></i><span>পড়া বন্ধ শিক্ষার্থীও</span></label>
         <label class="ab-switch" title="আজ যাদের এই তালিকা থেকে আগেই SMS গেছে, তাদের আবার পাঠানো হবে"><input type="checkbox" id="dsAgain"${S.again ? " checked" : ""}><i class="ab-sw"></i><span>আজ আগে গেছে তাদেরও আবার</span></label>
+        </div>
       </div>
       <div class="card ds-msg">
         <div class="ds-msg-head"><b>✉ বার্তা</b><span class="ds-ph"><small>বসান:</small>${["{নাম}", "{আইডি}", "{বকেয়া}", "{ব্যাচ}"].map((p) => `<button type="button" class="ab-btn" data-ph="${p}">${p}</button>`).join("")}<button type="button" class="ab-btn" data-tpl-reset title="আগের ডিফল্ট বার্তা ফিরিয়ে আনুন">↺ ডিফল্ট</button></span></div>
