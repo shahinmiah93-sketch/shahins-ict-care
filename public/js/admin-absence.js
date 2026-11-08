@@ -113,14 +113,15 @@ window.SICAbsence = function (X) {
     const uid = `${esc(s.id)}-${r.follow ? "f" : "a"}`;
     const streak = streakOf(s.id, date), mon = monthAbsent(s.id, date);
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
+    // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
+    const stBtns = `<div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>`;
     const contact = SICContacts.html(s, key, msgFor(s, date)); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
     return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${r.follow ? ` · <span class="chip warn">ফলো-আপ — ${esc(U.date(date))}-এর অনুপস্থিতি</span>` : ""}</small>
-          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small></div>
+          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small>${stBtns}</div>
         ${contact}
       </div>
-      <div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>
       ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
       <div class="ab-note-row">
         <select class="ab-reason" aria-label="অনুপস্থিতির কারণ"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>

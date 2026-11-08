@@ -921,3 +921,11 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-sum article.bad small{color:#a3212b}
 .ab-hist{font-size:13px;color:var(--muted)}.ab-hist summary{cursor:pointer;font-weight:600}.ab-hist ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
 .dc-link .at-tabn{margin-left:6px}
+/* কল তালিকার সারি: কলের অবস্থার বাটন বাম পাশে (নাম-চিহ্নের নিচে), যোগাযোগ কার্ড ডানে ও ছোট */
+.ab-stu{flex:1 1 300px;min-width:0;display:grid;gap:6px;align-content:start}.ab-stu small{margin-top:0}
+.ab-stu .ab-st{margin-top:4px;gap:6px}.ab-stu .ab-st button{padding:7px 11px;font-size:13.5px;border-radius:11px}
+.ab-guard.ab-card{width:min(100%,390px);padding:10px;gap:8px;border-radius:16px}
+.ab-who{padding:3px;border-radius:12px}.ab-who button{padding:5px 4px;flex:1 1 76px}.ab-who button b{font-size:13px}.ab-who button small{font-size:11.5px}
+.ab-actions{gap:6px}.ab-actions .ab-btn{padding:7px 10px;font-size:13.5px}
+.ab-ident{padding:7px 12px;gap:10px;border-radius:12px}.ab-av{width:34px;height:34px;font-size:17px}.ab-ident small{font-size:12px}.ab-ident .ab-num{font-size:18px}
+@media(max-width:700px){.ab-stu{flex-basis:100%}.ab-guard.ab-card{width:100%}}

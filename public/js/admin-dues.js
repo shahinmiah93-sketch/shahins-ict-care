@@ -52,15 +52,16 @@ window.SICDues = function (X) {
     const promise = c.status === "promised" && c.promiseDate ? (c.promiseDate < t ? `<span class="chip bad">⚠ ${esc(U.date(c.promiseDate))}-এর মধ্যে দেওয়ার কথা ছিল, পেরিয়ে গেছে</span>` : `<span class="chip ok">💰 ${esc(U.date(c.promiseDate))}-এর মধ্যে দেবেন</span>`) : "";
     const follow = c.status === "later" && c.followUp ? (c.followUp <= t ? `<span class="chip warn">📌 আজ আবার ফোন করার কথা</span>` : `<span class="chip">🔁 ${esc(U.date(c.followUp))} আবার ফোন</span>`) : "";
     const last = c.at ? `<span class="chip" title="${esc(c.note || "")}">শেষ কল ${esc(U.date(c.at.slice(0, 10)))} — ${esc(ST_TX[c.status] || "")}</span>` : "";
+    // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
+    const stBtns = `<div class="ab-st">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div>`;
     const log = (c.log || []).slice().reverse();
     return `<div class="ab-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-sid="${esc(s.id)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small>
           <small><span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
-          <small>${promise}${follow}${last}${smsChip(s)}</small></div>
+          <small>${promise}${follow}${last}${smsChip(s)}</small>${stBtns}</div>
         ${contact}
       </div>
-      <div class="ab-st">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div>
       <div class="ab-note-row">
         <select class="ab-reason" aria-label="কারণ"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>
         <input class="ab-note" placeholder="নোট (ঐচ্ছিক) — কী কথা হলো" maxlength="300" value="${esc(c.note || "")}">
