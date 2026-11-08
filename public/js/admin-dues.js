@@ -55,12 +55,12 @@ window.SICDues = function (X) {
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
     const stBtns = `<div class="ab-st">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div>`;
     // কয়েকদিন টানা অনুপস্থিত থাকলে বকেয়ার পাশেই চিহ্ন (শেষ ১৪ দিনের হাজিরা ধরে) — কলের সময় অভিভাবককে এটাও বলা যায়
-    const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 1 && stk.last >= addDays(t, -14) ? ` <span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${bn(stk.n)} দিন টানা অনুপস্থিত</span>` : "";
+    const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 1 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${bn(stk.n)} দিন টানা অনুপস্থিত</span> ` : "";
     const log = (c.log || []).slice().reverse();
     return `<div class="ab-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-sid="${esc(s.id)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small>
-          <small><span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span>${absChip} <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
+          <small>${absChip}<span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
           <small>${promise}${follow}${last}${smsChip(s)}</small>${stBtns}</div>
         ${contact}
       </div>
