@@ -15,10 +15,13 @@ window.SICDueSms = function (X) {
   const S = (window.__sicDueSmsState ||= { session: "", batch: "", q: "", min: 0, to: "guardian", inactive: true, again: false, tpl: savedTpl() || DEFAULT_TPL, sel: new Set(), running: false, stop: false });
 
   const batchOf = (id) => DB().batches.find((b) => b.id === id);
+  // কাকে পাঠাবেন: অভিভাবক (অভিভাবক → বাবা → মা, প্রথম নম্বর) | বাবা | মা | শিক্ষার্থী নিজে | অভিভাবক + শিক্ষার্থী — না থাকলে খালি
   const targets = (s) => {
-    const g = [s.guardianPhone, s.fatherPhone, s.motherPhone].map(cleanPhone).find(okPhone) || "", own = okPhone(cleanPhone(s.phone)) ? cleanPhone(s.phone) : "";
-    return [...new Set((S.to === "student" ? [own] : S.to === "both" ? [g, own] : [g]).filter(Boolean))];
+    const one = (v) => (okPhone(cleanPhone(v)) ? cleanPhone(v) : "");
+    const g = [s.guardianPhone, s.fatherPhone, s.motherPhone].map(cleanPhone).find(okPhone) || "", own = one(s.phone);
+    return [...new Set(({ student: [own], both: [g, own], father: [one(s.fatherPhone)], mother: [one(s.motherPhone)], guardian: [g] }[S.to] || [g]).filter(Boolean))];
   };
+  const WHO = { guardian: "অভিভাবকের", student: "শিক্ষার্থীর", father: "বাবার", mother: "মায়ের", both: "অভিভাবক বা শিক্ষার্থীর" };
   const inScope = (s) => {
     const b = batchOf(s.batchId), q = S.q.trim().toLowerCase();
     return (S.inactive || s.status !== "inactive") && (!S.session || (b && b.session === S.session)) && (!S.batch || s.batchId === S.batch)
@@ -47,7 +50,7 @@ window.SICDueSms = function (X) {
         <label>ব্যাচ<select id="dsBa"></select></label>
         <label>খুঁজুন<input id="dsQ" class="dc-q" placeholder="নাম বা আইডি" value="${esc(S.q)}"></label>
         <label>সর্বনিম্ন বকেয়া (৳)<input id="dsMin" class="dc-q" type="number" min="0" step="100" value="${S.min || ""}" placeholder="যেকোনো"></label>
-        <label>কাকে পাঠাবেন<select id="dsTo"><option value="guardian"${S.to === "guardian" ? " selected" : ""}>অভিভাবকের নম্বরে</option><option value="student"${S.to === "student" ? " selected" : ""}>শিক্ষার্থীর নম্বরে</option><option value="both"${S.to === "both" ? " selected" : ""}>দুজনেরই নম্বরে</option></select></label>
+        <label>কাকে পাঠাবেন<select id="dsTo"><option value="guardian"${S.to === "guardian" ? " selected" : ""}>অভিভাবকের নম্বরে</option><option value="father"${S.to === "father" ? " selected" : ""}>বাবার নম্বরে</option><option value="mother"${S.to === "mother" ? " selected" : ""}>মায়ের নম্বরে</option><option value="student"${S.to === "student" ? " selected" : ""}>শিক্ষার্থীর নম্বরে</option><option value="both"${S.to === "both" ? " selected" : ""}>অভিভাবক ও শিক্ষার্থী দুজনেরই নম্বরে</option></select></label>
         <label class="ab-switch"><input type="checkbox" id="dsInact"${S.inactive ? " checked" : ""}><i class="ab-sw"></i><span>পড়া বন্ধ শিক্ষার্থীও</span></label>
         <label class="ab-switch" title="আজ যাদের এই তালিকা থেকে আগেই SMS গেছে, তাদের আবার পাঠানো হবে"><input type="checkbox" id="dsAgain"${S.again ? " checked" : ""}><i class="ab-sw"></i><span>আজ আগে গেছে তাদেরও আবার</span></label>
       </div>
@@ -79,7 +82,7 @@ window.SICDueSms = function (X) {
         const tg = targets(s), b = batchOf(s.batchId), lastSms = last[s.id];
         return `<label class="ds-row${tg.length ? "" : " off"}${S.sel.has(s.id) && tg.length ? " on" : ""}"><input type="checkbox" data-sid="${esc(s.id)}"${S.sel.has(s.id) && tg.length ? " checked" : ""}${tg.length ? "" : " disabled"}>
           <div class="ds-info"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(b ? b.name : "ব্যাচ নেই")}${s.status === "inactive" ? ` · <span class="chip warn">পড়া বন্ধ</span>` : ""}</small>
-            <small>${tg.length ? tg.map((p) => `<span class="chip">${bn(p)}</span>`).join(" ") : `<span class="chip bad">${S.to === "student" ? "শিক্ষার্থীর" : "অভিভাবকের"} নম্বর নেই</span>`}${lastSms ? ` <span class="chip ${lastSms === today() ? "ok" : ""}" title="শেষ বকেয়ার SMS">শেষ SMS ${esc(U.date(lastSms))}</span>` : ""}${todaySent.has(s.id) ? ` <span class="chip ok">✉ আজ গেছে</span>` : ""}</small></div>
+            <small>${tg.length ? tg.map((p) => `<span class="chip">${bn(p)}</span>`).join(" ") : `<span class="chip bad">${WHO[S.to] || "অভিভাবকের"} নম্বর নেই</span>`}${lastSms ? ` <span class="chip ${lastSms === today() ? "ok" : ""}" title="শেষ বকেয়ার SMS">শেষ SMS ${esc(U.date(lastSms))}</span>` : ""}${todaySent.has(s.id) ? ` <span class="chip ok">✉ আজ গেছে</span>` : ""}</small></div>
           <div class="ds-due"><small>বকেয়া</small><b>${U.money(s.fees.balance)}</b></div></label>`;
       }).join("") || `<div class="card empty">${DB().students.some((s) => s.fees && s.fees.balance > 0) ? "এই ফিল্টারে কোনো শিক্ষার্থী নেই" : "কোনো বকেয়া নেই 🎉"}</div>`;
     };
