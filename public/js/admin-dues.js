@@ -21,13 +21,7 @@ window.SICDues = function (X) {
   const calls = () => (DB().dueCalls ||= {});
   const batchOf = (id) => DB().batches.find((b) => b.id === id);
 
-  const phones = (s) => {
-    const out = [];
-    const add = (label, v) => { const p = cleanPhone(v); if (/^01\d{9}$/.test(p) && !out.some((o) => o.p === p)) out.push({ label, p }); };
-    add("অভিভাবক", s.guardianPhone); add("বাবা", s.fatherPhone); add("মা", s.motherPhone); add("শিক্ষার্থী", s.phone);
-    return out;
-  };
-  const guardianName = (s) => s.guardianName || s.fatherName || s.motherName || "";
+  // কাকে কল করবেন (অভিভাবক · বাবা · মা · শিক্ষার্থী) — admin-contacts.js (SICContacts)
   const lastPay = (sid) => (DB().payments || []).filter((p) => p.studentId === sid).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.receiptNo).localeCompare(String(a.receiptNo)))[0];
 
   // কত জরুরি: ০ = টাকা দেওয়ার তারিখ পেরিয়ে গেছে · ১ = ফোন করার তারিখ এসেছে · ২ = এখনো কল হয়নি · ৩ = ধরেনি · ৪ = টাকা দেবে (সামনে) · ৫ = পরে ফোন (সামনে) · ৬ = কথা হয়েছে
@@ -48,9 +42,12 @@ window.SICDues = function (X) {
   const dueStudents = () => DB().students.filter((s) => s.status !== "inactive" && s.fees && s.fees.balance > 0);
   const msgFor = (s) => `আসসালামু আলাইকুম। ${DB().settings.name || "Shahin's ICT Care"} থেকে বলছি। ${s.name}-এর ফি বাবদ ${money(s.fees.balance).replace("৳", "")} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন।`;
 
+  // আজ এই শিক্ষার্থীর অভিভাবককে বকেয়ার SMS গেছে কি না — SMS খাতা (smsLog) থেকে
+  const smsChip = (s) => ((DB().smsLog || []).some((l) => l.ok && l.date === today() && String(l.text || "").includes(`— ${s.id}`) && l.filter === "CallDue") ? ` <span class="chip ok">✉ আজ SMS গেছে</span>` : "");
+
   const rowHtml = (s) => {
-    const c = calls()[s.id] || {}, ph = phones(s), main = ph[0], gn = guardianName(s), f = s.fees, pr = priority(s.id), t = today();
-    const lp = lastPay(s.id), msg = main ? msgFor(s) : "";
+    const c = calls()[s.id] || {}, f = s.fees, pr = priority(s.id), t = today();
+    const lp = lastPay(s.id), contact = SICContacts.html(s, s.id, msgFor(s), `<button type="button" class="ab-btn pay" data-dpay>💵 পেমেন্ট নিন</button>`);
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     const promise = c.status === "promised" && c.promiseDate ? (c.promiseDate < t ? `<span class="chip bad">⚠ ${esc(U.date(c.promiseDate))}-এর মধ্যে দেওয়ার কথা ছিল, পেরিয়ে গেছে</span>` : `<span class="chip ok">💰 ${esc(U.date(c.promiseDate))}-এর মধ্যে দেবেন</span>`) : "";
     const follow = c.status === "later" && c.followUp ? (c.followUp <= t ? `<span class="chip warn">📌 আজ আবার ফোন করার কথা</span>` : `<span class="chip">🔁 ${esc(U.date(c.followUp))} আবার ফোন</span>`) : "";
@@ -60,15 +57,9 @@ window.SICDues = function (X) {
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small>
           <small><span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
-          <small>${promise}${follow}${last}</small></div>
-        <div class="ab-guard">${main ? `<div><small>${esc(main.label)}${gn && main.label === "অভিভাবক" ? ` · ${esc(gn)}` : ""}</small><br><a class="ab-num" href="tel:${main.p}">${bn(main.p)}</a></div>
-          <a class="ab-btn call" href="tel:${main.p}">📞 কল</a>
-          <a class="ab-btn wa" target="_blank" rel="noopener" href="https://wa.me/88${main.p}?text=${encodeURIComponent(msg)}">🟢 WhatsApp</a>
-          <a class="ab-btn" href="sms:${main.p}?body=${encodeURIComponent(msg)}">✉ SMS</a>`
-          : `<span class="ab-warn">অভিভাবকের মোবাইল নম্বর নেই — শিক্ষার্থীর প্রোফাইলে নম্বর যোগ করুন</span>`}
-          <button type="button" class="ab-btn pay" data-dpay>💵 পেমেন্ট নিন</button></div>
+          <small>${promise}${follow}${last}${smsChip(s)}</small></div>
+        ${contact}
       </div>
-      ${ph.length > 1 ? `<div class="ab-more"><small>অন্য নম্বর:</small> ${ph.slice(1).map((o) => `<a href="tel:${o.p}">${esc(o.label)} ${bn(o.p)}</a>`).join(" · ")}</div>` : ""}
       <div class="ab-st">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div>
       <div class="ab-note-row">
         <select class="ab-reason" aria-label="কারণ"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>
@@ -119,7 +110,23 @@ window.SICDues = function (X) {
         draw();
       } catch (e) { toast(e.message, true); }
     };
+    // "✉ SMS পাঠান" → সরাসরি BulkSMSBD দিয়ে অভিভাবকের মোবাইলে (বকেয়ার বার্তা); আগে নম্বর আর বার্তা দেখিয়ে জিজ্ঞেস করে
+    const smsGuardian = async (row, phone) => {
+      const body = { kind: "due", studentId: row.dataset.sid, phone };
+      try {
+        const pre = await api("/api/admin/call-sms", { body: { ...body, dry: true } });
+        if (!pre.live) { if (confirm("SMS সার্ভিস চালু নেই (সেটআপ → সেটিংস)।\n\nতার বদলে ফোনের SMS অ্যাপে খুলবেন?")) location.href = `sms:${pre.phone}?body=${encodeURIComponent(pre.text)}`; return; }
+        if (!confirm(`${bn(pre.phone)} নম্বরে এই SMS পাঠাবেন?\n\n${pre.text}${pre.already ? "\n\n⚠ আজ এই শিক্ষার্থীর অভিভাবককে আগেই বকেয়ার SMS পাঠানো হয়েছে। তবুও আবার পাঠাবেন?" : ""}`)) return;
+        await api("/api/admin/call-sms", { body: { ...body, force: !!pre.already } });
+        toast(`${bn(pre.phone)} নম্বরে SMS পাঠানো হয়েছে`);
+        await X.load(); render(host);
+      } catch (er) { toast(er.message, true); }
+    };
     host.onclick = (e) => {
+      const who = e.target.closest("[data-who]");
+      if (who) { SICContacts.pick(who.closest(".ab-row").dataset.sid, Number(who.dataset.who)); draw(); return; }
+      const smsBtn = e.target.closest("[data-sms]");
+      if (smsBtn) return smsGuardian(smsBtn.closest(".ab-row"), smsBtn.dataset.phone);
       const pay = e.target.closest("[data-dpay]");
       if (pay) return X.paymentForm(pay.closest(".ab-row").dataset.sid);
       const b = e.target.closest("[data-dst]"); if (!b) return;

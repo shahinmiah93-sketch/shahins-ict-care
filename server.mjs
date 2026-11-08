@@ -2747,6 +2747,37 @@ async function api(req, res, url) {
     saveDb();
     return send(res, 200, { ok: true, item });
   }
+  // কল তালিকা থেকে অভিভাবককে সরাসরি SMS (BulkSMSBD দিয়ে): kind = absence (অনুপস্থিতি) বা due (বকেয়া)।
+  // বার্তা সার্ভারেই তৈরি হয় (ক্লায়েন্টের লেখা বার্তা পাঠানো হয় না); dry = শুধু দেখানো (নম্বর, বার্তা, আজ আগে গেছে কি না), পাঠানো নয়।
+  if (p === "/api/admin/call-sms" && m === "POST") {
+    const b = await readBody(req), kind = b.kind === "due" ? "due" : "absence", sid = str(b.studentId, 40);
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(str(b.date, 10)) ? str(b.date, 10) : today();
+    const s = db.students.find((x) => x.id === sid);
+    if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
+    const nums = [s.guardianPhone, s.fatherPhone, s.motherPhone, s.phone].map(phoneOf).filter((n) => /^01\d{9}$/.test(n)), want = phoneOf(b.phone), phone = nums.includes(want) ? want : nums[0]; // বাছা নম্বর অবশ্যই এই শিক্ষার্থীরই হতে হবে
+    if (!phone) return send(res, 400, { error: "অভিভাবকের মোবাইল নম্বর নেই" });
+    let text, tag, logText;
+    if (kind === "due") {
+      const bal = feeSummary(s).balance;
+      if (!(bal > 0)) return send(res, 400, { error: "এই শিক্ষার্থীর কোনো বকেয়া নেই" });
+      text = `সম্মানিত অভিভাবক, ${s.name}-এর ফি বাবদ ${Math.round(bal).toLocaleString("bn-BD")} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। — Shahin Sir`;
+      tag = "CallDue"; logText = `বকেয়া কল তালিকা — ${s.id}, ${day}`;
+    } else {
+      if (!absentStudent(day, sid)) return send(res, 400, { error: "এই তারিখে শিক্ষার্থী অনুপস্থিত নেই" });
+      const dateBn = new Date(day + "T00:00").toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+      text = `সম্মানিত অভিভাবক, ${s.name} ${dateBn} ক্লাসে অনুপস্থিত ছিল। অনুগ্রহ করে কারণটা জানাবেন। — Shahin Sir`;
+      tag = "CallAbsent"; logText = `অনুপস্থিতি কল তালিকা — ${s.id}, ${day}`;
+    }
+    // আজ এই শিক্ষার্থীর অভিভাবককে একই ধরনের SMS (সন্ধ্যার অটো অনুপস্থিতি SMS-সহ) আগে গেছে কি না — দুবার টাকা কাটা ঠেকাতে
+    const already = db.smsLog.some((l) => l.ok && l.date === today() && String(l.text || "").includes(`— ${s.id}`) && (l.filter === tag || (kind === "absence" && l.filter === "Absent")));
+    if (b.dry) return send(res, 200, { ok: true, live: smsOn(), phone, text, already });
+    if (!smsOn()) return send(res, 400, { error: "SMS সার্ভিস চালু নেই — সেটআপ → সেটিংস থেকে চালু করুন" });
+    if (already && !b.force) return send(res, 409, { error: "আজ এই শিক্ষার্থীর অভিভাবককে আগেই SMS পাঠানো হয়েছে", already: true });
+    try { await sendSms(phone, text, logText, tag); }
+    catch (er) { saveDb(); return send(res, 502, { error: er.message }); }
+    saveDb();
+    return send(res, 200, { ok: true, phone });
+  }
   // অনুপস্থিত শিক্ষার্থীর অভিভাবককে কল — কলের অবস্থা (কথা হয়েছে / ধরেনি / পরে ফোন), কারণ আর নোট জমা রাখা
   if (p === "/api/admin/absence-call" && m === "POST") {
     const b = await readBody(req);

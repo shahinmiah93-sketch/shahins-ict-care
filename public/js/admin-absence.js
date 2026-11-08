@@ -17,14 +17,7 @@ window.SICAbsence = function (X) {
   const calls = () => (DB().absenceCalls ||= {});
   const batchOf = (id) => DB().batches.find((b) => b.id === id);
 
-  // অভিভাবকের নম্বর: প্রথমে অভিভাবক, তারপর বাবা, মা, শেষে শিক্ষার্থী নিজে (একই নম্বর একবার)
-  const phones = (s) => {
-    const out = [];
-    const add = (label, v) => { const p = cleanPhone(v); if (/^01\d{9}$/.test(p) && !out.some((o) => o.p === p)) out.push({ label, p }); };
-    add("অভিভাবক", s.guardianPhone); add("বাবা", s.fatherPhone); add("মা", s.motherPhone); add("শিক্ষার্থী", s.phone);
-    return out;
-  };
-  const guardianName = (s) => s.guardianName || s.fatherName || s.motherName || "";
+  // কাকে কল করবেন (অভিভাবক · বাবা · মা · শিক্ষার্থী) — admin-contacts.js (SICContacts)
 
   // একজনের P/A ইতিহাস (ছুটি বাদ; একই দিনে কোথাও উপস্থিত থাকলে উপস্থিত), নতুন থেকে পুরোনো
   const history = (sid) => {
@@ -106,6 +99,8 @@ window.SICAbsence = function (X) {
   };
 
   // বকেয়ার চিহ্ন: কলের সময় অভিভাবককে ফি-র কথাও মনে করানো যায় (সারির ওপর মাউস রাখলে মোট ফি আর জমা দেখায়)
+  // আজ এই শিক্ষার্থীর অভিভাবককে অনুপস্থিতির SMS গেছে কি না (এই তালিকা থেকে বা সন্ধ্যার অটো SMS-এ) — SMS খাতা (smsLog) থেকে
+  const smsChip = (s) => ((DB().smsLog || []).some((l) => l.ok && l.date === today() && String(l.text || "").includes(`— ${s.id}`) && (l.filter === "CallAbsent" || l.filter === "Absent")) ? ` <span class="chip ok">✉ আজ SMS গেছে</span>` : "");
   const dueChip = (s) => {
     const f = s.fees; if (!f) return "";
     const b = Number(f.balance) || 0, tip = esc(`মোট ফি ${U.money(f.totalDue)} · জমা ${U.money(f.paid)}`);
@@ -113,23 +108,18 @@ window.SICAbsence = function (X) {
   };
 
   const rowHtml = (r) => {
-    const { s, key, date } = r, c = calls()[key] || {}, ph = phones(s), main = ph[0], gn = guardianName(s);
+    const { s, key, date } = r, c = calls()[key] || {};
     const pending = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
     const uid = `${esc(s.id)}-${r.follow ? "f" : "a"}`;
     const streak = streakOf(s.id, date), mon = monthAbsent(s.id, date);
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
-    const msg = main ? msgFor(s, date) : "";
+    const contact = SICContacts.html(s, key, msgFor(s, date)); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
     return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${r.follow ? ` · <span class="chip warn">ফলো-আপ — ${esc(U.date(date))}-এর অনুপস্থিতি</span>` : ""}</small>
-          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small></div>
-        <div class="ab-guard">${main ? `<div><small>${esc(main.label)}${gn && main.label === "অভিভাবক" ? ` · ${esc(gn)}` : ""}</small><br><a class="ab-num" href="tel:${main.p}">${bn(main.p)}</a></div>
-          <a class="ab-btn call" href="tel:${main.p}">📞 কল</a>
-          <a class="ab-btn wa" target="_blank" rel="noopener" href="https://wa.me/88${main.p}?text=${encodeURIComponent(msg)}">🟢 WhatsApp</a>
-          <a class="ab-btn" href="sms:${main.p}?body=${encodeURIComponent(msg)}">✉ SMS</a>`
-          : `<span class="ab-warn">অভিভাবকের মোবাইল নম্বর নেই — শিক্ষার্থীর প্রোফাইলে নম্বর যোগ করুন</span>`}</div>
+          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small></div>
+        ${contact}
       </div>
-      ${ph.length > 1 ? `<div class="ab-more"><small>অন্য নম্বর:</small> ${ph.slice(1).map((o) => `<a href="tel:${o.p}">${esc(o.label)} ${bn(o.p)}</a>`).join(" · ")}</div>` : ""}
       <div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>
       ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
       <div class="ab-note-row">
@@ -229,7 +219,23 @@ window.SICAbsence = function (X) {
         toast(`${s.name} এখন ${toName} ব্যাচে`);
       } catch (er) { toast(er.message, true); }
     };
+    // "✉ SMS পাঠান" → সরাসরি BulkSMSBD দিয়ে অভিভাবকের মোবাইলে; আগে নম্বর আর বার্তা দেখিয়ে জিজ্ঞেস করে (ভুল চাপে টাকা কাটা ঠেকাতে)
+    const smsGuardian = async (row, phone) => {
+      const body = { kind: "absence", studentId: row.dataset.sid, date: row.dataset.date, phone };
+      try {
+        const pre = await api("/api/admin/call-sms", { body: { ...body, dry: true } });
+        if (!pre.live) { if (confirm("SMS সার্ভিস চালু নেই (সেটআপ → সেটিংস)।\n\nতার বদলে ফোনের SMS অ্যাপে খুলবেন?")) location.href = `sms:${pre.phone}?body=${encodeURIComponent(pre.text)}`; return; }
+        if (!confirm(`${bn(pre.phone)} নম্বরে এই SMS পাঠাবেন?\n\n${pre.text}${pre.already ? "\n\n⚠ আজ এই শিক্ষার্থীর অভিভাবককে আগেই SMS পাঠানো হয়েছে। তবুও আবার পাঠাবেন?" : ""}`)) return;
+        await api("/api/admin/call-sms", { body: { ...body, force: !!pre.already } });
+        toast(`${bn(pre.phone)} নম্বরে SMS পাঠানো হয়েছে`);
+        await X.load(); render(host);
+      } catch (er) { toast(er.message, true); }
+    };
     host.onclick = (e) => {
+      const who = e.target.closest("[data-who]");
+      if (who) { SICContacts.pick(who.closest(".ab-row").dataset.key, Number(who.dataset.who)); draw(); return; }
+      const smsBtn = e.target.closest("[data-sms]");
+      if (smsBtn) return smsGuardian(smsBtn.closest(".ab-row"), smsBtn.dataset.phone);
       const moveBtn = e.target.closest("[data-abmove]");
       if (moveBtn) { const row = moveBtn.closest(".ab-row"), p = $(".ab-move", row), sp = $(".ab-stop", row); if (sp) sp.hidden = true; p.hidden = !p.hidden; return; }
       if (e.target.closest("[data-abmove-cancel]")) { $(".ab-move", e.target.closest(".ab-row")).hidden = true; return; }

@@ -895,7 +895,7 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-row.done{opacity:.62;background:#f6f4ee}.ab-row.fu{border-color:#f3c55d;background:#fffaf0}
 .ab-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start}
 .ab-stu b{font-size:16px}.ab-stu small{display:block;margin-top:4px;color:var(--muted)}
-.ab-guard{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.ab-guard small{color:var(--muted)}
+.ab-guard{display:grid;gap:10px;justify-items:end}.ab-guard small{color:var(--muted)}.ab-call-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}.ab-who{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}.ab-who button{display:grid;gap:1px;text-align:left;padding:7px 14px;border:1px solid #cbded7;border-radius:12px;background:#fff;color:#2e4a44;font:inherit;cursor:pointer;line-height:1.3}.ab-who button b{font-size:13.5px}.ab-who button small{font-size:12.5px;color:var(--muted);font-weight:600}.ab-who button:hover{border-color:#0f5c4f}.ab-who button.on{background:#e6f4ee;border-color:#0f5c4f;box-shadow:inset 0 0 0 1px #0f5c4f}.ab-who button.on small{color:#0f5c4f}@media(max-width:700px){.ab-guard{justify-items:stretch}.ab-call-row,.ab-who{justify-content:flex-start}}
 .ab-num{font-weight:700;font-size:17px;color:#0b3b36;text-decoration:none}
 .ab-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid #e3dccb;background:#fffdf8;font:inherit;font-weight:700;text-decoration:none;color:#2e4a44;cursor:pointer}
 .ab-btn.call{background:#0f5c4f;border-color:#0f5c4f;color:#fff}.ab-btn.wa{background:#e8f8ee;border-color:#9ad9b2;color:#12663a}
