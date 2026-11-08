@@ -2,7 +2,7 @@
 // নিয়ম: /api (PIN, ছবি, ফলাফল — সব ব্যক্তিগত তথ্য) কখনো জমা রাখা হয় না — সবসময় সরাসরি সার্ভার থেকে।
 // পাতা খোলা: আগে ইন্টারনেট; না থাকলে "ইন্টারনেট নেই" পাতা। CSS / JS / ছবি / ফন্ট: আগের কপি দেখিয়ে পেছনে নতুনটা এনে রাখে।
 // অ্যাডমিন পাতা আর তার স্ক্রিপ্টে হাত দেয় না।
-const VERSION = "sic-pwa-v1";
+const VERSION = "sic-pwa-v2";
 const SHELL = ["/offline.html", "/pwa-192.png", "/images/logo-nav.png"];
 
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
