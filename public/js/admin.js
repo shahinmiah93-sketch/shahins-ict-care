@@ -2058,8 +2058,8 @@ ${list.map(receiptHtml).join("")}
     openForm({
       title: "পেমেন্ট নিন", saveText: "সেভ ও রসিদ প্রিন্ট",
       fields: [
+        { name: "idQ", label: "আইডি লিখুন", placeholder: "যেমন: 270001" },
         { name: "studentId", label: "শিক্ষার্থী", type: "select", options: [["", "বেছে নিন"], ...studs], required: true },
-        { name: "idQ", label: "অথবা আইডি লিখুন", placeholder: "যেমন: 270001" },
         { type: "html", html: '<div id="payInfo" style="color:var(--muted)"></div>' },
         { name: "enrollmentId", label: "কোন মডিউলের ফি", type: "select", options: [["", "সাধারণ"]], wide: true },
         { name: "amount", label: "টাকার পরিমাণ", type: "number", min: 1, required: true },
