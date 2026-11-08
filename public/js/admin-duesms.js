@@ -45,7 +45,7 @@ window.SICDueSms = function (X) {
 
   function render(host) {
     const sessions = DB().sessions.filter((x) => x.active !== false);
-    host.innerHTML = `<div class="card ab-ctl">
+    host.innerHTML = `<div class="card ab-ctl ab-ctl-dues">
         <label>সেশন<select id="dsSe"><option value="">সব সেশন</option>${sessions.map((x) => `<option value="${esc(x.name)}"${x.name === S.session ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label>ব্যাচ<select id="dsBa"></select></label>
         <label>খুঁজুন<input id="dsQ" class="dc-q" placeholder="নাম বা আইডি" value="${esc(S.q)}"></label>

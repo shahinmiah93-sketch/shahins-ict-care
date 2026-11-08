@@ -962,3 +962,5 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ds-info{flex:1;min-width:0;display:grid;gap:4px}.ds-info b{font-size:15.5px}.ds-info small{display:block;color:var(--muted)}
 .ds-due{flex:none;text-align:right}.ds-due small{display:block;color:var(--muted);font-size:12px}.ds-due b{font-size:18px;color:#b4233c}
 @media(max-width:560px){.ds-row{align-items:flex-start;padding:12px}.ds-due{align-self:center}}
+/* ফি পাতার বকেয়া কল / SMS তালিকা: ক্রম সেশন → ব্যাচ → খুঁজুন — সেশনের ঘর ছোট, ব্যাচের ঘর বড় (ব্যাচের নাম দিন-সময়সহ কাটা না পড়ে) */
+.ab-ctl-dues>label:nth-child(1){flex:.5 1 130px}.ab-ctl-dues>label:nth-child(2){flex:1.6 1 300px}.ab-ctl-dues>label:nth-child(3){flex:1 1 180px}
