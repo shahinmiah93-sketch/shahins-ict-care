@@ -45,12 +45,12 @@ window.SICDueSms = function (X) {
 
   function render(host) {
     const sessions = DB().sessions.filter((x) => x.active !== false);
-    host.innerHTML = `<div class="card ab-ctl ab-ctl-dues">
+    host.innerHTML = `<div class="card ab-ctl ab-ctl-dues ab-ctl-sms">
         <label>সেশন<select id="dsSe"><option value="">সব সেশন</option>${sessions.map((x) => `<option value="${esc(x.name)}"${x.name === S.session ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label>ব্যাচ<select id="dsBa"></select></label>
+        <label>কাকে পাঠাবেন<select id="dsTo"><option value="guardian"${S.to === "guardian" ? " selected" : ""}>অভিভাবক</option><option value="father"${S.to === "father" ? " selected" : ""}>বাবা</option><option value="mother"${S.to === "mother" ? " selected" : ""}>মা</option><option value="student"${S.to === "student" ? " selected" : ""}>শিক্ষার্থী</option><option value="both"${S.to === "both" ? " selected" : ""}>অভিভাবক + শিক্ষার্থী</option></select></label>
         <label>খুঁজুন<input id="dsQ" class="dc-q" placeholder="নাম বা আইডি" value="${esc(S.q)}"></label>
         <label>সর্বনিম্ন বকেয়া (৳)<input id="dsMin" class="dc-q" type="number" min="0" step="100" value="${S.min || ""}" placeholder="যেকোনো"></label>
-        <label>কাকে পাঠাবেন<select id="dsTo"><option value="guardian"${S.to === "guardian" ? " selected" : ""}>অভিভাবকের নম্বরে</option><option value="father"${S.to === "father" ? " selected" : ""}>বাবার নম্বরে</option><option value="mother"${S.to === "mother" ? " selected" : ""}>মায়ের নম্বরে</option><option value="student"${S.to === "student" ? " selected" : ""}>শিক্ষার্থীর নম্বরে</option><option value="both"${S.to === "both" ? " selected" : ""}>অভিভাবক ও শিক্ষার্থী দুজনেরই নম্বরে</option></select></label>
         <label class="ab-switch"><input type="checkbox" id="dsInact"${S.inactive ? " checked" : ""}><i class="ab-sw"></i><span>পড়া বন্ধ শিক্ষার্থীও</span></label>
         <label class="ab-switch" title="আজ যাদের এই তালিকা থেকে আগেই SMS গেছে, তাদের আবার পাঠানো হবে"><input type="checkbox" id="dsAgain"${S.again ? " checked" : ""}><i class="ab-sw"></i><span>আজ আগে গেছে তাদেরও আবার</span></label>
       </div>

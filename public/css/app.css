@@ -964,3 +964,6 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 @media(max-width:560px){.ds-row{align-items:flex-start;padding:12px}.ds-due{align-self:center}}
 /* ফি পাতার বকেয়া কল / SMS তালিকা: ক্রম সেশন → ব্যাচ → খুঁজুন — সেশনের ঘর ছোট, ব্যাচের ঘর বড় (ব্যাচের নাম দিন-সময়সহ কাটা না পড়ে) */
 .ab-ctl-dues>label:nth-child(1){flex:.5 1 130px}.ab-ctl-dues>label:nth-child(2){flex:1.6 1 300px}.ab-ctl-dues>label:nth-child(3){flex:1 1 180px}
+/* বকেয়া SMS তালিকার ওপরের লাইন: সেশন · ব্যাচ · কাকে পাঠাবেন (ছোট) · খুঁজুন · সর্বনিম্ন বকেয়া */
+.ab-ctl-sms>label:nth-child(1){flex:.45 1 110px}.ab-ctl-sms>label:nth-child(2){flex:1.6 1 230px}.ab-ctl-sms>label:nth-child(3){flex:0 0 140px}.ab-ctl-sms>label:nth-child(4){flex:1 1 130px}.ab-ctl-sms>label:nth-child(5){flex:0 0 118px}
+@media(max-width:520px){.ab-ctl-sms>label:nth-child(n){flex:1 1 100%}}
