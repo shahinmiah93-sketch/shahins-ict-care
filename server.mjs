@@ -3651,6 +3651,10 @@ syncPauses(); setInterval(syncPauses, 60e3).unref(); // সামনের ত�
 // প্রতিদিন রাত ১২:০১-এ, জন্মদিন আজ এমন সক্রিয় শিক্ষার্থীকে: নিজের নোটিশে আর SMS-এ — বছরে একবারই (সার্ভার দেরিতে চালু হলেও সেদিনই যায়)
 const BIRTHDAY_BODY = "Wishing you happiness, success, and a wonderful year ahead. Keep learning, keep smiling, and keep moving toward your dreams.\n\nBest wishes,\nMd Shahin Miah (Mentor-ICT)";
 const firstName = (s) => { const en = str(s.nameEn, 120).split(/[\s.]+/).filter((w) => w && !/^(md|mohammad|mohammed|muhammad|mohammod|mst|mosammat|mosammad|most|mrs?|miss|ms)$/i.test(w)); return en[0] || s.nameEn || s.name || ""; };
+// প্যানেলের নোটিশে শুভেচ্ছা বাংলায়, বাংলা নামে (SMS ইংরেজিতেই থাকে — বাংলা অক্ষরে SMS-এর খরচ বেশি)
+const BIRTHDAY_BODY_BN = "তোমার জন্মদিনে অনেক অনেক শুভেচ্ছা ও ভালোবাসা। তুমি সুখী হও, সফল হও — সামনের বছরটা হোক আনন্দ আর নতুন অর্জনে ভরা। পড়াশোনা চালিয়ে যাও, স্বপ্নের পথে এগিয়ে যাও।\n\nশুভেচ্ছান্তে,\nমো. শাহিন মিয়া (মেন্টর — আইসিটি)";
+const BN_NAME_TITLES = new Set(["মো", "মোঃ", "মোহাম্মদ", "মোহাম্মাদ", "মুহাম্মদ", "মুহাম্মাদ", "মোছা", "মোছাঃ", "মোসা", "মোসাঃ", "মোসাম্মৎ", "মোসাম্মত", "মোসাম্মাৎ", "মিসেস", "মিস"]);
+const firstNameBn = (s) => { const parts = str(s.name, 120).split(/[\s.]+/).map((w) => w.replace(/[:ঃ]+$/u, "")).filter(Boolean); return parts.filter((w) => !BN_NAME_TITLES.has(w))[0] || parts[0] || firstName(s); };
 const birthdayToday = (dob, day) => { const md = String(dob || "").slice(5), now = day.slice(5), y = Number(day.slice(0, 4)); return /^\d{4}-\d{2}-\d{2}$/.test(dob || "") && (md === now || (md === "02-29" && now === "02-28" && !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)))); };
 async function sendBirthdays() {
   const clock = new Date(); if (clock.getHours() === 0 && clock.getMinutes() < 1) return; // ১২:০১ থেকে
@@ -3659,9 +3663,9 @@ async function sendBirthdays() {
   if (!list.length && !stale.length) return;
   db.notices = db.notices.filter((n) => !stale.includes(n)); // আগের দিনের শুভেচ্ছা নোটিশ রাখার দরকার নেই
   for (const s of list) {
-    const title = `Happy Birthday, ${firstName(s)}!`;
+    const title = `শুভ জন্মদিন, ${firstNameBn(s)}!`;
     s.lastBirthday = year; // আগে চিহ্ন, যাতে পরের মিনিটের চেকে আবার না যায়
-    db.notices.push({ id: uid("not"), birthday: true, studentIds: [s.id], title, body: BIRTHDAY_BODY, date: day, until: day, public: false, important: true, createdAt: new Date().toISOString() });
+    db.notices.push({ id: uid("not"), birthday: true, studentIds: [s.id], title, body: BIRTHDAY_BODY_BN, date: day, until: day, public: false, important: true, createdAt: new Date().toISOString() });
   }
   saveDb();
   for (const s of list) {

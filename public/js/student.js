@@ -293,6 +293,8 @@ ${inner}
     const l = routineList();
     openCard("পরীক্ষার রুটিন", `<table><thead><tr><th class="c">নং</th><th>তারিখ</th><th>দিন</th><th>পরীক্ষা</th><th>সময়</th><th class="n">পূর্ণমান</th><th>সিলেবাস</th></tr></thead><tbody>${l.map((x, i) => `<tr><td class="c">${bn(i + 1)}</td><td>${U.date(x.date)}</td><td>${dayName(x.date)}</td><td>${esc(examName(x))}</td><td>${esc(x.time || "—")}</td><td class="n">${bn(x.full)}</td><td class="sy">${esc(x.chapter || x.syllabus || "—")}</td></tr>`).join("")}</tbody></table>`, null);
   }
+  // জন্মদিনের দিন: রঙিন ব্যানার (বেলুন + কেক) — সার্ভার জন্মদিনের নোটিশে birthday চিহ্ন দেয়; সাধারণ নোটিশের তালিকায় এটা আর আলাদা করে আসে না
+  const birthdayCard = () => { const n = (D.notices || []).find((x) => x.birthday); return n ? `<section class="bday" aria-label="জন্মদিনের শুভেচ্ছা"><span class="bday-b b1" aria-hidden="true">🎈</span><span class="bday-b b2" aria-hidden="true">🎈</span><span class="bday-b b3" aria-hidden="true">🎈</span><span class="bday-b b4" aria-hidden="true">🎉</span><div class="bday-body"><div class="bday-cake" aria-hidden="true">🎂</div><div><h2>${esc(n.title)}</h2><p>${U.richText(n.body)}</p></div></div></section>` : ""; };
   const TABS = {
     routine() {
       const EC = window.ExamCalc, t = U.today(), all = D.schedule || [], pdfs = D.examRoutines || [];
@@ -313,7 +315,7 @@ ${inner}
     home() {
       const lr = taken()[0], last = lr ? { marks: n2(lr.me.total), fullMarks: lr.full, title: lr.title, rank: lr.me.rank, of: lr.of } : null;
       const f = D.fees;
-      return `${accessNotes()}
+      return `${birthdayCard()}${accessNotes()}
         <div class="tiles">
           <div class="tile">${ring(attPct(), "উপস্থিতি", "var(--ok)")}</div>
           <div class="tile">${ring(avgPct(), "পরীক্ষার গড়", "var(--gold2)")}</div>
@@ -326,7 +328,7 @@ ${inner}
         <div class="grid2">
           <div class="card"><h2>ক্লাসের সময়</h2>${D.batch ? `<dl class="kv" style="margin-top:12px"><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সেশন</dt><dd>${esc(D.batch.session)}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch))}</dd><dt>দিন</dt><dd>${esc(D.batch.days)}</dd><dt>সময়</dt><dd>${esc(D.batch.time)}</dd></dl>` : "<p>ব্যাচ ঠিক করা হয়নি</p>"}
             ${(D.closures || []).map((c) => `<p class="chip ${c.from <= U.today() ? "bad" : "warn"}" style="margin-top:10px;white-space:normal">⏸ ${c.from <= U.today() ? "এখন বন্ধ" : "বন্ধ থাকবে"}: ${U.date(c.from)} – ${U.date(c.to)}${c.reason ? ` (${esc(c.reason)})` : ""}</p>`).join("")}</div>
-          <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
+          <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.some((n) => !n.birthday) ? `<ul class="list" style="margin-top:12px">${D.notices.filter((n) => !n.birthday).slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
         </div>
         <div class="class-moments-row">${rateCard()}${classMomentsCard()}</div>`;
     },
@@ -482,7 +484,7 @@ ${inner}
       </section>${Object.entries(kinds).filter(([key]) => !selected || key === selected).map(section).join("")}`;
     },
     notices() {
-      return `<div class="card"><h2>নোটিশ বোর্ড</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b> <small style="float:right;color:var(--muted)">${U.date(n.date)}</small><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>`;
+      return `${birthdayCard()}<div class="card"><h2>নোটিশ বোর্ড</h2>${D.notices.some((n) => !n.birthday) ? `<ul class="list" style="margin-top:12px">${D.notices.filter((n) => !n.birthday).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b> <small style="float:right;color:var(--muted)">${U.date(n.date)}</small><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>`;
     },
     // রেকর্ড ক্লাস — প্রতিটা মডিউলের মেয়াদ (শেষ হবে কবে / ৭ দিনের কম হলে সতর্কবার্তা / শেষ হলে তালা)
     videos() {
