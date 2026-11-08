@@ -19,6 +19,19 @@ window.SICContacts = (function () {
   }
   function pick(key, i) { picked.set(key, i); }
 
+  // টানা অনুপস্থিতি: শেষ হাজিরার দিন থেকে পেছনে পরপর কতগুলো ক্লাসে অনুপস্থিত (ছুটি বাদ; একই দিনে কোথাও উপস্থিত থাকলে উপস্থিত)।
+  // ফেরত: { n: টানা কয়টা, last: সর্বশেষ হাজিরার তারিখ }
+  function streak(attendance, sid, date) {
+    const byDate = {};
+    for (const [key, marks] of Object.entries(attendance || {})) {
+      const st = marks[sid]; if (st !== "P" && st !== "A") continue;
+      const d = key.split("|")[0]; if (d <= date && byDate[d] !== "P") byDate[d] = st;
+    }
+    const days = Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0]));
+    let n = 0; for (const [, st] of days) { if (st !== "A") break; n++; }
+    return { n, last: days.length ? days[0][0] : "" };
+  }
+
   // extra = নম্বরের পাশে বাড়তি বাটন (যেমন "💵 পেমেন্ট নিন")
   function html(s, key, msg, extra = "") {
     const sl = slots(s), first = sl.findIndex((o) => o.p);
@@ -41,5 +54,5 @@ window.SICContacts = (function () {
       <div class="ab-ident"><i class="ab-av">${icon}</i><div><small>${esc(now.label)}${now.name ? ` · ${esc(now.name)}` : ""}</small><a class="ab-num" href="tel:${now.p}">${bn(now.p)}</a></div></div>
     </div>`;
   }
-  return { slots, pick, html };
+  return { slots, pick, html, streak };
 })();
