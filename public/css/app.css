@@ -929,3 +929,4 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-actions{gap:6px}.ab-actions .ab-btn{padding:7px 10px;font-size:13.5px}
 .ab-ident{padding:7px 12px;gap:10px;border-radius:12px}.ab-av{width:34px;height:34px;font-size:17px}.ab-ident small{font-size:12px}.ab-ident .ab-num{font-size:18px}
 @media(max-width:700px){.ab-stu{flex-basis:100%}.ab-guard.ab-card{width:100%}}
+.ab-who button.empty{opacity:.5;cursor:default;pointer-events:none}.ab-who button.empty:hover{background:transparent}
