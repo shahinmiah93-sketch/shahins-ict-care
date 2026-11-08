@@ -930,15 +930,18 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-ident{padding:7px 12px;gap:10px;border-radius:12px}.ab-av{width:34px;height:34px;font-size:17px}.ab-ident small{font-size:12px}.ab-ident .ab-num{font-size:18px}
 @media(max-width:700px){.ab-stu{flex-basis:100%}.ab-guard.ab-card{width:100%}}
 .ab-who button.empty{opacity:.5;cursor:default;pointer-events:none}.ab-who button.empty:hover{background:transparent}
-/* জন্মদিনের ব্যানার (শিক্ষার্থী প্যানেল): রঙিন গ্রেডিয়েন্ট, কেক আর ভেসে ওঠা বেলুন */
-.bday{position:relative;overflow:hidden;margin:0 0 16px;padding:18px 20px;border-radius:20px;color:#fff;background:linear-gradient(120deg,#ff5f9e 0%,#ff9a3c 48%,#7c5cff 100%);box-shadow:0 10px 26px rgba(255,95,158,.35)}
-.bday::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 10% 18%,rgba(255,255,255,.28),transparent 42%),radial-gradient(circle at 92% 85%,rgba(255,255,255,.2),transparent 46%);pointer-events:none}
-.bday-body{position:relative;z-index:1;display:flex;gap:14px;align-items:flex-start}
-.bday-cake{flex:none;font-size:46px;line-height:1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.25))}
-.bday h2{margin:0 0 6px;font-size:22px;line-height:1.3;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2)}
-.bday p{margin:0;color:rgba(255,255,255,.96);font-size:15px;line-height:1.75}
-.bday-b{position:absolute;bottom:-44px;z-index:0;font-size:28px;opacity:0;animation:bdayUp 7s linear infinite}
-.bday-b.b1{left:6%}.bday-b.b2{left:34%;animation-delay:1.7s;font-size:24px}.bday-b.b3{left:64%;animation-delay:3.2s}.bday-b.b4{left:88%;animation-delay:.9s;font-size:22px}
-@keyframes bdayUp{0%{transform:translateY(0) rotate(-6deg);opacity:0}15%{opacity:.9}100%{transform:translateY(-210px) rotate(8deg);opacity:0}}
-@media(prefers-reduced-motion:reduce){.bday-b{animation:none;bottom:10px;opacity:.55}}
-@media(max-width:560px){.bday{padding:16px}.bday-cake{font-size:36px}.bday h2{font-size:19px}}
+/* জন্মদিনের ব্যানার (শিক্ষার্থী প্যানেল): হালকা উষ্ণ ব্যাকগ্রাউন্ডে গাঢ় লেখা — পরিষ্কার পড়া যায়; গ্রেডিয়েন্ট শুধু শিরোনাম, ছবি আর পাশের ফিতায় */
+.bday{position:relative;overflow:hidden;display:flex;gap:20px;align-items:center;margin:0 0 16px;padding:20px 24px 20px 28px;border-radius:22px;color:#2a2340;background:linear-gradient(135deg,#fff8ee 0%,#fff1f6 55%,#f4f0ff 100%);border:1px solid #f4d8e4;box-shadow:0 12px 30px rgba(124,92,255,.13),0 2px 6px rgba(255,95,158,.12)}
+.bday::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(180deg,#ff5f9e,#ff9a3c 50%,#7c5cff)}
+.bday::after{content:"";position:absolute;right:0;top:0;bottom:0;width:36%;pointer-events:none;opacity:.6;background:radial-gradient(circle at 22% 24%,#ff5f9e 0 4px,transparent 5px),radial-gradient(circle at 62% 14%,#ffb72b 0 3px,transparent 4px),radial-gradient(circle at 88% 38%,#7c5cff 0 4px,transparent 5px),radial-gradient(circle at 46% 68%,#2fc2a4 0 3px,transparent 4px),radial-gradient(circle at 80% 82%,#ff5f9e 0 3px,transparent 4px),radial-gradient(circle at 12% 86%,#ffb72b 0 4px,transparent 5px)}
+.bday-art{position:relative;z-index:1;flex:none;align-self:flex-start;margin-top:4px;display:grid;place-items:center;width:80px;height:80px;border-radius:26px;font-size:44px;line-height:1;background:linear-gradient(135deg,#ff5f9e,#ff9a3c);box-shadow:0 10px 20px rgba(255,95,158,.35);transform:rotate(-6deg)}
+.bday-main{position:relative;z-index:1;min-width:0}
+.bday-kicker{display:inline-block;margin-bottom:6px;padding:3px 13px;border-radius:999px;background:#fff;border:1px solid #f1cfdd;color:#b2336b;font-size:12.5px;font-weight:700}
+.bday h2{margin:0 0 8px;font-size:27px;line-height:1.3;font-weight:800;color:#d62f78;background:linear-gradient(90deg,#e0357f,#f07a1a 55%,#6b4df0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.bday p{margin:0 0 10px;color:#3a3351;font-size:15.5px;line-height:1.85}.bday p:last-of-type{margin-bottom:12px}.bday-emo{-webkit-text-fill-color:initial;color:initial;background:none}
+.bday-sign{display:inline-grid;gap:1px;padding-top:9px;border-top:1px dashed #e6cbd9;color:#5b5078;font-size:14.5px;font-weight:700;line-height:1.5}.bday-sign small{color:#9a8fb4;font-weight:600;font-size:12.5px}
+.bday-b{position:absolute;bottom:-42px;z-index:0;font-size:26px;opacity:0;animation:bdayUp 8s linear infinite}
+.bday-b.b1{left:68%}.bday-b.b2{left:82%;animation-delay:2.4s;font-size:22px}.bday-b.b3{left:93%;animation-delay:4.6s;font-size:20px}
+@keyframes bdayUp{0%{transform:translateY(0) rotate(-6deg);opacity:0}15%{opacity:.75}100%{transform:translateY(-230px) rotate(8deg);opacity:0}}
+@media(prefers-reduced-motion:reduce){.bday-b{animation:none;bottom:10px;opacity:.5}}
+@media(max-width:560px){.bday{flex-direction:column;align-items:flex-start;gap:10px;padding:16px 16px 16px 22px}.bday-art{width:48px;height:48px;font-size:26px;border-radius:16px;margin-top:0}.bday h2{font-size:21px}.bday p{font-size:14.5px}.bday::after{width:30%}}

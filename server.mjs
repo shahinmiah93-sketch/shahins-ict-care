@@ -3651,19 +3651,24 @@ syncPauses(); setInterval(syncPauses, 60e3).unref(); // সামনের ত�
 // প্রতিদিন রাত ১২:০১-এ, জন্মদিন আজ এমন সক্রিয় শিক্ষার্থীকে: নিজের নোটিশে আর SMS-এ — বছরে একবারই (সার্ভার দেরিতে চালু হলেও সেদিনই যায়)
 const BIRTHDAY_BODY = "Wishing you happiness, success, and a wonderful year ahead. Keep learning, keep smiling, and keep moving toward your dreams.\n\nBest wishes,\nMd Shahin Miah (Mentor-ICT)";
 const firstName = (s) => { const en = str(s.nameEn, 120).split(/[\s.]+/).filter((w) => w && !/^(md|mohammad|mohammed|muhammad|mohammod|mst|mosammat|mosammad|most|mrs?|miss|ms)$/i.test(w)); return en[0] || s.nameEn || s.name || ""; };
-// প্যানেলের নোটিশে শুভেচ্ছা বাংলায়, বাংলা নামে (SMS ইংরেজিতেই থাকে — বাংলা অক্ষরে SMS-এর খরচ বেশি)
-const BIRTHDAY_BODY_BN = "তোমার জন্মদিনে অনেক অনেক শুভেচ্ছা ও ভালোবাসা। তুমি সুখী হও, সফল হও — সামনের বছরটা হোক আনন্দ আর নতুন অর্জনে ভরা। পড়াশোনা চালিয়ে যাও, স্বপ্নের পথে এগিয়ে যাও।\n\nশুভেচ্ছান্তে,\nমো. শাহিন মিয়া (মেন্টর — আইসিটি)";
-const BN_NAME_TITLES = new Set(["মো", "মোঃ", "মোহাম্মদ", "মোহাম্মাদ", "মুহাম্মদ", "মুহাম্মাদ", "মোছা", "মোছাঃ", "মোসা", "মোসাঃ", "মোসাম্মৎ", "মোসাম্মত", "মোসাম্মাৎ", "মিসেস", "মিস"]);
-const firstNameBn = (s) => { const parts = str(s.name, 120).split(/[\s.]+/).map((w) => w.replace(/[:ঃ]+$/u, "")).filter(Boolean); return parts.filter((w) => !BN_NAME_TITLES.has(w))[0] || parts[0] || firstName(s); };
+// প্যানেলের জন্মদিনের নোটিশ: শুভেচ্ছা বাংলায়, শিক্ষার্থীর পুরো বাংলা নামে (SMS ইংরেজিতেই থাকে — বাংলা অক্ষরে SMS-এর খরচ বেশি)
+const BIRTHDAY_BODY_BN = "তোমার জীবনের প্রতিটি দিন আনন্দ, সাফল্য ও সুন্দর মুহূর্তে ভরে উঠুক। তোমার স্বপ্নগুলো হোক আরও বড়, আর সেই স্বপ্ন পূরণের পথে প্রতিটি পদক্ষেপ হোক আত্মবিশ্বাস ও দৃঢ়তায় পরিপূর্ণ।\n\nসবসময় শেখার আগ্রহ ধরে রেখো, নিজের ওপর বিশ্বাস রেখো এবং হাসিমুখে এগিয়ে চলো তোমার কাঙ্ক্ষিত লক্ষ্যের দিকে।\n\nএকজন শিক্ষক হিসেবে তোমার সুন্দর ভবিষ্যৎ, সুস্বাস্থ্য ও উজ্জ্বল সাফল্য কামনা করি। জীবনে অনেক বড় হও, একজন ভালো মানুষ হও—এটাই আমার প্রত্যাশা।\n\nঅনেক অনেক দোয়া, ভালোবাসা ও শুভকামনা রইল। ❤️\n\nশুভেচ্ছান্তে,\nমো. শাহিন মিয়া\nতোমার আইসিটি শিক্ষক ও মেন্টর\nShahin’s ICT Care";
+const BIRTHDAY_BODY_BN_OLD = "তোমার জন্মদিনে অনেক অনেক শুভেচ্ছা ও ভালোবাসা। তুমি সুখী হও, সফল হও — সামনের বছরটা হোক আনন্দ আর নতুন অর্জনে ভরা। পড়াশোনা চালিয়ে যাও, স্বপ্নের পথে এগিয়ে যাও।\n\nশুভেচ্ছান্তে,\nমো. শাহিন মিয়া (মেন্টর — আইসিটি)"; // আগের সংস্করণের বাংলা লেখা — এটা দিয়ে বানানো নোটিশ নতুন লেখায় বদলে যায়
+const nameBn = (s) => str(s.name, 120) || firstName(s);
+const birthdayTitle = (s) => `শুভ জন্মদিন, ${nameBn(s)}! 🎉💖`;
 const birthdayToday = (dob, day) => { const md = String(dob || "").slice(5), now = day.slice(5), y = Number(day.slice(0, 4)); return /^\d{4}-\d{2}-\d{2}$/.test(dob || "") && (md === now || (md === "02-29" && now === "02-28" && !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)))); };
 async function sendBirthdays() {
   const clock = new Date(); if (clock.getHours() === 0 && clock.getMinutes() < 1) return; // ১২:০১ থেকে
   const day = today(), year = day.slice(0, 4), list = db.students.filter((s) => s.status !== "inactive" && s.lastBirthday !== year && birthdayToday(s.dob, day));
   const stale = db.notices.filter((n) => n.birthday && n.until < day);
+  // আগের (ইংরেজি) জন্মদিনের নোটিশ থাকলে প্যানেলের জন্য বাংলা নাম আর বাংলা শুভেচ্ছায় বদলে দেওয়া — সেদিনের জন্যই, নতুন করে পাঠানো হয় না
+  let upgraded = false;
+  for (const n of db.notices) if (n.birthday && (n.body === BIRTHDAY_BODY || n.body === BIRTHDAY_BODY_BN_OLD) && (n.studentIds || []).length === 1) { const st = db.students.find((x) => x.id === n.studentIds[0]); if (st) { n.title = birthdayTitle(st); n.body = BIRTHDAY_BODY_BN; upgraded = true; } }
+  if (upgraded) saveDb();
   if (!list.length && !stale.length) return;
   db.notices = db.notices.filter((n) => !stale.includes(n)); // আগের দিনের শুভেচ্ছা নোটিশ রাখার দরকার নেই
   for (const s of list) {
-    const title = `শুভ জন্মদিন, ${firstNameBn(s)}!`;
+    const title = birthdayTitle(s);
     s.lastBirthday = year; // আগে চিহ্ন, যাতে পরের মিনিটের চেকে আবার না যায়
     db.notices.push({ id: uid("not"), birthday: true, studentIds: [s.id], title, body: BIRTHDAY_BODY_BN, date: day, until: day, public: false, important: true, createdAt: new Date().toISOString() });
   }

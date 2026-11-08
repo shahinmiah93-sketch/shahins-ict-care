@@ -3,27 +3,32 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../server.mjs', import.meta.url), 'utf8');
-const pick = (start, endMarker) => { const a = source.indexOf(start), b = source.indexOf(endMarker, a); assert.ok(a > 0 && b > a, start + ' must be present'); return source.slice(a, b); };
-const code = pick('const BN_NAME_TITLES', 'const birthdayToday') + '\n;firstNameBn';
+const a = source.indexOf('const BIRTHDAY_BODY_BN ='), b = source.indexOf('const birthdayToday', a);
+assert.ok(a > 0 && b > a, 'birthday greeting block must be present');
 const ctx = { str: (v, n = 500) => String(v ?? '').trim().slice(0, n), firstName: (s) => s.nameEn || s.name || '' };
 vm.createContext(ctx);
-const firstNameBn = vm.runInContext(code, ctx);
+vm.runInContext(source.slice(a, b), ctx);
+const get = (name) => vm.runInContext(name, ctx);
 
-test('Bengali first name skips Mo./Mosammat style prefixes', () => {
-  assert.equal(firstNameBn({ name: 'মো. রহিম উদ্দিন' }), 'রহিম');
-  assert.equal(firstNameBn({ name: 'মোঃ করিম হোসেন' }), 'করিম');
-  assert.equal(firstNameBn({ name: 'মোছাঃ ফাতেমা খাতুন' }), 'ফাতেমা');
-  assert.equal(firstNameBn({ name: 'মোহাম্মদ আলী' }), 'আলী');
-  assert.equal(firstNameBn({ name: 'জারা ভূঁইয়া' }), 'জারা');
-  assert.equal(firstNameBn({ name: 'সিয়াম' }), 'সিয়াম');
+test('Panel greeting title uses the full Bengali name and the emoji', () => {
+  assert.equal(get('birthdayTitle')({ name: 'সাদিকা সাঈদ' }), 'শুভ জন্মদিন, সাদিকা সাঈদ! 🎉💖');
+  assert.equal(get('birthdayTitle')({ name: 'মো. রহিম উদ্দিন' }), 'শুভ জন্মদিন, মো. রহিম উদ্দিন! 🎉💖');
 });
-test('Bengali first name falls back to the English name when the Bengali name is empty', () => {
-  assert.equal(firstNameBn({ name: '', nameEn: 'Rahim' }), 'Rahim');
-  assert.equal(firstNameBn({ name: 'মো.', nameEn: 'Md Rahim' }), 'মো');
+test('Falls back to the English name when the Bengali name is empty', () => {
+  assert.equal(get('birthdayTitle')({ name: '', nameEn: 'Rahim' }), 'শুভ জন্মদিন, Rahim! 🎉💖');
 });
-test('Birthday notice for the panel is in Bengali and flagged for the banner', () => {
-  assert.match(source, /const title = `শুভ জন্মদিন, \$\{firstNameBn\(s\)\}!`;/);
+test('Greeting body is the teacher\'s Bengali wish with the signature block', () => {
+  const body = get('BIRTHDAY_BODY_BN');
+  assert.match(body, /^তোমার জীবনের প্রতিটি দিন আনন্দ/);
+  assert.match(body, /শুভেচ্ছান্তে,\nমো\. শাহিন মিয়া\nতোমার আইসিটি শিক্ষক ও মেন্টর\nShahin’s ICT Care$/);
+  assert.equal(body.split('\n\n').length, 5);
+});
+test('Birthday notice is flagged for the banner and uses the title helper', () => {
+  assert.match(source, /const title = birthdayTitle\(s\);/);
   assert.match(source, /birthday: true, studentIds: \[s\.id\], title, body: BIRTHDAY_BODY_BN/);
-  // SMS stays English (cheaper than Unicode SMS)
+});
+test('SMS stays English and old notices are upgraded to the new wish', () => {
   assert.match(source, /Happy Birthday, \$\{firstName\(s\)\}!\\n\\n\$\{BIRTHDAY_BODY\}/);
+  assert.match(source, /n\.birthday && \(n\.body === BIRTHDAY_BODY \|\| n\.body === BIRTHDAY_BODY_BN_OLD\) && \(n\.studentIds \|\| \[\]\)\.length === 1/);
+  assert.match(source, /n\.title = birthdayTitle\(st\); n\.body = BIRTHDAY_BODY_BN; upgraded = true;/);
 });

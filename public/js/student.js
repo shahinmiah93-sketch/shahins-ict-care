@@ -294,7 +294,15 @@ ${inner}
     openCard("পরীক্ষার রুটিন", `<table><thead><tr><th class="c">নং</th><th>তারিখ</th><th>দিন</th><th>পরীক্ষা</th><th>সময়</th><th class="n">পূর্ণমান</th><th>সিলেবাস</th></tr></thead><tbody>${l.map((x, i) => `<tr><td class="c">${bn(i + 1)}</td><td>${U.date(x.date)}</td><td>${dayName(x.date)}</td><td>${esc(examName(x))}</td><td>${esc(x.time || "—")}</td><td class="n">${bn(x.full)}</td><td class="sy">${esc(x.chapter || x.syllabus || "—")}</td></tr>`).join("")}</tbody></table>`, null);
   }
   // জন্মদিনের দিন: রঙিন ব্যানার (বেলুন + কেক) — সার্ভার জন্মদিনের নোটিশে birthday চিহ্ন দেয়; সাধারণ নোটিশের তালিকায় এটা আর আলাদা করে আসে না
-  const birthdayCard = () => { const n = (D.notices || []).find((x) => x.birthday); return n ? `<section class="bday" aria-label="জন্মদিনের শুভেচ্ছা"><span class="bday-b b1" aria-hidden="true">🎈</span><span class="bday-b b2" aria-hidden="true">🎈</span><span class="bday-b b3" aria-hidden="true">🎈</span><span class="bday-b b4" aria-hidden="true">🎉</span><div class="bday-body"><div class="bday-cake" aria-hidden="true">🎂</div><div><h2>${esc(n.title)}</h2><p>${U.richText(n.body)}</p></div></div></section>` : ""; };
+  const birthdayCard = () => {
+    const n = (D.notices || []).find((x) => x.birthday); if (!n) return "";
+    const body = String(n.body || ""), k = body.indexOf("শুভেচ্ছান্তে"); // এর আগে পর্যন্ত শুভেচ্ছার অনুচ্ছেদ, এরপর স্বাক্ষর
+    const msg = (k < 0 ? body : body.slice(0, k)).trim().split(/\n\s*\n/).filter(Boolean).map((p) => `<p>${U.richText(p)}</p>`).join("");
+    const sign = k < 0 ? "" : body.slice(k).replace(/^শুভেচ্ছান্তে,?\s*/, "").trim();
+    const m = String(n.title || "").match(/^(.*?)\s*([\u{1F300}-\u{1FAFF}\u2600-\u27BF\u2764\uFE0F\s]+)$/u); // শিরোনামের শেষের ইমোজি আলাদা (গ্রেডিয়েন্ট ছাড়া)
+    const title = m && m[2].trim() ? `${esc(m[1])} <span class="bday-emo">${esc(m[2].trim())}</span>` : esc(n.title);
+    return `<section class="bday" aria-label="জন্মদিনের শুভেচ্ছা"><span class="bday-b b1" aria-hidden="true">🎈</span><span class="bday-b b2" aria-hidden="true">🎈</span><span class="bday-b b3" aria-hidden="true">🎉</span><div class="bday-art" aria-hidden="true">🎂</div><div class="bday-main"><span class="bday-kicker">🎉 আজ তোমার বিশেষ দিন</span><h2>${title}</h2>${msg}${sign ? `<div class="bday-sign"><small>শুভেচ্ছান্তে</small>${U.richText(sign)}</div>` : ""}</div></section>`;
+  };
   const TABS = {
     routine() {
       const EC = window.ExamCalc, t = U.today(), all = D.schedule || [], pdfs = D.examRoutines || [];
