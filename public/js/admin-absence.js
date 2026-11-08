@@ -105,6 +105,13 @@ window.SICAbsence = function (X) {
     </div>`;
   };
 
+  // বকেয়ার চিহ্ন: কলের সময় অভিভাবককে ফি-র কথাও মনে করানো যায় (সারির ওপর মাউস রাখলে মোট ফি আর জমা দেখায়)
+  const dueChip = (s) => {
+    const f = s.fees; if (!f) return "";
+    const b = Number(f.balance) || 0, tip = esc(`মোট ফি ${U.money(f.totalDue)} · জমা ${U.money(f.paid)}`);
+    return b > 0 ? `<span class="chip bad" title="${tip}">বকেয়া ${U.money(b)}</span>` : b < 0 ? `<span class="chip ok" title="${tip}">অগ্রিম ${U.money(-b)}</span>` : `<span class="chip ok" title="${tip}">বকেয়া নেই</span>`;
+  };
+
   const rowHtml = (r) => {
     const { s, key, date } = r, c = calls()[key] || {}, ph = phones(s), main = ph[0], gn = guardianName(s);
     const pending = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
@@ -115,7 +122,7 @@ window.SICAbsence = function (X) {
     return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${r.follow ? ` · <span class="chip warn">ফলো-আপ — ${esc(U.date(date))}-এর অনুপস্থিতি</span>` : ""}</small>
-          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span>${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small></div>
+          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small></div>
         <div class="ab-guard">${main ? `<div><small>${esc(main.label)}${gn && main.label === "অভিভাবক" ? ` · ${esc(gn)}` : ""}</small><br><a class="ab-num" href="tel:${main.p}">${bn(main.p)}</a></div>
           <a class="ab-btn call" href="tel:${main.p}">📞 কল</a>
           <a class="ab-btn wa" target="_blank" rel="noopener" href="https://wa.me/88${main.p}?text=${encodeURIComponent(msg)}">🟢 WhatsApp</a>
