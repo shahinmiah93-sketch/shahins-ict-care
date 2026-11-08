@@ -800,7 +800,7 @@ ${list.map(receiptHtml).join("")}
         </div>
       </div>
       <div class="card"><div class="card-head"><h2>নোটিশ বোর্ড</h2><a href="#notices">পরিচালনা →</a></div>
-        ${notices.length ? `<ul class="list">${notices.map((n) => `<li><b>${n.important ? "" : ""}${esc(n.title)}</b><p>${esc(n.body)}</p></li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}
+        ${notices.length ? `<ul class="list">${notices.map((n) => `<li><b>${n.important ? "" : ""}${esc(n.title)}</b><p>${U.richText(n.body)}</p></li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}
       </div>`;
     dvTips(c);
   }

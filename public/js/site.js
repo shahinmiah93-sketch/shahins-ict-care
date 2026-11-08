@@ -415,7 +415,7 @@
     const pop = $("#ntPop");
     const ntCard = (n, old) => `<article class="nt-it${n.important ? " hot" : ""}${old ? " old" : seen().includes(n.id) ? "" : " new"}">
       <div class="nt-meta"><span class="nt-tag">${esc(n.tag || (n.important ? "জরুরি" : "নোটিশ"))}</span>${n.date ? `<small>${esc(U.date(n.date))}</small>` : ""}${old || seen().includes(n.id) ? "" : '<em class="nt-new">নতুন</em>'}</div>
-      <h3>${esc(n.title)}</h3>${n.body ? `<p>${esc(n.body).replace(/\n/g, "<br>")}</p>` : ""}
+      <h3>${esc(n.title)}</h3>${n.body ? `<p>${U.richText(n.body)}</p>` : ""}
       ${n.pdf ? `<a class="nt-pdf" href="/api/notice/${esc(n.id)}/pdf?download=1&v=${n.pdf.v}" download>PDF ডাউনলোড — ${esc(n.pdf.name)}</a>` : ""}</article>`;
     // চলতি নোটিশ আগে, তারপর মেয়াদ শেষ হওয়াগুলো "পুরোনো নোটিশ" ভাগে (ফিকে করে)
     $("#ntList").innerHTML = NT.map((n) => ntCard(n)).join("") + (OLD.length ? `<div class="nt-sep">পুরোনো নোটিশ</div>${OLD.map((n) => ntCard(n, true)).join("")}` : "");

@@ -326,7 +326,7 @@ ${inner}
         <div class="grid2">
           <div class="card"><h2>ক্লাসের সময়</h2>${D.batch ? `<dl class="kv" style="margin-top:12px"><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সেশন</dt><dd>${esc(D.batch.session)}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch))}</dd><dt>দিন</dt><dd>${esc(D.batch.days)}</dd><dt>সময়</dt><dd>${esc(D.batch.time)}</dd></dl>` : "<p>ব্যাচ ঠিক করা হয়নি</p>"}
             ${(D.closures || []).map((c) => `<p class="chip ${c.from <= U.today() ? "bad" : "warn"}" style="margin-top:10px;white-space:normal">⏸ ${c.from <= U.today() ? "এখন বন্ধ" : "বন্ধ থাকবে"}: ${U.date(c.from)} – ${U.date(c.to)}${c.reason ? ` (${esc(c.reason)})` : ""}</p>`).join("")}</div>
-          <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${esc(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
+          <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
         </div>
         <div class="class-moments-row">${rateCard()}${classMomentsCard()}</div>`;
     },
@@ -482,7 +482,7 @@ ${inner}
       </section>${Object.entries(kinds).filter(([key]) => !selected || key === selected).map(section).join("")}`;
     },
     notices() {
-      return `<div class="card"><h2>নোটিশ বোর্ড</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b> <small style="float:right;color:var(--muted)">${U.date(n.date)}</small><p>${esc(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>`;
+      return `<div class="card"><h2>নোটিশ বোর্ড</h2>${D.notices.length ? `<ul class="list" style="margin-top:12px">${D.notices.map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b> <small style="float:right;color:var(--muted)">${U.date(n.date)}</small><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>`;
     },
     // রেকর্ড ক্লাস — প্রতিটা মডিউলের মেয়াদ (শেষ হবে কবে / ৭ দিনের কম হলে সতর্কবার্তা / শেষ হলে তালা)
     videos() {

@@ -41,6 +41,8 @@ window.U = {
   $: (s, root = document) => root.querySelector(s),
   $$: (s, root = document) => [...root.querySelectorAll(s)],
   esc: (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])),
+  // নোটিশ / বার্তার লেখা: সুরক্ষিত (esc) করে লাইন ভাঙা (Enter) ঠিক রাখে, আর **এভাবে লিখলে** গাঢ় (bold) হয়
+  richText: (s) => U.esc(s).replace(/\*\*([^*\r\n]+?)\*\*/g, "<strong>$1</strong>").replace(/\r?\n/g, "<br>"),
   bn: (v) => String(v ?? "").replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]),
   // প্রিন্টের স্বাক্ষরের ঘর: দাগের উপরে শাহিন স্যারের স্বাক্ষর
   sig: (label) => `<span style="position:relative"><img src="${location.origin}/images/signature.png" alt="" style="position:absolute;left:50%;bottom:calc(100% + 1px);transform:translateX(-50%);height:7mm;width:auto;max-width:95%">${label}</span>`,
