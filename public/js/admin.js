@@ -3390,7 +3390,7 @@ ${list.map(receiptHtml).join("")}
       };
     });
     openForm({
-      title: t ? "শিক্ষকের তথ্য বদলান" : "নতুন শিক্ষক",
+      title: t ? "শিক্ষক ও একাডেমিক সহযোগীর তথ্য বদলান" : "নতুন শিক্ষক ও একাডেমিক সহযোগী",
       fields: [
         { name: "name", label: "নাম", required: true },
         { name: "subject", label: "বিষয় / পদবি" },
@@ -3414,7 +3414,7 @@ ${list.map(receiptHtml).join("")}
     });
   }
   function teachers(c) {
-    c.innerHTML = `<div class="card"><div class="card-head"><h2>আমাদের শিক্ষা পরিবার (ওয়েবসাইটে দেখায়)</h2><button class="btn gold" id="addT">+ নতুন শিক্ষক</button></div>
+    c.innerHTML = `<div class="card"><div class="card-head"><h2>আমাদের শিক্ষা পরিবার (ওয়েবসাইটে দেখায়)</h2><button class="btn gold" id="addT">+ নতুন শিক্ষক ও একাডেমিক সহযোগী</button></div>
       <div class="tbl-wrap"><table><thead><tr><th>নাম</th><th>বিষয়</th><th>পরিচিতি</th><th></th></tr></thead><tbody>
       ${DB.teachers.map((t) => `<tr><td><b>${esc(t.name)}</b></td><td>${esc(t.subject)}</td><td>${esc(t.bio)}</td><td class="num"><button class="icon-btn" data-et="${t.id}">✎</button><button class="icon-btn" data-dt="${t.id}">✕</button></td></tr>`).join("") || `<tr><td colspan="4" class="empty">কোনো শিক্ষক যোগ করা হয়নি</td></tr>`}
       </tbody></table></div></div>`;
