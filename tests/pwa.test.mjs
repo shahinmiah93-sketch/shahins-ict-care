@@ -56,6 +56,12 @@ test('Dismissing the install button hides it only for this visit, not for days',
   assert.doesNotMatch(s, /localStorage/);
   assert.doesNotMatch(s, /7 \* 864e5/);
 });
+test('Install button still appears (with menu steps) when the browser does not offer a native prompt', () => {
+  const s = fs.readFileSync(pub('js/pwa.js'), 'utf8');
+  assert.match(s, /setTimeout\(\(\) => \{\s*if \(native \|\| pill\) return;/);
+  assert.match(s, /Install app/);
+  assert.match(s, /native = true;/);          // পরে সুযোগ এলে সরাসরি ইনস্টল
+});
 test('Student page links the manifest and the install helper; server knows the manifest type', () => {
   const html = fs.readFileSync(pub('student.html'), 'utf8');
   assert.match(html, /<link rel="manifest" href="\/manifest\.webmanifest">/);
