@@ -127,7 +127,7 @@ window.SICAbsence = function (X) {
         <label>তারিখ<input type="date" id="abD" value="${esc(S.date)}" max="${today()}"></label>
         <label>সেশন<select id="abSe"><option value="">সব সেশন</option>${sessions.map((x) => `<option value="${esc(x.name)}"${x.name === S.session ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label>ব্যাচ<select id="abBa"></select></label>
-        <label class="check"><input type="checkbox" id="abHide"${S.hideDone ? " checked" : ""}> কথা হয়ে গেছে যাদের, লুকান</label>
+        <label class="ab-switch" title="যাদের সাথে কথা হয়ে গেছে, তাদের সারি তালিকা থেকে সরিয়ে রাখুন"><input type="checkbox" id="abHide"${S.hideDone ? " checked" : ""}><i class="ab-sw"></i><span>কথা হয়ে গেছে যাদের, লুকান</span></label>
       </div>
       <div class="ab-sum" id="abSum"></div>
       <div id="abNote"></div>
