@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#062d29">
+<title>ইন্টারনেট নেই — শাহিন’স আইসিটি কেয়ার</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(160deg,#062d29,#0b4a43);color:#fff;font-family:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;text-align:center}
+  main{max-width:420px}
+  img{width:150px;height:auto;background:#fff;border-radius:18px;padding:10px}
+  h1{margin:22px 0 8px;font-size:26px}
+  p{margin:0 0 22px;color:#cfe7e2;line-height:1.7;font-size:17px}
+  button{padding:13px 28px;border:0;border-radius:999px;background:linear-gradient(180deg,#ffe6a8,#f3c55d);color:#2b1c00;font:700 17px inherit;font-family:inherit;cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+  <img src="/images/logo-nav.png" alt="শাহিন’স আইসিটি কেয়ার">
+  <h1>ইন্টারনেট সংযোগ নেই</h1>
+  <p>আপনার ফোনে ওয়াইফাই বা মোবাইল ডেটা চালু আছে কিনা দেখুন। সংযোগ ফিরলে নিচের বোতামে চাপুন — আপনার প্যানেল আবার খুলে যাবে।</p>
+  <button type="button" onclick="location.reload()">আবার চেষ্টা করুন</button>
+</main>
+<script>addEventListener("online", () => location.reload());</script>
+</body>
+</html>

@@ -1033,3 +1033,10 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .sc-views{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 .sc-tbl tfoot td{font-weight:800;border-top:2px solid var(--line,#d9dee7)}
 .sc-barc{width:28%;min-width:80px}.sc-barc i{display:block;height:10px;border-radius:6px;background:linear-gradient(90deg,#f3c55d,#e39a1b)}
+/* অ্যাপ ইনস্টল বোতাম (শিক্ষার্থী প্যানেল) */
+.pwa-pill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;align-items:center;border-radius:999px;background:linear-gradient(180deg,#ffe6a8,#f3c55d);box-shadow:0 10px 26px rgba(3,10,35,.4);overflow:hidden}
+.pwa-go{padding:11px 8px 11px 16px;border:0;background:none;color:#2b1c00;font:800 15px var(--sans,inherit);cursor:pointer}
+.pwa-x{padding:11px 14px 11px 6px;border:0;background:none;color:#5a3b00;font-size:15px;cursor:pointer}
+.pwa-help{position:fixed;left:14px;right:14px;bottom:76px;z-index:61;max-width:380px;margin-left:auto;padding:16px 18px;border-radius:18px;background:#fff;color:#1b2430;box-shadow:0 16px 40px rgba(3,10,35,.45)}
+.pwa-help ol{margin:8px 0 12px;padding-left:20px;line-height:1.8}.pwa-help button{padding:8px 18px;border:0;border-radius:999px;background:#102b55;color:#fff;font:700 14px var(--sans,inherit)}
+@media print{.pwa-pill,.pwa-help{display:none!important}}

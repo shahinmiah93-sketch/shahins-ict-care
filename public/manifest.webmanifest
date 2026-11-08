@@ -1,0 +1,23 @@
+{
+  "name": "শাহিন’স আইসিটি কেয়ার — শিক্ষার্থী প্যানেল",
+  "short_name": "ICT Care",
+  "description": "শাহিন’স আইসিটি কেয়ারের শিক্ষার্থী প্যানেল — হাজিরা, ফলাফল, ফি, নোটিশ ও আইডি কার্ড এক জায়গায়।",
+  "lang": "bn",
+  "dir": "ltr",
+  "id": "/student",
+  "start_url": "/student?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#062d29",
+  "theme_color": "#062d29",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "আমার প্যানেল", "url": "/student?source=shortcut", "icons": [{ "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

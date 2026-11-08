@@ -3675,7 +3675,7 @@ installRegularMonthlyFees();
 // ---------- ফাইল পরিবেশন ----------
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+  ".json": "application/json; charset=utf-8", ".webmanifest": "application/manifest+json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
   ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2", ".ttf": "font/ttf", ".mp4": "video/mp4", ".webm": "video/webm",
 };
 const ROUTES = { "/": "/index.html", "/admin": "/admin.html", "/student": "/student.html", "/login": "/student.html", "/apply": "/apply.html", "/quiz": "/quiz.html", "/talent-hunt": "/talent.html", "/courses": "/learn.html", "/course": "/learn.html", "/free-classes": "/learn.html", "/module": "/module.html", "/online-apply": "/online-apply.html", "/admission": "/admission.html", "/daily": "/daily.html", "/books": "/books.html" };
