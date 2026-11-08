@@ -437,7 +437,7 @@ window.U = {
   },
   videoEmbed(video, autoplay) {
     if (!video) return "";
-    if (video.type === "youtube") return `<iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.yt)}?rel=0&modestbranding=1${autoplay ? "&autoplay=1" : ""}" title="ভিডিও" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    if (video.type === "youtube") return `<iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.yt)}?rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? "&autoplay=1" : ""}" title="ভিডিও" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
     return `<video src="${U.esc(video.src)}" controls${autoplay ? " autoplay" : ""} playsinline controlslist="nodownload" oncontextmenu="return false"></video>`;
   },
   // ট্যালেন্ট হান্টের প্রবেশপত্র — এক বা অনেকজনের (A4 পাতায় দুটো করে)। regs: [{roll,name,klass,college}], hunt: {title,examDate,examTime,venue,subjects,full}

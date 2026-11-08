@@ -145,7 +145,7 @@
   list.addEventListener("click", (e) => {
     if (e.target.closest("[data-qa-more]")) { all = true; return draw(); }
     const y = e.target.closest("[data-yt]");
-    if (y) y.outerHTML = `<div class="qa-ytf"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(y.dataset.yt)}?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="ভিডিও উত্তর"></iframe></div>`;
+    if (y) y.outerHTML = `<div class="qa-ytf"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(y.dataset.yt)}?autoplay=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="ভিডিও উত্তর"></iframe></div>`;
   });
   // নিজের প্রশ্ন — লগইন হলে / প্রশ্ন পাঠালে আবার আনে; লগআউট হলে খালি
   loadMine = () => (me ? U.api("/api/qna/mine").then((r) => { items = r.items || []; draw(); }).catch(() => {}) : ((items = []), draw()));

@@ -508,7 +508,7 @@ ${inner}
       const open = mods.filter((m) => !m.locked), all = open.flatMap((m) => m.lessons.map((l) => ({ ...l, mod: m })));
       const cur = all.find((l) => l.id === TABS._les) || all[0];
       const player = !cur ? "" : cur.video.type === "youtube"
-        ? `<iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(cur.video.yt)}?rel=0&modestbranding=1" title="${esc(cur.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
+        ? `<iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(cur.video.yt)}?rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="${esc(cur.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
         : `<video src="${esc(cur.video.src)}" controls controlsList="nodownload" playsinline preload="metadata"></video>`;
       return `<div class="card vd-card"><h2>🎬 ক্লাস ভিডিও</h2>${accessNotes()}
         ${cur ? `<div class="vd-player">${player}</div>
