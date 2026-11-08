@@ -1040,3 +1040,14 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .pwa-help{position:fixed;left:14px;right:14px;bottom:76px;z-index:61;max-width:380px;margin-left:auto;padding:16px 18px;border-radius:18px;background:#fff;color:#1b2430;box-shadow:0 16px 40px rgba(3,10,35,.45)}
 .pwa-help ol{margin:8px 0 12px;padding-left:20px;line-height:1.8}.pwa-help button{padding:8px 18px;border:0;border-radius:999px;background:#102b55;color:#fff;font:700 14px var(--sans,inherit)}
 @media print{.pwa-pill,.pwa-help{display:none!important}}
+/* ছবি ঠিক করার বাক্স (ক্রপ) */
+.pc-box[hidden]{display:none}
+.pc-stage{position:relative;width:min(280px,72vw);aspect-ratio:1;margin:12px auto 8px;overflow:hidden;border-radius:14px;background:#0e1626;touch-action:none;cursor:grab;user-select:none;outline:0}
+.pc-stage.grab{cursor:grabbing}.pc-stage:focus-visible{box-shadow:0 0 0 3px #f3c55d}
+.pc-stage .pc-img{position:absolute;left:0;top:0;margin:0;max-width:none;border-radius:0;background:none;object-fit:fill;display:block;transform-origin:0 0;pointer-events:none;-webkit-user-drag:none}
+.pc-ring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(8,14,30,.62);border:2px solid #fff;pointer-events:none}
+.pc-ctrl{display:flex;align-items:center;gap:10px;width:min(280px,72vw);margin:0 auto}
+.pc-ctrl input[type=range]{flex:1;margin:0;accent-color:#f3c55d;height:28px}
+.pc-ctrl button{width:34px;height:34px;border-radius:50%;border:1px solid #cdd6e4;background:#fff;color:#1b2430;font:700 18px/1 inherit;cursor:pointer}
+.pc-hint{margin:8px 0 0;text-align:center;font-size:13px;color:var(--muted,#667085)}
+.student-photo-current{display:flex;flex-wrap:wrap;gap:14px;font-size:14px;margin:0 0 10px}

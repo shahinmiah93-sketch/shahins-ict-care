@@ -1110,7 +1110,7 @@ ${list.map(receiptHtml).join("")}
     if (a) vals = { ...a, guardianName: a.guardianName || a.fatherName, note: `অনলাইন আবেদন ${a.appNo}`, status: "active" };
     else if (prefill) vals = prefill;
     fields.forEach((f) => { if (f.type === "address") f.values = vals; });
-    let photoData = "", photoGone = false, reminded = false;
+    let photoData = "", photoOriginal = "", photoGone = false, reminded = false;
     let pick = { courseId: a ? a.courseId : "", chapters: a ? [...(a.chapters || [])] : [] };
     const oldPhoto = s && s.photo ? photoUrl("s", s.id) : a && a.photo ? photoUrl("a", a.id) : "";
     const listFilters = new URLSearchParams(arg.startsWith("new?") ? arg.slice(4) : "");
@@ -1324,12 +1324,12 @@ ${list.map(receiptHtml).join("")}
     const ph = $("#admPhoto");
     if (ph) {
       ph.onchange = async (e) => {
-        try { photoData = await U.resizeImage(e.target.files[0]); photoGone = false; $("#admPv").style.backgroundImage = `url('${photoData}')`; $("#admPv").textContent = ""; $("#admPhotoDel").hidden = false; }
+        try { const f = e.target.files[0]; if (!f) return; const cr = await SICPhotoCrop.dialog(f, { title: "ছবি ঠিক করুন — গোল ফ্রেমের ভেতরের অংশটাই প্রোফাইল ছবি" }); e.target.value = ""; if (!cr) return; photoData = cr.photo; photoOriginal = cr.original || ""; photoGone = false; $("#admPv").style.backgroundImage = `url('${photoData}')`; $("#admPv").textContent = ""; $("#admPhotoDel").hidden = false; }
         catch (er) { toast(er.message, true); }
       };
       // ছবি না থাকলে লিঙ্গ অনুযায়ী আইকন দেখায়
       const showIcon = () => { if (!photoData && (!oldPhoto || photoGone)) $("#admPv").style.backgroundImage = `url('${U.avatarSrc(q("gender") && q("gender").value)}')`; };
-      $("#admPhotoDel").onclick = () => { photoData = ""; photoGone = true; showIcon(); $("#admPhotoDel").hidden = true; };
+      $("#admPhotoDel").onclick = () => { photoData = ""; photoOriginal = ""; photoGone = true; showIcon(); $("#admPhotoDel").hidden = true; };
       if (q("gender")) q("gender").addEventListener("change", showIcon);
     }
     const excelImport = $("#admExcelImport"); if (excelImport) excelImport.onclick = () => window.SICAdmissionImport({ DB, opt, openModal, closeModal, load, route });
@@ -1374,7 +1374,7 @@ ${list.map(receiptHtml).join("")}
           const r = await api("/api/admin/admit", { body: { student: d, enrollment, payment, applicationId: a ? a.id : "", enquiryId: prefill && prefill._enquiryId, leadId: prefill && prefill._leadId } });
           stu = r.student; enr = r.enrollment; pay = r.payment;
         }
-        if (showPerson && photoData) await api("/api/admin/student-photo", { body: { id: stu.id, photo: photoData } });
+        if (showPerson && photoData) await api("/api/admin/student-photo", { body: { id: stu.id, photo: photoData, original: photoOriginal } });
         else if (showPerson && photoGone && (s || a)) await api("/api/admin/student-photo", { body: { id: stu.id, remove: true } });
         await load();
         stu = studentById(stu.id);
@@ -1519,6 +1519,7 @@ ${list.map(receiptHtml).join("")}
         panel.innerHTML = '<button type="button" class="btn line" data-photo-list>‹ ছবির তালিকা</button>'
           + '<h3>' + esc(student.name) + ' · ' + esc(student.id) + '</h3>'
           + '<img class="photo-approval-preview" src="' + photoUrl(student) + '" alt="শিক্ষার্থীর পাঠানো ছবি">'
+          + '<p><a href="/api/admin/photo/po/' + encodeURIComponent(student.id) + '" target="_blank" rel="noopener">🔍 মূল ছবি বড় করে দেখুন</a> · <a href="/api/admin/photo/po/' + encodeURIComponent(student.id) + '?download=1" download>⬇ সেভ করুন</a></p>'
           + '<div class="toolbar"><button type="button" class="btn gold" data-decision="approve">✓ অনুমোদন করুন</button>'
           + '<button type="button" class="btn line" data-decision="reject">অনুমোদন না দিন</button></div>';
         $("[data-photo-list]", panel).onclick = () => render();
@@ -1617,7 +1618,7 @@ ${list.map(receiptHtml).join("")}
       body: `
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">${avatar(s.photo, "s", s.id, s.name, 84, s.gender)}
           <div><label class="btn sm line">${s.photo ? "ছবি বদলান" : "ছবি দিন"}<input type="file" accept="image/*" id="stuPhoto" hidden></label>
-          ${s.photo ? '<button type="button" class="btn sm line" id="stuPhotoDel">সরান</button>' : ""}</div></div>
+          ${s.photo ? `<a class="btn sm line" href="/api/admin/photo/o/${encodeURIComponent(s.id)}" target="_blank" rel="noopener">🔍 মূল ছবি</a><a class="btn sm line" href="/api/admin/photo/o/${encodeURIComponent(s.id)}?download=1" download>⬇ সেভ</a>` : ""}${s.photo ? '<button type="button" class="btn sm line" id="stuPhotoDel">সরান</button>' : ""}</div></div>
         ${s.pendingPhoto ? `<section class="student-photo-review"><h3>নতুন ছবি অনুমোদনের অপেক্ষায়</h3><img src="/api/admin/photo/p/${encodeURIComponent(s.id)}?v=${encodeURIComponent(s.pendingPhoto.version)}" alt="শিক্ষার্থীর পাঠানো ছবি" style="width:120px;height:145px;object-fit:contain;border:1px solid #dae4e2;border-radius:12px;background:#f2f6f8"><p>অনুমোদন দিলে এই ছবি প্রোফাইল ও আইডি কার্ডে ব্যবহার হবে।</p><div class="toolbar"><button type="button" class="btn gold" data-photo-review="approve">✓ অনুমোদন করুন</button><button type="button" class="btn line" data-photo-review="reject">অনুমোদন না দিন</button></div></section>` : ""}
         ${s.pendingProfile ? `<section class="student-photo-review"><h3>তথ্য সংশোধন অনুমোদনের অপেক্ষায়</h3><p>${bn(Object.keys(s.pendingProfile.changes).length)}টি তথ্য বদলানোর অনুরোধ এসেছে।</p><button type="button" class="btn gold" id="viewProfileChanges">আগের ও নতুন তথ্য দেখুন →</button></section>` : ""}
         <dl class="kv">
@@ -1674,7 +1675,7 @@ ${list.map(receiptHtml).join("")}
     $("#vsForm").onclick = () => { const enr = enrollmentsOf(s.id)[0]; printAdmission(s, formExtra(s, enr, null), enr); };
     $("#vsEdit").onclick = () => studentForm(s);
     $("#stuPhoto").onchange = async (e) => {
-      try { const data = await U.resizeImage(e.target.files[0]); await api("/api/admin/student-photo", { body: { id: s.id, photo: data } }); await load(); toast("ছবি সেভ হয়েছে"); viewStudent(s.id); }
+      try { const f = e.target.files[0]; if (!f) return; const r = await SICPhotoCrop.dialog(f, { title: s.name + " — ছবি ঠিক করুন" }); e.target.value = ""; if (!r) return; await api("/api/admin/student-photo", { body: { id: s.id, photo: r.photo, original: r.original } }); await load(); toast("ছবি সেভ হয়েছে"); viewStudent(s.id); }
       catch (er) { toast(er.message, true); }
     };
     const pdel = $("#stuPhotoDel"); if (pdel) pdel.onclick = async () => { await api("/api/admin/student-photo", { body: { id: s.id, remove: true } }); await load(); viewStudent(s.id); };

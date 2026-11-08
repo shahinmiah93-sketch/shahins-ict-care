@@ -7,7 +7,7 @@ function fixture(){
   const files=new Map([['db',Buffer.from('{}')]]),student={id:'fixture',photo:true},original=Buffer.from('previous approved photo');files.set('s-fixture',original);
   let sequence=0,fail=false;
   const c={Buffer,Date,db:{students:[student]},readBody:async req=>req.body,send:(_,status,data)=>({status,data}),str:v=>String(v||''),uid:()=>String(++sequence),photoFile:(kind,id)=>kind+'-'+id,DB_FILE:'db',BACKUPS:'backups',path:{join:(...s)=>s.join('/')},saveDb:()=>{if(fail)throw Error('save failed')},removePhoto:(kind,id)=>files.delete(kind+'-'+id),fs:{existsSync:p=>files.has(p),readFileSync:p=>files.get(p),writeFileSync:(p,b)=>files.set(p,Buffer.from(b)),copyFileSync:(a,b)=>{if(!files.has(a))throw Error('missing');files.set(b,Buffer.from(files.get(a)))}}};
-  vm.createContext(c);vm.runInContext(source.slice(source.indexOf('async function studentPhotoRequest('),source.indexOf('async function api(')),c);
+  vm.createContext(c);vm.runInContext(source.slice(source.indexOf('function originalBytes('),source.indexOf('const removePhoto = ')),c);vm.runInContext(source.slice(source.indexOf('async function studentPhotoRequest('),source.indexOf('async function api(')),c);
   const image=Buffer.alloc(150,7);image[0]=255;image[1]=216;image[2]=255;
   return{c,files,student,original,photo:'data:image/jpeg;base64,'+image.toString('base64'),fail:()=>fail=true};
 }

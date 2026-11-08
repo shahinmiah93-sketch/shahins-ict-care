@@ -474,11 +474,19 @@ function savePhoto(dataUrl, kind, id) {
   fs.writeFileSync(photoFile(kind, id), buf);
   return true;
 }
-function sendPhoto(res, kind, id) {
-  const f = photoFile(kind, id);
+// opts.fallback: এই ধরনের ছবি না থাকলে অন্য ধরনেরটা (পুরোনো ছবির মূল কপি নেই — ক্রপ করা ছবিই দেখায়); opts.download: ফাইলের নামসহ নামানোর জন্য
+function sendPhoto(res, kind, id, opts = {}) {
+  let f = photoFile(kind, id);
+  if (!fs.existsSync(f) && opts.fallback) f = photoFile(opts.fallback, id);
   if (!fs.existsSync(f)) { res.writeHead(404); return res.end(); }
-  res.writeHead(200, { "Content-Type": "image/jpeg", "Cache-Control": "no-store" });
+  res.writeHead(200, { "Content-Type": "image/jpeg", "Cache-Control": "no-store", ...(opts.download ? { "Content-Disposition": `attachment; filename="${String(opts.download).replace(/[^\w.-]/g, "_")}"` } : {}) });
   fs.createReadStream(f).pipe(res);
+}
+// মূল ছবি (ক্রপের আগের বড় কপি): শুধু JPEG, ১.৫ MB পর্যন্ত; ঠিক না থাকলে null
+function originalBytes(dataUrl) {
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ""));
+  const buf = m && Buffer.from(m[1], "base64");
+  return buf && buf.length >= 100 && buf.length <= 1536 * 1024 && buf[0] === 255 && buf[1] === 216 && buf[2] === 255 ? buf : null;
 }
 const removePhoto = (kind, id) => { try { fs.unlinkSync(photoFile(kind, id)); } catch {} };
 // হিরোর মেন্টরের ছবি — data/photos/mentor.<ext>; না থাকলে ওয়েবসাইট public/images/teachers/shahin-hero.webp দেখায়
@@ -1690,7 +1698,7 @@ function renumberStudentsByAdmission() {
   fs.copyFileSync(DB_FILE, path.join(BACKUPS, `${tag}.json`));
   const to = id => mapping[id] || id;
   const files = new Map();
-  for (const s of ordered) for (const kind of ["s","p"]) for (const id of [s.id,to(s.id)]) {
+  for (const s of ordered) for (const kind of ["s","p","o","po"]) for (const id of [s.id,to(s.id)]) {
     const file = photoFile(kind,id);
     if (!files.has(file)) files.set(file,fs.existsSync(file) ? fs.readFileSync(file) : null);
   }
@@ -1717,10 +1725,10 @@ function renumberStudentsByAdmission() {
     for (const [file,data] of files) if (data) fs.unlinkSync(file);
     for (const s of ordered) {
       const old = s.id;
-      for (const kind of ["s","p"]) { const data = files.get(photoFile(kind,old)); if (data) fs.writeFileSync(photoFile(kind,to(old)),data); }
+      for (const kind of ["s","p","o","po"]) { const data = files.get(photoFile(kind,old)); if (data) fs.writeFileSync(photoFile(kind,to(old)),data); }
       s.id = to(old);
     }
-    const targetFiles = new Set(ordered.flatMap(s => [photoFile("s",s.id),photoFile("p",s.id)]));
+    const targetFiles = new Set(ordered.flatMap(s => ["s","p","o","po"].map(k => photoFile(k,s.id))));
     for (const [file,data] of files) if (data && !targetFiles.has(file) && fs.existsSync(file)) fs.unlinkSync(file);
     db.students = ordered;
     // Retire old student sessions so a reused numeric ID can never open another profile.
@@ -1807,18 +1815,19 @@ async function reviewStudentProfile(req, res) {
   return send(res,200,{ok:true});
 }
 async function studentPhotoRequest(req, res, student) {
-  const b = await readBody(req, 600 * 1024);
+  const b = await readBody(req, 3 * 1024 * 1024);
   const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.photo || ""));
   const bytes = match && Buffer.from(match[1], "base64");
   if (!bytes || bytes.length < 100 || bytes.length > 400 * 1024 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[2] !== 255) return send(res, 400, { error: "সঠিক JPG ছবি দিন (৪০০ KB-এর মধ্যে)" });
-  const file = photoFile("p", student.id), old = fs.existsSync(file) ? fs.readFileSync(file) : null;
+  const file = photoFile("p", student.id), old = fs.existsSync(file) ? fs.readFileSync(file) : null, ofile = photoFile("po", student.id), oldO = fs.existsSync(ofile) ? fs.readFileSync(ofile) : null, orig = originalBytes(b.original);
   const original = JSON.stringify(student);
   try {
     fs.writeFileSync(file, bytes);
+    if (orig) fs.writeFileSync(ofile, orig); else removePhoto("po", student.id);
     student.pendingPhoto = { version: uid("photo"), submittedAt: new Date().toISOString() };
     delete student.photoReview; saveDb();
     return send(res, 200, { ok: true, pendingPhoto: student.pendingPhoto });
-  } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(file, old); else removePhoto("p", student.id); throw error; }
+  } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(file, old); else removePhoto("p", student.id); if (oldO) fs.writeFileSync(ofile, oldO); else removePhoto("po", student.id); throw error; }
 }
 async function reviewStudentPhoto(req, res) {
   const b = await readBody(req), student = db.students.find(s => s.id === str(b.id, 40));
@@ -1835,6 +1844,8 @@ async function reviewStudentPhoto(req, res) {
     student.photoReview = { status: b.action === "approve" ? "approved" : "rejected", at: new Date().toISOString() };
     delete student.pendingPhoto; saveDb();
   } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(current, old); else removePhoto("s", student.id); throw error; }
+  if (b.action === "approve") { const po = photoFile("po", student.id); if (fs.existsSync(po)) fs.copyFileSync(po, photoFile("o", student.id)); else removePhoto("o", student.id); }
+  removePhoto("po", student.id);
   removePhoto("p", student.id);
   return send(res, 200, { ok: true });
 }
@@ -2537,6 +2548,11 @@ async function api(req, res, url) {
     if (!ps) return send(res, 401, { error: "লগইন করুন" });
     return sendPhoto(res, "s", ps.id);
   }
+  if (p === "/api/student/photo-original" && m === "GET") {
+    const ps = panelStudent();
+    if (!ps) return send(res, 401, { error: "লগইন করুন" });
+    return sendPhoto(res, "o", ps.id, { fallback: "s", download: url.searchParams.get("download") === "1" ? `${ps.id}-photo.jpg` : "" });
+  }
   const svm = p.match(/^\/api\/student\/video\/([\w-]+)\/([\w-]+)$/);
   if (svm && m === "GET") {
     const c = db.courses.find((x) => x.id === svm[1]), l = c && (c.lessons || []).find((x) => x.id === svm[2]);
@@ -2951,7 +2967,7 @@ async function api(req, res, url) {
   }
   if (p === "/api/admin/clear-sample" && m === "POST") {
     fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-clear-${Date.now()}.json`));
-    db.students.forEach((s) => removePhoto("s", s.id));
+    db.students.forEach((s) => ["s", "p", "o", "po"].forEach((k) => removePhoto(k, s.id)));
     db.applications.forEach((a) => removePhoto("a", a.id));
     db.docs.forEach((d) => { if (d.file) try { fs.unlinkSync(docPath(d)); } catch {} });
     db.examRoutines.forEach((r) => { try { fs.unlinkSync(examRoutineFile(r)); } catch {} }); db.examRoutines = [];
@@ -2963,15 +2979,15 @@ async function api(req, res, url) {
   // ছবি দেখা: /api/admin/photo/s/<studentId> বা /api/admin/photo/a/<applicationId>
   if (p === "/api/admin/student-profile-review" && m === "POST") return reviewStudentProfile(req, res);
   if (p === "/api/admin/student-photo-review" && m === "POST") return reviewStudentPhoto(req, res);
-  const pm = p.match(/^\/api\/admin\/photo\/([sap])\/([\w-]+)$/);
-  if (pm && m === "GET") return sendPhoto(res, pm[1], pm[2]);
+  const pm = p.match(/^\/api\/admin\/photo\/(s|a|p|o|po)\/([\w-]+)$/);
+  if (pm && m === "GET") return sendPhoto(res, pm[1], pm[2], pm[1] === "o" || pm[1] === "po" ? { fallback: pm[1] === "o" ? "s" : "p", download: url.searchParams.get("download") === "1" ? `${pm[2]}-photo.jpg` : "" } : {});
   if (p === "/api/admin/student-photo" && m === "POST") {
-    const b = await readBody(req, 1024 * 1024);
+    const b = await readBody(req, 3 * 1024 * 1024);
     const s = db.students.find((x) => x.id === str(b.id, 40));
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
-    if (b.remove) { removePhoto("s", s.id); s.photo = false; }
+    if (b.remove) { removePhoto("s", s.id); removePhoto("o", s.id); s.photo = false; }
     else if (!savePhoto(b.photo, "s", s.id)) return send(res, 400, { error: "ছবিটি ঠিক নেই (JPG/PNG, ৪০০KB-এর কম)" });
-    else s.photo = true;
+    else { s.photo = true; const o = originalBytes(b.original); if (o) fs.writeFileSync(photoFile("o", s.id), o); else removePhoto("o", s.id); }
     saveDb();
     return send(res, 200, { ok: true });
   }
@@ -3493,7 +3509,7 @@ async function api(req, res, url) {
       const gone = list[i];
       list.splice(i, 1);
       if (col === "students") {
-        removePhoto("s", id);
+        removePhoto("s", id); removePhoto("o", id); removePhoto("p", id); removePhoto("po", id);
         db.enrollments = db.enrollments.filter((e) => e.studentId !== id);
         db.payments = db.payments.filter((x) => x.studentId !== id);
       }
