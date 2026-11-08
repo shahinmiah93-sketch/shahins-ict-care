@@ -1008,3 +1008,13 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .rt-area h2{margin:18px 0 8px;color:#fff;font:800 24px/1.45 var(--sans,inherit)}.rt-area h3{margin:14px 0 6px;color:#f3c55d;font:800 19px/1.5 var(--sans,inherit)}
 .rt-area ul,.rt-area ol{margin:0 0 12px;padding-left:1.5em}.rt-area hr{border:0;height:1px;background:rgba(255,255,255,.2);margin:16px 0}
 .rt-note{display:block;margin-top:6px;color:var(--muted,#667085)}
+/* শিক্ষার্থীর প্রোফাইল ছবি — গোল, সোনালি রিং, ক্যামেরা ব্যাজ (ফেসবুকের মতো) */
+.stu-hero #av.avatar{width:112px;height:112px;border-radius:50%!important;padding:0;overflow:visible;border:4px solid #fff!important;background-color:#dfe8f5;
+  box-shadow:0 0 0 4px rgba(243,197,93,.95),0 0 0 9px rgba(243,197,93,.22),0 14px 30px rgba(3,10,35,.45)!important;transition:transform .2s,box-shadow .2s}
+.stu-hero #av.avatar:not(:disabled):hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 0 4px #f3c55d,0 0 0 11px rgba(243,197,93,.3),0 18px 34px rgba(3,10,35,.5)!important}
+.stu-hero #av.avatar:focus-visible{outline:3px solid #fff;outline-offset:6px}
+#av .av-cam{position:absolute;right:-2px;bottom:2px;left:auto;top:auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#ffe6a8,#f3c55d);color:#2b1c00;border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.35);line-height:1}
+#av .av-cam svg{width:17px;height:17px}
+#av .av-tip{position:absolute;left:50%;bottom:-34px;right:auto;top:auto;transform:translateX(-50%) translateY(4px);white-space:nowrap;padding:5px 11px;border-radius:999px;background:#102b55;color:#fff;font:600 12px/1.4 var(--sans,inherit);opacity:0;pointer-events:none;transition:.2s}
+#av:hover .av-tip,#av:focus-visible .av-tip{opacity:1;transform:translateX(-50%)}
+@media(max-width:650px){.stu-hero{grid-template-columns:84px minmax(0,1fr)}.stu-hero #av.avatar{width:80px;height:80px;border-width:3px!important;box-shadow:0 0 0 3px rgba(243,197,93,.95),0 0 0 6px rgba(243,197,93,.22),0 10px 22px rgba(3,10,35,.45)!important}#av .av-cam{width:28px;height:28px;border-width:2px}#av .av-cam svg{width:14px;height:14px}#av .av-tip{display:none}}

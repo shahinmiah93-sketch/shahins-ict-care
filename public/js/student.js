@@ -680,7 +680,7 @@ ${inner}
     $("#av").textContent = "";
     $("#av").style.cssText = `background:url('${p.photo ? "/api/student/photo" + Q : U.avatarSrc(p.gender)}') center/cover`; // ছবি না থাকলে ছেলে/মেয়ের আইকন
     $("#av").disabled = !!AS;
-    $("#av").innerHTML = AS ? "" : '<span>ছবি বদলান</span>';
+    $("#av").innerHTML = AS ? "" : '<span class="av-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg></span><span class="av-tip" aria-hidden="true">ছবি বদলান</span>';
     $("#av").onclick = requestProfilePhoto;
     $("#studentPhotoStatus").textContent = p.pendingPhoto ? "নতুন ছবি অ্যাডমিনের অনুমোদনের অপেক্ষায়।" : p.photoReview?.status === "rejected" ? "আগের ছবিটি অনুমোদিত হয়নি। পরিষ্কার ছবি আবার পাঠান।" : "";
     const completion = D.profileCompletion;
