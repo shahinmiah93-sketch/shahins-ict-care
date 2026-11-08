@@ -607,7 +607,7 @@ ${list.map(receiptHtml).join("")}
     ["admission", [["admission", "ভর্তি ফর্ম"], ["applications", "অনলাইন আবেদন", "appBadge"], ["onlineApps", "অনলাইন কোর্সে ভর্তি", "oaBadge"], ["leads", "সম্ভাব্য শিক্ষার্থী", "enqBadge"]]],
     ["exams", [["exams", "পরীক্ষা"], ["results", "ফলাফল ও মূল্যায়ন"]]],
     ["website", [["banners", "বিজ্ঞাপন"], ["notices", "নোটিশ"], ["ebooks", "ই-বুক"], ["daily", "প্রতিদিন শিখি"], ["qna", "প্রশ্নোত্তর বক্স", "qnaBadge"], ["faqs", "সাধারণ প্রশ্ন (FAQ)"], ["gallery", "আমাদের দিনলিপি"], ["classMoments", "ক্লাসের ক্যানভাস"], ["achievers", "সফল শিক্ষার্থী"], ["ratings", "শিক্ষার্থীদের মতামত"], ["learn", "ফ্রি ক্লাস", "learnBadge"]]],
-    ["teachers", [["teachers", "শিক্ষক"], ["settings", "সেটিংস"]]],
+    ["teachers", [["teachers", "শিক্ষক ও একাডেমিক সহযোগী"], ["settings", "সেটিংস"]]],
   ];
   const SEC_ALIAS = { website: "banners", talent: "exams", quiz: "exams" }; // #website = ব্যানার; ট্যালেন্ট হান্ট ও অনলাইন কুইজ পরীক্ষার ভেতরে
   // কোন মেনু আইটেম জ্বলবে
@@ -658,7 +658,7 @@ ${list.map(receiptHtml).join("")}
     daily: ["ওয়েবসাইট — প্রতিদিন শিখি", daily],
     access: ["শিক্ষার্থী — মেয়াদ (রেকর্ড ক্লাস ও ই-বুক)", (c) => accessPage(c).catch((e) => { c.innerHTML = `<div class="card"><p class="empty">${esc(e.message)}</p></div>`; })],
     qna: ["ওয়েবসাইট — প্রশ্নোত্তর বক্স", (c, arg) => qnaPage(c, arg)],
-    teachers: ["শিক্ষক", teachers],
+    teachers: ["শিক্ষক ও একাডেমিক সহযোগী", teachers],
     settings: ["সেটিংস", settings],
   };
   function route() {
