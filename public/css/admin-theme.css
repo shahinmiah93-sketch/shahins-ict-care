@@ -523,3 +523,4 @@ body.dash-dark .side a.nav-item[href="#bloodbank"] i{color:#ff7a7a}
 .adm-module-item{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 16px;border:1px solid #dbe5f0;border-radius:12px;background:#f5f8fc}
 .adm-module-item strong{display:block;margin-top:4px;color:#183658;font-size:16px;overflow-wrap:anywhere}
 .adm-module-item small{display:block;margin-top:2px;color:#586b83}
+.adm-module-acts{display:flex;gap:8px;flex-wrap:wrap}

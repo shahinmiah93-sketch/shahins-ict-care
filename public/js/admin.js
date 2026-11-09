@@ -1156,7 +1156,7 @@ ${list.map(receiptHtml).join("")}
             const course = courseById(e.courseId);
             return `<div class="adm-module-item">
               <div><span class="chip ok">সক্রিয়</span><strong>${esc(course?.name || "মডিউল")}</strong>${e.startDate ? `<small>শুরু ${esc(U.date(e.startDate))}</small>` : ""}</div>
-              <a class="btn gold" href="#admission/enroll/${esc(s.id)}/${esc(e.id)}">মডিউল বদলান →</a></div>`;
+              <span class="adm-module-acts"><button type="button" class="btn line" data-disc-edit="${esc(e.id)}">ছাড় বদলান</button> <a class="btn gold" href="#admission/enroll/${esc(s.id)}/${esc(e.id)}">মডিউল বদলান →</a></span></div>`;
           }).join("") || '<p class="empty">কোনো সক্রিয় মডিউল নেই।</p>'}</div></section>` : ""}
         ${showModule ? `<section class="adm-sec"><h3>${mode === "enroll" ? "মডিউল ও ফি" : "৩. মডিউল ও ফি"}</h3>
           <div class="mod-cards">${moduleCards}</div>
@@ -1257,6 +1257,7 @@ ${list.map(receiptHtml).join("")}
       q("batchId").addEventListener("change", info); info();
     });
     if (q("batchId")) q("batchId").addEventListener("change", info);
+    $$("[data-disc-edit]", form).forEach((b) => { b.onclick = () => editEnrollmentDiscount(s, b.dataset.discEdit, () => route()); }); // সম্পাদনার পাতা থেকে ছাড় বদলালে এই পাতাতেই থাকে
     form.addEventListener("change", (e) => {
       if (e.target.name === "admissionDate" && q("startDate") && mode !== "enroll") q("startDate").value = e.target.value;
       if (e.target.name === "courseId") { pick.courseId = e.target.value; pick.chapters = []; drawFee(); }
@@ -1454,7 +1455,7 @@ ${list.map(receiptHtml).join("")}
 
   // ---------- শিক্ষার্থী ----------
   // ভর্তি হওয়া মডিউলের ছাড় — শতাংশ বা টাকায়; "নতুন হিসাব দেখুন" চাপলে আগের/নতুন ফি আর বকেয়া দেখায়, তারপর সংরক্ষণ
-  function editEnrollmentDiscount(student, enrollmentId) {
+  function editEnrollmentDiscount(student, enrollmentId, after) {
     const e = DB.enrollments.find(x => x.id === enrollmentId);
     if (!e) return;
     const fee = Number(e.fee) || 0, cur = Number(e.discount) || 0, curPct = fee ? Math.round(cur / fee * 1000) / 10 : 0, monthly = courseById(e.courseId)?.feeType === "monthly";
@@ -1470,7 +1471,7 @@ ${list.map(receiptHtml).join("")}
       onSave: async () => {
         if (!preview) throw new Error("আগে নতুন হিসাব দেখুন");
         await api("/api/admin/enrollment-discount", { body: { id: e.id, mode: $("#dscMode").value, value: Number($("#dscVal").value), commit: true, token: preview.token } });
-        await load(); viewStudent(student.id); toast("ছাড় সংরক্ষণ হয়েছে — বকেয়া নতুন হিসাবে বদলেছে"); return true;
+        await load(); if (after) { closeModal(); after(); } else viewStudent(student.id); toast("ছাড় সংরক্ষণ হয়েছে — বকেয়া নতুন হিসাবে বদলেছে"); return true;
       },
     });
     $("#modalSave").disabled = true;

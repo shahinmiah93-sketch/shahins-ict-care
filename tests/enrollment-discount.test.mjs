@@ -51,8 +51,10 @@ test('Saving needs the matching preview token and records the change', async () 
 test('Screens: change button in the fee table, preview form, percent box in admission form', () => {
   const admin = fs.readFileSync(new URL('../public/js/admin.js', import.meta.url), 'utf8');
   assert.match(admin, /data-disc="\$\{it\.enrollmentId\}">ছাড় বদলান/);
-  assert.match(admin, /function editEnrollmentDiscount\(student, enrollmentId\)/);
+  assert.match(admin, /function editEnrollmentDiscount\(student, enrollmentId, after\)/);
   assert.match(admin, /\/api\/admin\/enrollment-discount/);
   assert.match(admin, /name="discountPct"/);
+  assert.match(admin, /data-disc-edit="\$\{esc\(e\.id\)\}">ছাড় বদলান/);                    // তথ্য সম্পাদনার পাতার মডিউলের পাশে
+  assert.match(admin, /editEnrollmentDiscount\(s, b\.dataset\.discEdit, \(\) => route\(\)\)/);   // সেভের পর ওই পাতাতেই থাকে
   assert.match(source, /p === "\/api\/admin\/enrollment-discount" && m === "POST"/);
 });
