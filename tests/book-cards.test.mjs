@@ -22,6 +22,12 @@ test('Admin book form tells the best cover size (3:4, 900×1200) and warns about
   assert.match(admin, /খাড়া, ৩:৪ — সবচেয়ে ভালো ৯০০ × ১২০০ পিক্সেল/);
   assert.match(admin, /অন্য মাপ দিলে কিনারা কেটে যায়/);
 });
+test('Popup shows the WHOLE cover (never cropped): 3:4 box, contain, height-limited on short screens', () => {
+  assert.match(css, /\.bk-dcv\{position:relative;aspect-ratio:3\/4;max-height:calc\(100vh - 26px\);/);
+  assert.match(css, /\.bk-dcv img\{position:absolute;inset:0;width:100%;height:100%;object-fit:contain\}/);
+  assert.doesNotMatch(css, /\.bk-dcv img\{[^}]*object-fit:cover/);
+  assert.match(css, /\.bk-dcv\{aspect-ratio:auto;max-height:none;height:min\(46vh,380px\)\}/);   // ফোনে
+});
 test('Popup can add to cart and fits the screen', () => {
   assert.match(js, /bk-dadd/);
   assert.match(css, /\.bk-dlg\{[^}]*max-height:calc\(100vh - 24px\)/);

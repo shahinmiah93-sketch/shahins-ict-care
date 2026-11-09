@@ -86,11 +86,11 @@ body.books-page{background:#07070a;color:#e9e9ef}
 .bk-dlg[open]{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr)}
 .bk-dlg::backdrop{background:rgba(3,8,20,.72);backdrop-filter:blur(4px)}
 .bk-dx{position:absolute;top:12px;right:12px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px;cursor:pointer}.bk-dx:hover{background:rgba(0,0,0,.85)}
-.bk-dcv{position:relative;min-height:340px;background:#1b1b21}.bk-dcv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bk-dcv{position:relative;aspect-ratio:3/4;max-height:calc(100vh - 26px);background:#0e0e12}.bk-dcv img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .bk-dbody{display:flex;flex-direction:column;gap:8px;padding:30px 28px 26px;overflow:auto;max-height:calc(100vh - 26px);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
 .bk-kind2{align-self:flex-start;padding:3px 10px;border-radius:999px;background:rgba(243,197,93,.12);border:1px solid rgba(243,197,93,.4);color:#f3c55d;font:700 12px/1.5 var(--sans)}
 .bk-dbody h3{margin:2px 34px 0 0;color:#fff;font:800 24px/1.35 var(--sans)}.bk-dbody small{color:#a9a9b2;font-size:14px}
 .bk-off2{padding:2px 9px;border-radius:999px;background:linear-gradient(135deg,#ff6a3d,#f0306e);color:#fff;font:700 12px/1.6 var(--sans)}
 .bk-ddesc p{margin:0 0 10px;color:#d3d3db;font-size:16px;line-height:1.85}
 .bk-dadd{margin-top:auto;width:100%;justify-content:center;padding:13px}
-@media(max-width:640px){.bk-dlg[open]{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);max-height:calc(100vh - 24px)}.bk-dcv{min-height:0;height:220px}.bk-dbody{padding:18px 18px 22px;max-height:none}.bk-dbody h3{font-size:20px}}
+@media(max-width:640px){.bk-dlg[open]{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);max-height:calc(100vh - 24px)}.bk-dcv{aspect-ratio:auto;max-height:none;height:min(46vh,380px)}.bk-dbody{padding:18px 18px 22px;max-height:none}.bk-dbody h3{font-size:20px}}
