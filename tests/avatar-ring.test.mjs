@@ -8,7 +8,7 @@ test('Student photo ring: rotating rainbow ring with a bright comet, hollow so i
   assert.match(css, /conic-gradient\(#f3c55d,#ff9f43,#ff6b9d,#b794f6,#63b3ff,#4fd1c5,#9be564,#f3c55d\)/);
   assert.match(css, /rgba\(255,255,255,\.95\) 94%/);                   // ধূমকেতুর উজ্জ্বল টান
   assert.match(css, /mask-composite:xor/);                                 // ফাঁপা রিং
-  assert.match(css, /animation:av-spin 5s linear infinite/);
+  assert.match(css, /animation:av-spin 14s linear infinite/);
   assert.match(css, /@keyframes av-spin\{to\{transform:rotate\(360deg\)\}\}/);
 });
 test('Aurora glow is outside only (hollow mask), badge is glass with a ping wave, caption sits inside the circle on hover, avatar floats', () => {
