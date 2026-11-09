@@ -1640,6 +1640,30 @@ async function enrollmentStartAction(req, res) {
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
 
+// ভর্তি হওয়া মডিউলের ছাড় বদলানো — টাকা বা শতাংশে। আগে প্রিভিউ (আগের / নতুন হিসাব), তারপর সংরক্ষণ; ফি-র বেশি ছাড় হয় না।
+// মাসিক মডিউলে ছাড় প্রতি মাসের ফি থেকে কমে, আর আগের মাসগুলোও নতুন হারে ধরা হয়; আগের পেমেন্ট যেমন ছিল তেমনই থাকে।
+async function enrollmentDiscountAction(req, res) {
+  const input = await readBody(req);
+  const e = db.enrollments.find(x => x.id === str(input?.id, 60));
+  const s = e && db.students.find(x => x.id === e.studentId);
+  if (!s) return send(res, 404, { error: "মডিউলে ভর্তির রেকর্ড পাওয়া যায়নি" });
+  const fee = num(e.fee), value = num(input.value), percent = input.mode === "percent";
+  if (!(value >= 0) || (percent && value > 100)) return send(res, 400, { error: percent ? "শতাংশ ০ থেকে ১০০-র মধ্যে দিন" : "ছাড় ০ বা তার বেশি দিন" });
+  const discount = Math.min(fee, Math.max(0, Math.round(percent ? fee * value / 100 : value)));
+  const before = enrollmentDue(e), after = enrollmentDue({ ...e, discount }), fees = feeSummary(s);
+  const result = { fee, current: { discount: num(e.discount), due: before.due, net: before.net }, proposed: { discount, percent: fee ? Math.round(discount / fee * 1000) / 10 : 0, due: after.due, net: after.net, monthly: !!after.monthly, balance: fees.balance - before.due + after.due } };
+  const token = crypto.createHash("sha256").update(JSON.stringify({ enrollment: e, result })).digest("hex");
+  if (input.commit !== true) return send(res, 200, { ...result, token });
+  if (input.token !== token) return send(res, 409, { error: "হিসাব বদলেছে। আবার প্রিভিউ দেখে সংরক্ষণ করুন" });
+  const original = JSON.stringify(db);
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-fee-discount-${Date.now()}.json`));
+  try {
+    e.discountHistory = [...(e.discountHistory || []), { from: num(e.discount), to: discount, at: new Date().toISOString() }].slice(-50);
+    e.discount = discount; e.updatedAt = new Date().toISOString(); saveDb();
+    return send(res, 200, { ok: true, ...result, fees: feeSummary(s) });
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
+}
+
 // Gallery bulk deletion keeps private copies before removing the public records.
 async function galleryDeleteAction(req, res) {
   const body = await readBody(req, 1024 * 1024);
@@ -3020,6 +3044,7 @@ async function api(req, res, url) {
   if (p === "/api/admin/admission-import" && m === "POST") return admissionImportAction(req, res);
   if (p === "/api/admin/gallery-delete" && m === "POST") return galleryDeleteAction(req, res);
   if (p === "/api/admin/enrollment-start" && m === "POST") return enrollmentStartAction(req, res);
+  if (p === "/api/admin/enrollment-discount" && m === "POST") return enrollmentDiscountAction(req, res);
 
   // ভর্তি (নতুন শিক্ষার্থী বা অনলাইন আবেদন থেকে): শিক্ষার্থী + মডিউলে ভর্তি + জমা
   if (p === "/api/admin/admit" && m === "POST") {

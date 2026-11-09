@@ -1165,6 +1165,7 @@ ${list.map(receiptHtml).join("")}
             <label>কোর্স শুরুর তারিখ${mode !== "enroll" ? ' <small>(ভর্তির তারিখ অনুযায়ী)</small>' : ""}<input type="date" name="startDate" value="${esc(mode === "enroll" ? U.today() : vals.admissionDate || U.today())}"${mode !== "enroll" || replacing ? " readonly" : ""}></label>
             <label>কোর্স শেষ হওয়ার তারিখ <small style="color:var(--muted);font-weight:400">(ঐচ্ছিক)</small><input type="date" name="planEnd"></label>
             <label>ডিসকাউন্ট (৳)<input type="number" name="discount" min="0" value="0"></label>
+            <label>অথবা ডিসকাউন্ট (%) <small style="color:var(--muted);font-weight:400">— দিলে টাকার ঘর নিজে ভরে</small><input type="number" name="discountPct" min="0" max="100" step="any" placeholder="যেমন: 50"></label>
             <label>এখন জমা (৳)<input type="number" name="paid" min="0" value="0"></label>
             <label>পেমেন্ট পদ্ধতি<select name="method">${opt(METHODS, "নগদ")}</select></label>
           </div>
@@ -1262,7 +1263,12 @@ ${list.map(receiptHtml).join("")}
       if (e.target.closest && e.target.closest("#chapterBox")) { pick.chapters = $$("#chapterBox input:checked").map((x) => x.value); drawFee(); }
       if (["batchId", "session", "startDate", "admissionDate"].includes(e.target.name)) drawFee(); // ব্যাচের দিন / শুরুর তারিখ বদলালে প্রথম মাসের ফি আবার হিসাব
     });
-    form.addEventListener("input", (e) => { $("#admErr").textContent = ""; if (["discount", "paid"].includes(e.target.name)) drawFee(); });
+    form.addEventListener("input", (e) => {
+      $("#admErr").textContent = "";
+      if (e.target.name === "discountPct") { const fee = calc().fee, pct = Math.min(100, Math.max(0, Number(e.target.value) || 0)); q("discount").value = fee ? Math.round(fee * pct / 100) : 0; }
+      else if (e.target.name === "discount" && q("discountPct")) q("discountPct").value = "";
+      if (["discount", "discountPct", "paid"].includes(e.target.name)) drawFee();
+    });
     // সম্পর্ক "বাবা" বা "মা" হলে অভিভাবকের নাম ও নাম্বার নিজে থেকে বসে যায়
     const syncGuardian = () => {
       if (!q("guardianRelation")) return;
@@ -1447,6 +1453,45 @@ ${list.map(receiptHtml).join("")}
   }
 
   // ---------- শিক্ষার্থী ----------
+  // ভর্তি হওয়া মডিউলের ছাড় — শতাংশ বা টাকায়; "নতুন হিসাব দেখুন" চাপলে আগের/নতুন ফি আর বকেয়া দেখায়, তারপর সংরক্ষণ
+  function editEnrollmentDiscount(student, enrollmentId) {
+    const e = DB.enrollments.find(x => x.id === enrollmentId);
+    if (!e) return;
+    const fee = Number(e.fee) || 0, cur = Number(e.discount) || 0, curPct = fee ? Math.round(cur / fee * 1000) / 10 : 0, monthly = courseById(e.courseId)?.feeType === "monthly";
+    let preview = null;
+    openModal({
+      title: "ফি-র ছাড় বদলান",
+      body: `<p><b>${esc(student.name)}</b> · ${esc(courseById(e.courseId)?.name || "")}</p>
+        <p>ফি: <b>${money(fee)}${monthly ? "/মাস" : ""}</b> · এখনকার ছাড়: <b>${money(cur)}</b>${cur ? ` (${bn(curPct)}%)` : ""}</p>
+        <div class="fgrid"><label>ছাড়ের ধরন<select id="dscMode"><option value="percent">শতাংশ (%) — যেমন ৫০%</option><option value="taka">টাকা (৳)</option></select></label>
+        <label>ছাড়<input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div>
+        <div class="toolbar"><button type="button" class="btn gold" id="dscPrev">নতুন হিসাব দেখুন</button></div><div id="dscRes" aria-live="polite"></div>`,
+      saveText: "ছাড় সংরক্ষণ",
+      onSave: async () => {
+        if (!preview) throw new Error("আগে নতুন হিসাব দেখুন");
+        await api("/api/admin/enrollment-discount", { body: { id: e.id, mode: $("#dscMode").value, value: Number($("#dscVal").value), commit: true, token: preview.token } });
+        await load(); viewStudent(student.id); toast("ছাড় সংরক্ষণ হয়েছে — বকেয়া নতুন হিসাবে বদলেছে"); return true;
+      },
+    });
+    $("#modalSave").disabled = true;
+    const reset = () => { preview = null; $("#modalSave").disabled = true; $("#dscRes").textContent = ""; };
+    $("#dscMode").onchange = () => { $("#dscVal").value = $("#dscMode").value === "percent" ? (curPct || "") : (cur || ""); reset(); };
+    $("#dscVal").oninput = reset;
+    $("#dscPrev").onclick = async () => {
+      const btn = $("#dscPrev"); btn.disabled = true; $("#modalErr").textContent = ""; reset();
+      try {
+        const r = await api("/api/admin/enrollment-discount", { body: { id: e.id, mode: $("#dscMode").value, value: Number($("#dscVal").value) } });
+        preview = r; const p = r.proposed;
+        $("#dscRes").innerHTML = `<div class="fee-sum"><p>নতুন ছাড়: <b>${money(p.discount)}</b> (${bn(p.percent)}%)</p>
+          <p>${monthly ? "মাসিক ফি" : "ফি (ছাড়ের পর)"}: <b>${money(r.current.net)}</b> → <b>${money(p.net)}</b>${monthly ? "/মাস" : ""}</p>
+          <p>এখন পর্যন্ত মোট দেনা: <b>${money(r.current.due)}</b> → <b>${money(p.due)}</b></p>
+          <p>নতুন বকেয়া: <b>${p.balance > 0 ? money(p.balance) : p.balance < 0 ? "অগ্রিম " + money(-p.balance) : "নেই"}</b></p>
+          ${monthly ? "<small>আগের মাসগুলোতেও নতুন হারে ফি ধরা হবে; আগের পেমেন্ট যেমন ছিল তেমনই থাকবে।</small>" : ""}</div>`;
+        $("#modalSave").disabled = false;
+      } catch (er) { $("#modalErr").textContent = er.message; }
+      finally { btn.disabled = false; }
+    };
+  }
   function correctEnrollmentStart(student, enrollmentId) {
     const e = DB.enrollments.find(x => x.id === enrollmentId);
     if (!e) return;
@@ -1640,7 +1685,7 @@ ${list.map(receiptHtml).join("")}
         <div class="tbl-wrap"><table><thead><tr><th>মডিউল</th><th>শুরু</th><th class="num">ফি</th><th class="num">ছাড়</th><th class="num">মোট দেনা</th><th></th></tr></thead><tbody>
           ${f.items.map((it) => { const m = courseById(it.courseId) || {}; return `<tr><td><b>${esc(it.course)}</b> ${it.status === "ended" ? '<span class="chip">শেষ</span>' : ""}${it.chapters.length ? `<small>${esc(chapterNames(m, it.chapters).join(", "))}</small>` : ""}</td><td>${U.date(it.startDate)}</td>
             <td class="num">${money(it.fee)}${it.monthly ? "/মাস" : ""}</td><td class="num">${it.discount ? money(it.discount) : "—"}</td><td class="num">${money(it.due)}${it.monthly ? `<small>${bn(it.months)} মাস</small>${feeAdjustHtml(it)}` : ""}</td>
-            <td class="num">${it.monthly ? `<button type="button" class="btn sm line" data-start="${it.enrollmentId}">শুরুর তারিখ সংশোধন</button> ` : ""}${it.monthly && it.status === "active" ? `<button type="button" class="btn sm line" data-end="${it.enrollmentId}">শেষ করুন</button>` : ""}</td></tr>`; }).join("") || '<tr><td colspan="6" class="empty">কোনো মডিউলে ভর্তি নেই</td></tr>'}
+            <td class="num"><button type="button" class="btn sm line" data-disc="${it.enrollmentId}">ছাড় বদলান</button> ${it.monthly ? `<button type="button" class="btn sm line" data-start="${it.enrollmentId}">শুরুর তারিখ সংশোধন</button> ` : ""}${it.monthly && it.status === "active" ? `<button type="button" class="btn sm line" data-end="${it.enrollmentId}">শেষ করুন</button>` : ""}</td></tr>`; }).join("") || '<tr><td colspan="6" class="empty">কোনো মডিউলে ভর্তি নেই</td></tr>'}
           <tr><td colspan="4"><b>মোট</b> · পরিশোধ ${money(f.paid)}</td><td class="num" colspan="2">${balanceChip(f)}</td></tr>
         </tbody></table></div>
         <div class="pin-box">লগইন PIN: <b id="pinVal">${esc(s.pin)}</b><button type="button" class="btn sm line" id="pinReset">নতুন PIN</button><button type="button" class="btn sm line" id="pinSms">SMS পাঠান</button><small id="pinSmsNote">${esc(loginSmsNote(s))}</small></div>
@@ -1656,6 +1701,7 @@ ${list.map(receiptHtml).join("")}
     $("#pinSms").onclick = () => { if (confirm(`${s.name}-কে আইডি আর PIN SMS-এ পাঠাবেন?`)) resendLogin(s, $("#pinSmsNote")); };
     if ($("#viewProfileChanges")) $("#viewProfileChanges").onclick=()=>reviewProfileChanges(s.id);
     $$("#modalBody [data-start]").forEach(button => { button.onclick = () => correctEnrollmentStart(s, button.dataset.start); });
+    $$("#modalBody [data-disc]").forEach(button => { button.onclick = () => editEnrollmentDiscount(s, button.dataset.disc); });
     $$("#modalBody [data-photo-review]").forEach(button => { button.onclick = async () => {
       if (!confirm(button.dataset.photoReview === "approve" ? "এই ছবিটি অনুমোদন করবেন?" : "এই ছবিটি অনুমোদন না দিয়ে ফেরত দেবেন?")) return;
       $$("#modalBody [data-photo-review]").forEach(b => b.disabled = true);
