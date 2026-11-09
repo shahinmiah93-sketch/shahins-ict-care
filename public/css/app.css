@@ -906,6 +906,7 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-note-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}.ab-note-row select{flex:1 1 170px;min-width:0}.ab-note-row input.ab-note{flex:2 1 240px;min-width:0}.ab-fu-wrap{flex:1 1 230px;min-width:0}
 .ab-note-row select,.ab-note-row input{width:100%}.ab-fu-wrap{display:grid;gap:3px}.ab-fu-wrap[hidden]{display:none}
 .ab-warn{color:#b4233c;font-weight:600}
+.ab-info{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:#eaf3ff;border:1px solid #bcd6f5;color:#16406f;line-height:1.7}.ab-lastd{font-weight:500;color:#586b83}
 .ab-st button.stop{border-style:dashed;color:#8a1f2b;background:#fff7f7}.ab-st button.stop:hover{background:#ffeaec}
 .ab-stop{display:grid;gap:10px;padding:14px;border:1px solid #f1b0b6;border-radius:14px;background:#fff7f7}.ab-stop[hidden]{display:none}
 .ab-opt{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid #ead3d5;border-radius:12px;background:#fff;cursor:pointer}
