@@ -1431,6 +1431,7 @@ ${list.map(receiptHtml).join("")}
         <div class="mny"><small>জমা</small><b>${money(pay ? pay.amount : 0)}</b></div>
         <div class="mny ${s.fees.balance > 0 ? "due" : ""}"><small>মোট বকেয়া</small><b>${money(Math.max(0, s.fees.balance))}</b></div>
       </div>
+      ${enrolled || !DB.attendance[`${U.today()}|${s.batchId}`] ? "" : `<div class="adm-att" style="margin:12px auto;padding:10px 14px;border:1px dashed #c9a24a;border-radius:12px;max-width:460px;background:#fffaf0"><b>আজ (${esc(U.date(U.today()))}) এই ব্যাচের হাজিরা আগেই নেওয়া হয়ে গেছে।</b><br><small>${esc(s.name)} কি আজ ক্লাসে এসেছিল?</small><div class="toolbar" style="justify-content:center;margin:8px 0 0"><button type="button" class="btn line" id="dnAttP" data-st="P">✓ হ্যাঁ, এসেছিল</button><button type="button" class="btn line" id="dnAttA" data-st="A">✗ না, আসেনি</button></div><small id="dnAttNote" class="muted"></small></div>`}
       ${enrolled ? "" : `<p class="muted"><span id="dnSmsNote">${esc(loginSmsNote(s))}</span> — এটা দিয়ে শিক্ষার্থী প্যানেলে লগইন করবে।</p>`}
       <div class="toolbar" style="justify-content:center">
         ${pay ? '<button type="button" class="btn gold" id="dnRec">রসিদ প্রিন্ট</button>' : '<button type="button" class="btn gold" id="dnPay">৳ পেমেন্ট নিন</button>'}
@@ -1440,6 +1441,17 @@ ${list.map(receiptHtml).join("")}
         <button type="button" class="btn line" id="dnView">প্রোফাইল</button>
         <a class="btn line" href="${esc(newAdmissionHref({ session: s.session, batch: s.batchId }))}" id="dnNew">+ আরেকজন ভর্তি</a>
       </div></div>`;
+    $$("#dnAttP,#dnAttA").forEach((btn) => btn.onclick = async () => {
+      const st = btn.dataset.st, note = $("#dnAttNote");
+      $$("#dnAttP,#dnAttA").forEach((x) => x.disabled = true);
+      try {
+        await api("/api/admin/attendance-one", { body: { studentId: s.id, status: st } });
+        const key = `${U.today()}|${s.batchId}`; DB.attendance[key] = { ...(DB.attendance[key] || {}), [s.id]: st };
+        note.textContent = st === "P" ? "✓ আজ উপস্থিত লেখা হয়েছে" : "✗ আজ অনুপস্থিত লেখা হয়েছে";
+        $("#dnAttP").classList.toggle("gold", st === "P"); $("#dnAttA").classList.toggle("gold", st === "A");
+      } catch (e) { toast(e.message, true); }
+      $$("#dnAttP,#dnAttA").forEach((x) => x.disabled = false);
+    });
     const rec = $("#dnRec"); if (rec) rec.onclick = () => printReceipt(pay);
     const dp = $("#dnPay"); if (dp) dp.onclick = () => paymentForm(s.id);
     const dnSms = $("#dnSms"); if (dnSms) dnSms.onclick = () => resendLogin(s, $("#dnSmsNote"));

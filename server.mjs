@@ -3010,6 +3010,19 @@ async function api(req, res, url) {
     saveDb();
     return send(res, 200, { ok: true });
   }
+  // একজন শিক্ষার্থীর আজকের হাজিরা (ভর্তির পর) — ব্যাচের বাকিদের হাজিরা যেমন আছে তেমনই থাকে
+  if (p === "/api/admin/attendance-one" && m === "POST") {
+    const b = await readBody(req);
+    const s = db.students.find((x) => x.id === str(b.studentId, 40));
+    if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
+    const st = b.status === "P" || b.status === "A" ? b.status : "";
+    const key = `${today()}|${s.batchId}`;
+    const marks = { ...(db.attendance[key] || {}) };
+    if (st) marks[s.id] = st; else delete marks[s.id];
+    if (Object.keys(marks).length) db.attendance[key] = marks; else delete db.attendance[key];
+    saveDb();
+    return send(res, 200, { ok: true, date: today(), status: st });
+  }
   // আইডি / মোবাইল আর PIN আবার SMS-এ
   if (p === "/api/admin/login-sms" && m === "POST") {
     const b = await readBody(req), learner = b.kind === "learner";
