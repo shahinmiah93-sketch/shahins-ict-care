@@ -17,8 +17,8 @@ test('Original photo must be a real JPEG within 1.5 MB', () => {
   assert.equal(check(''), null);
 });
 test('Original is stored with the pending photo and promoted on approval; fallback and download work', () => {
-  assert.match(source, /ofile = photoFile\("po", student\.id\)/);
-  assert.match(source, /if \(orig\) fs\.writeFileSync\(ofile, orig\); else removePhoto\("po", student\.id\);/);
+  assert.match(source, /ofile = photoFile\("o", student\.id\)/);                                   // এখন সরাসরি মূল ছবি হিসেবে জমা (অনুমোদন ছাড়া)
+  assert.match(source, /if \(orig\) fs\.writeFileSync\(ofile, orig\); else removePhoto\("o", student\.id\);/);
   assert.match(source, /fs\.copyFileSync\(po, photoFile\("o", student\.id\)\); else removePhoto\("o", student\.id\);/);
   assert.match(source, /function sendPhoto\(res, kind, id, opts = \{\}\)/);
   assert.match(source, /opts\.fallback/);

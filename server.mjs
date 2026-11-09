@@ -1839,20 +1839,31 @@ async function reviewStudentProfile(req, res) {
   } catch(error) { Object.keys(student).forEach(k=>delete student[k]); Object.assign(student,JSON.parse(original)); throw error; }
   return send(res,200,{ok:true});
 }
+// শিক্ষার্থীর নিজের ছবি দেওয়া — অনুমোদন ছাড়াই সাথে সাথে চালু হয় (প্রথমবার বা বদলে)। আগের ছবি ব্যাকআপে থাকে; দিনে সর্বোচ্চ ১০ বার।
 async function studentPhotoRequest(req, res, student) {
   const b = await readBody(req, 3 * 1024 * 1024);
   const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.photo || ""));
   const bytes = match && Buffer.from(match[1], "base64");
   if (!bytes || bytes.length < 100 || bytes.length > 400 * 1024 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[2] !== 255) return send(res, 400, { error: "সঠিক JPG ছবি দিন (৪০০ KB-এর মধ্যে)" });
-  const file = photoFile("p", student.id), old = fs.existsSync(file) ? fs.readFileSync(file) : null, ofile = photoFile("po", student.id), oldO = fs.existsSync(ofile) ? fs.readFileSync(ofile) : null, orig = originalBytes(b.original);
-  const original = JSON.stringify(student);
+  const now = Date.now(), recent = (student.photoUploads || []).filter((t) => now - Date.parse(t) < 864e5);
+  if (recent.length >= 10) return send(res, 429, { error: "আজ অনেকবার ছবি বদলানো হয়েছে — কাল আবার চেষ্টা করুন" });
+  const file = photoFile("s", student.id), ofile = photoFile("o", student.id);
+  const old = fs.existsSync(file) ? fs.readFileSync(file) : null, oldO = fs.existsSync(ofile) ? fs.readFileSync(ofile) : null, orig = originalBytes(b.original), snapshot = JSON.stringify(student);
   try {
+    if (old) fs.writeFileSync(path.join(BACKUPS, `photo-self-${now}-${student.id}-previous.jpg`), old);
     fs.writeFileSync(file, bytes);
-    if (orig) fs.writeFileSync(ofile, orig); else removePhoto("po", student.id);
-    student.pendingPhoto = { version: uid("photo"), submittedAt: new Date().toISOString() };
-    delete student.photoReview; saveDb();
-    return send(res, 200, { ok: true, pendingPhoto: student.pendingPhoto });
-  } catch (error) { Object.keys(student).forEach(k => delete student[k]); Object.assign(student, JSON.parse(original)); if (old) fs.writeFileSync(file, old); else removePhoto("p", student.id); if (oldO) fs.writeFileSync(ofile, oldO); else removePhoto("po", student.id); throw error; }
+    if (orig) fs.writeFileSync(ofile, orig); else removePhoto("o", student.id);
+    const at = new Date(now).toISOString();
+    student.photo = true; student.photoReview = { status: "approved", at, auto: true }; student.photoUploads = [...recent, at];
+    delete student.pendingPhoto; removePhoto("p", student.id); removePhoto("po", student.id);
+    saveDb();
+    return send(res, 200, { ok: true, photo: true });
+  } catch (error) {
+    Object.keys(student).forEach((k) => delete student[k]); Object.assign(student, JSON.parse(snapshot));
+    if (old) fs.writeFileSync(file, old); else removePhoto("s", student.id);
+    if (oldO) fs.writeFileSync(ofile, oldO); else removePhoto("o", student.id);
+    throw error;
+  }
 }
 // অনুমোদিত ছবিটাই সরিয়ে / ছোট-বড় করে ঠিক করা — নতুন ছবি নয়, তাই অনুমোদন লাগে না। অনুমোদিত ছবি থাকতে হবে; দিনে সর্বোচ্চ ৫ বার
 async function studentPhotoAdjust(req, res, student) {

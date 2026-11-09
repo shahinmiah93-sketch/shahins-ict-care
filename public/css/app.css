@@ -1009,16 +1009,6 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .rt-area h2{margin:18px 0 8px;color:#fff;font:800 24px/1.45 var(--sans,inherit)}.rt-area h3{margin:14px 0 6px;color:#f3c55d;font:800 19px/1.5 var(--sans,inherit)}
 .rt-area ul,.rt-area ol{margin:0 0 12px;padding-left:1.5em}.rt-area hr{border:0;height:1px;background:rgba(255,255,255,.2);margin:16px 0}
 .rt-note{display:block;margin-top:6px;color:var(--muted,#667085)}
-/* শিক্ষার্থীর প্রোফাইল ছবি — গোল, সোনালি রিং, ক্যামেরা ব্যাজ (ফেসবুকের মতো) */
-.stu-hero #av.avatar{width:112px;height:112px;border-radius:50%!important;padding:0;overflow:visible;border:4px solid #fff!important;background-color:#dfe8f5;
-  box-shadow:0 0 24px rgba(243,197,93,.35),0 14px 30px rgba(3,10,35,.45)!important;transition:transform .2s,box-shadow .2s}
-.stu-hero #av.avatar:not(:disabled):hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 34px rgba(243,197,93,.5),0 18px 34px rgba(3,10,35,.5)!important}
-.stu-hero #av.avatar:focus-visible{outline:3px solid #fff;outline-offset:6px}
-#av .av-cam{position:absolute;right:-2px;bottom:2px;left:auto;top:auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#ffe6a8,#f3c55d);color:#2b1c00;border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.35);line-height:1}
-#av .av-cam svg{width:17px;height:17px}
-#av .av-tip{position:absolute;left:50%;bottom:-34px;right:auto;top:auto;transform:translateX(-50%) translateY(4px);white-space:nowrap;padding:5px 11px;border-radius:999px;background:#102b55;color:#fff;font:600 12px/1.4 var(--sans,inherit);opacity:0;pointer-events:none;transition:.2s}
-#av:hover .av-tip,#av:focus-visible .av-tip{opacity:1;transform:translateX(-50%)}
-@media(max-width:650px){.stu-hero{grid-template-columns:84px minmax(0,1fr)}.stu-hero #av.avatar{width:80px;height:80px;border-width:3px!important;box-shadow:0 0 18px rgba(243,197,93,.35),0 10px 22px rgba(3,10,35,.45)!important}.stu-hero #av.avatar::before{inset:-5px;padding:4px}#av .av-cam{width:28px;height:28px;border-width:2px}#av .av-cam svg{width:14px;height:14px}#av .av-tip{display:none}}
 /* SMS খরচের হিসাব */
 .sc-pres{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .sc-pre,.sc-view{padding:7px 14px;border:1px solid var(--line,#d9dee7);border-radius:999px;background:#fff;color:#1b2430;font:600 14px var(--sans,inherit);cursor:pointer}
@@ -1057,11 +1047,37 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .student-photo-dialog label small{font-weight:500;color:#617383}
 .pay-sug{display:grid;gap:6px;margin-top:-6px}.pay-sug:empty{display:none}
 .pay-sug .btn{justify-content:flex-start;text-align:left;font-weight:500}.pay-sug .btn small{color:var(--muted,#667085);margin-left:6px}
-/* প্রোফাইল ছবির চারপাশের রিং: গ্রেডিয়েন্ট, ঘুরতে থাকে (ফাঁপা রিং — মাঝের ছবি ঢাকে না) */
+/* শিক্ষার্থীর প্রোফাইল ছবি — অরোরা আভা, ঘুরন্ত ধূমকেতু-রিং, গ্লাস ক্যামেরা ব্যাজ, ছবির ভেতরে ক্যাপশন; ভাসমান */
+.stu-hero #av.avatar{--av:112px;width:var(--av);height:var(--av);border-radius:50%!important;padding:0;overflow:visible;position:relative;border:4px solid #fff!important;background-color:#dfe8f5;
+  box-shadow:inset 0 0 0 1px rgba(10,25,60,.12),inset 0 -12px 20px rgba(8,20,60,.26),0 18px 36px rgba(3,10,35,.5)!important;
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;animation:av-float 6s ease-in-out infinite}
+.stu-hero #av.avatar:not(:disabled):hover{transform:scale(1.06);box-shadow:inset 0 0 0 1px rgba(10,25,60,.12),inset 0 -46px 40px rgba(8,20,55,.6),0 24px 44px rgba(3,10,35,.55)!important}
+.stu-hero #av.avatar:focus-visible{outline:3px solid #fff;outline-offset:8px}
+/* বাইরের অরোরা আভা (ফাঁপা — ছবি ঢাকে না) */
+.stu-hero #av.avatar::after{content:"";position:absolute;inset:-26px;border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 90deg,#f3c55d,#ff6b9d,#b794f6,#63b3ff,#4fd1c5,#9be564,#f3c55d);filter:blur(14px);opacity:.6;
+  -webkit-mask:radial-gradient(closest-side,transparent 72%,#000 79%,#000 84%,transparent 100%);mask:radial-gradient(closest-side,transparent 72%,#000 79%,#000 84%,transparent 100%);
+  animation:av-spin 9s linear infinite reverse}
+/* ঘুরন্ত রঙিন রিং + তার ওপর উজ্জ্বল আলোর টান */
 .stu-hero #av.avatar::before{content:"";position:absolute;inset:-9px;border-radius:50%;padding:5px;pointer-events:none;
-  background:conic-gradient(#f3c55d,#ff9f43,#ff6b9d,#b794f6,#63b3ff,#4fd1c5,#9be564,#f3c55d);
+  background:conic-gradient(transparent 0 78%,rgba(255,255,255,.95) 94%,transparent 100%),conic-gradient(#f3c55d,#ff9f43,#ff6b9d,#b794f6,#63b3ff,#4fd1c5,#9be564,#f3c55d);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
-  animation:av-ring-spin 5s linear infinite}
+  animation:av-spin 5s linear infinite}
 .stu-hero #av.avatar:not(:disabled):hover::before{animation-duration:2s}
-@keyframes av-ring-spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.stu-hero #av.avatar::before{animation:none}}
+/* ক্যামেরা ব্যাজ: কাঁচের মতো সোনালি, চারপাশে ধীরে ছড়ানো ঢেউ — চাপলে ছবি বদলানো যায় বোঝাতে */
+#av .av-cam{position:absolute;right:-5px;bottom:-1px;left:auto;top:auto;z-index:3;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;line-height:1;
+  background:linear-gradient(145deg,#fff2c6,#f3c55d 55%,#df9a1c);color:#2b1c00;border:3px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.75)}
+#av .av-cam svg{width:18px;height:18px}
+#av .av-cam::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid rgba(243,197,93,.85);pointer-events:none;animation:av-ping 2.6s ease-out infinite}
+/* "ছবি বদলান" ক্যাপশন: মাউস নিলে ছবির নিচের দিকে কাঁচের পিলে ভেসে ওঠে */
+#av .av-tip{position:absolute;left:50%;bottom:13px;top:auto;right:auto;z-index:2;transform:translate(-50%,8px);white-space:nowrap;padding:5px 13px;border-radius:999px;
+  background:rgba(8,20,55,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.42);color:#fff;font:700 12.5px/1.4 var(--sans,inherit);
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#av:hover .av-tip,#av:focus-visible .av-tip{opacity:1;transform:translate(-50%,0)}
+@keyframes av-spin{to{transform:rotate(360deg)}}
+@keyframes av-float{50%{translate:0 -4px}}
+@keyframes av-ping{0%{transform:scale(.92);opacity:.9}75%,100%{transform:scale(1.55);opacity:0}}
+@media(max-width:650px){.stu-hero{grid-template-columns:84px minmax(0,1fr)}.stu-hero #av.avatar{--av:80px;border-width:3px!important}
+  .stu-hero #av.avatar::after{inset:-18px;filter:blur(10px)}.stu-hero #av.avatar::before{inset:-5px;padding:4px}
+  #av .av-cam{width:28px;height:28px;border-width:2px;right:-4px}#av .av-cam svg{width:14px;height:14px}#av .av-tip{display:none}}
+@media(prefers-reduced-motion:reduce){.stu-hero #av.avatar,.stu-hero #av.avatar::before,.stu-hero #av.avatar::after,#av .av-cam::after{animation:none}}
