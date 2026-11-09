@@ -10,6 +10,12 @@ test('Payment form finds a student by ID, name or any of the four mobile numbers
   assert.match(admin, /normQ\(t\)\.includes\(q\)/);                          // বাংলা / ইংরেজি অঙ্ক দুভাবেই নামে মেলে
   assert.match(admin, /exact\.length\) return exact/);                       // আইডি হুবহু মিললে একজনই
 });
+test('Once a student is found, the name is shown big in a highlighted card (tick, name, ID · batch, dues)', () => {
+  assert.match(admin, /<div class="pay-who"><span class="pay-tick" aria-hidden="true">✓<\/span><b>\$\{esc\(s\.name\)\}<\/b>/);
+  assert.match(admin, /id="payInfo" class="wide"/);
+  assert.match(admin, /<span class="pay-due bad">বকেয়া <b>\$\{money\(bal\)\}<\/b><\/span>/);        // বকেয়া বড় লাল ব্যাজে
+  assert.match(admin, /<span class="pay-due ok">অগ্রিম/); assert.match(admin, /<span class="pay-due ok">বকেয়া নেই<\/span>/);
+});
 test('One match selects the student; several show a pick list; Enter takes the first', () => {
   assert.match(admin, /sel\.value = matches\.length === 1 \? matches\[0\]\.id : ""/);
   assert.match(admin, /data-pick=/);

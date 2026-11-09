@@ -2114,7 +2114,7 @@ ${list.map(receiptHtml).join("")}
         { name: "idQ", label: "আইডি, নাম বা মোবাইল লিখুন", placeholder: "যেমন: 270001, রাহিম বা 017…" },
         { name: "studentId", label: "শিক্ষার্থী", type: "select", options: [["", "বেছে নিন"], ...studs], required: true },
         { type: "html", html: '<div id="paySug" class="wide pay-sug"></div>' },
-        { type: "html", html: '<div id="payInfo" style="color:var(--muted)"></div>' },
+        { type: "html", html: '<div id="payInfo" class="wide" style="color:var(--muted)"></div>' },
         { name: "enrollmentId", label: "কোন মডিউলের ফি", type: "select", options: [["", "সাধারণ"]], wide: true },
         { name: "amount", label: "টাকার পরিমাণ (নগদ জমা)", type: "number", min: 0, required: true },
         { name: "discount", label: "ছাড় (টাকা) — ঐচ্ছিক", type: "number", min: 0, placeholder: "ছাড় দিলে লিখুন" },
@@ -2161,7 +2161,7 @@ ${list.map(receiptHtml).join("")}
     };
     const info = () => {
       const s = studentById(sel.value), typed = idQ.value.trim();
-      $("#payInfo").innerHTML = s ? `${esc(s.session || "")} · ${esc(batchName(s.batchId))} · ${balanceChip(s.fees)}` : typed ? (matches.length > 1 ? `<span style="color:var(--muted)">${matches.length}জন মিলেছে — নিচ থেকে শিক্ষার্থী বেছে নিন</span>` : `<span style="color:var(--bad)">এই আইডি / নাম / মোবাইলের কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি</span>`) : "";
+      $("#payInfo").innerHTML = s ? `<div class="pay-who"><span class="pay-tick" aria-hidden="true">✓</span><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(s.session || "")} · ${esc(batchName(s.batchId))}</small>${(() => { const bal = Number(s.fees && s.fees.balance) || 0; return bal > 0 ? `<span class="pay-due bad">বকেয়া <b>${money(bal)}</b></span>` : bal < 0 ? `<span class="pay-due ok">অগ্রিম <b>${money(-bal)}</b></span>` : '<span class="pay-due ok">বকেয়া নেই</span>'; })()}</div>` : typed ? (matches.length > 1 ? `<span style="color:var(--muted)">${matches.length}জন মিলেছে — নিচ থেকে শিক্ষার্থী বেছে নিন</span>` : `<span style="color:var(--bad)">এই আইডি / নাম / মোবাইলের কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি</span>`) : "";
       es.innerHTML = opt([["", "সাধারণ"], ...(s ? s.fees.items.filter((i) => i.status === "active").map((i) => [i.enrollmentId, `${i.course} — ${money(i.net)}${i.monthly ? "/মাস" : ""}`]) : [])], s && s.fees.items[0] ? s.fees.items[0].enrollmentId : "");
       const it = s && s.fees.items.find((i) => i.enrollmentId === es.value);
       if (s && !amt.value) { base = Math.max(0, Math.min(s.fees.balance, it && it.monthly ? it.net : s.fees.balance)); touched = false; amt.value = base ? String(Math.max(0, base - (Number(dsc.value) || 0))) : ""; }
