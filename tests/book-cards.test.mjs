@@ -17,6 +17,11 @@ test('Cover boxes have a fixed size whatever the image: image is absolutely posi
   assert.match(css, /\.bk-cv img\{position:absolute;inset:0;width:100%;height:100%;object-fit:cover/);
   assert.match(css, /\.bk-cv-ph\{position:absolute;inset:0;/);
 });
+test('Admin book form tells the best cover size (3:4, 900×1200) and warns about cropping', () => {
+  const admin = fs.readFileSync(new URL('../public/js/admin-books.js', import.meta.url), 'utf8');
+  assert.match(admin, /খাড়া, ৩:৪ — সবচেয়ে ভালো ৯০০ × ১২০০ পিক্সেল/);
+  assert.match(admin, /অন্য মাপ দিলে কিনারা কেটে যায়/);
+});
 test('Popup can add to cart and fits the screen', () => {
   assert.match(js, /bk-dadd/);
   assert.match(css, /\.bk-dlg\{[^}]*max-height:calc\(100vh - 24px\)/);

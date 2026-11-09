@@ -67,7 +67,7 @@ window.SICBooks = function (X) {
         { name: "lowStock", label: "কতটায় নামলে \"কম আছে\" দেখাবে", type: "number", min: 0 },
         ...(b ? [] : [{ name: "opening", label: "এখন স্টকে কতটি আছে", type: "number", min: 0 }]),
         { name: "short", label: "ছোট বিবরণ (ওয়েবসাইটে দেখায়)", type: "textarea", wide: true },
-        { type: "html", html: `<label class="wide">কভার ছবি <small style="color:var(--muted);font-weight:400">JPG / PNG, ৮ MB পর্যন্ত${b && b.image ? " — না দিলে আগেরটাই থাকবে" : ""}</small><input type="file" accept="image/jpeg,image/png,image/webp" id="bkCover"></label>` },
+        { type: "html", html: `<label class="wide">কভার ছবি <b>(খাড়া, ৩:৪ — সবচেয়ে ভালো ৯০০ × ১২০০ পিক্সেল)</b> <small style="color:var(--muted);font-weight:400">JPG / PNG, ৮ MB পর্যন্ত${b && b.image ? " — না দিলে আগেরটাই থাকবে" : ""}</small><small style="display:block;color:var(--muted);font-weight:400;margin:2px 0 4px">ওয়েবসাইটে সব বইয়ের ছবি ৩:৪ ফ্রেমে বসে — অন্য মাপ দিলে কিনারা কেটে যায়, তাই নাম ও গুরুত্বপূর্ণ লেখা ছবির মাঝখানে রাখুন।</small><input type="file" accept="image/jpeg,image/png,image/webp" id="bkCover"></label>` },
         { name: "online", label: "ওয়েবসাইটে অনলাইন অর্ডার চালু", type: "check" },
         { name: "active", label: "চালু (বন্ধ করলে বিক্রি / অর্ডারে আসে না, হিসাব থাকে)", type: "check" },
       ],
