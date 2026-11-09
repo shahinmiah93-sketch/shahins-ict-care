@@ -1903,6 +1903,13 @@ async function reviewStudentPhoto(req, res) {
   removePhoto("p", student.id);
   return send(res, 200, { ok: true });
 }
+// শিক্ষার্থীর লগইনে আইডি / PIN বাংলা অঙ্কে (২৮০০৮৭), ফাঁকা জায়গা বা অদৃশ্য চিহ্নসহ লেখা হলেও ঠিক ধরা হয় (মোবাইলের বাংলা কিবোর্ড / কপি-পেস্টে এমন হয়)
+const loginText = (v) => enDigits(String(v ?? "")).replace(/[\s\u200b-\u200d\ufeff]+/g, "");
+function studentByLogin(idRaw, pinRaw) {
+  const id = loginText(idRaw).toUpperCase(), pin = loginText(pinRaw);
+  if (!id || !pin) return null;
+  return db.students.find((x) => loginText(x.id).toUpperCase() === id && loginText(x.pin) === pin) || null;
+}
 async function api(req, res, url) {
   const p = url.pathname;
   const m = req.method;
@@ -2501,10 +2508,10 @@ async function api(req, res, url) {
   };
   // ---- শিক্ষার্থী লগইন ----
   if (p === "/api/student/login" && m === "POST") {
-    if (tooManyFails(ip)) return send(res, 429, { error: "Too many wrong attempts. Try again in 5 minutes." });
+    if (tooManyFails(ip)) return send(res, 429, { error: "অনেকবার ভুল হয়েছে। ৫ মিনিট পরে চেষ্টা করুন।" });
     const b = await readBody(req);
-    const s = db.students.find((x) => x.id.toUpperCase() === str(b.id, 40).toUpperCase());
-    if (!s || s.pin !== str(b.pin, 10) || s.status === "inactive") { noteFail(ip); return send(res, 401, { error: "Wrong ID or PIN" }); }
+    const s = studentByLogin(str(b.id, 40), str(b.pin, 10));
+    if (!s || s.status === "inactive") { noteFail(ip); return send(res, 401, { error: "আইডি বা PIN মেলেনি। ভর্তির সময় পাওয়া আইডি ও PIN দিন — সংখ্যা ইংরেজিতে (0-9) লিখুন।" }); }
     loginFails.delete(ip);
     newLogin(res, "student", s.id);
     return send(res, 200, { ok: true });
