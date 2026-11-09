@@ -1088,3 +1088,9 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .pay-due{margin-left:auto;padding:6px 16px;border-radius:12px;font-size:15px;font-weight:700;white-space:nowrap}
 .pay-due b{font-size:24px;margin-left:4px}
 .pay-due.bad{background:#ffe3e6;color:#b4233c;border:1px solid #f3b0ba}.pay-due.ok{background:#dcf5e8;color:#127a52;border:1px solid #a7dec3}
+/* ফি বদলানোর পপআপ: শিক্ষার্থীর নিজস্ব ফি-র অংশ */
+.dsc-fixed{margin:12px 0 8px;padding:12px 14px;border-radius:14px;background:#f4f8fb;border:1px solid #dbe6ef}
+.dsc-fixed h4{margin:0 0 8px;font-size:15px;color:#183658}.dsc-fixed h4 small{font-weight:500;color:#586b83}
+.dsc-fixed input[type=number]{font-size:20px;font-weight:700;max-width:220px}
+.dsc-note{display:block;margin:6px 0 4px;color:#586b83;line-height:1.7}
+.dsc-more{margin:8px 0}.dsc-more summary{cursor:pointer;font-weight:600;color:#183658;padding:4px 0}

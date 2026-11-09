@@ -1454,41 +1454,51 @@ ${list.map(receiptHtml).join("")}
   }
 
   // ---------- শিক্ষার্থী ----------
-  // ভর্তি হওয়া মডিউলের ছাড় — শতাংশ বা টাকায়; "নতুন হিসাব দেখুন" চাপলে আগের/নতুন ফি আর বকেয়া দেখায়, তারপর সংরক্ষণ
+  // প্রতিটা শিক্ষার্থীর জন্য আলাদা নির্দিষ্ট ফি (ভর্তির তারিখ থেকে এটাই ধরা হয়) + ঐচ্ছিক ছাড় (শতাংশ / টাকা); "নতুন হিসাব দেখুন" চাপলে আগের/নতুন ফি আর বকেয়া দেখায়, তারপর সংরক্ষণ
   function editEnrollmentDiscount(student, enrollmentId, after) {
     const e = DB.enrollments.find(x => x.id === enrollmentId);
     if (!e) return;
-    const fee = Number(e.fee) || 0, cur = Number(e.discount) || 0, curPct = fee ? Math.round(cur / fee * 1000) / 10 : 0, monthly = courseById(e.courseId)?.feeType === "monthly";
+    const fee = Number(e.fee) || 0, cur = Number(e.discount) || 0, curPct = fee ? Math.round(cur / fee * 1000) / 10 : 0, monthly = courseById(e.courseId)?.feeType === "monthly", locked = !!e.feeLocked;
     let preview = null;
+    const payload = (extra = {}) => {
+      const raw = $("#dscVal").value, f = $("#feeVal").value;
+      return { id: e.id, fee: f === "" ? null : Number(f), feeReset: !!($("#feeReset") && $("#feeReset").checked), mode: $("#dscMode").value, value: raw === "" ? null : Number(raw), ...extra };
+    };
     openModal({
-      title: "ফি-র ছাড় বদলান",
+      title: "ফি বদলান",
       body: `<p><b>${esc(student.name)}</b> · ${esc(courseById(e.courseId)?.name || "")}</p>
-        <p>ফি: <b>${money(fee)}${monthly ? "/মাস" : ""}</b> · এখনকার ছাড়: <b>${money(cur)}</b>${cur ? ` (${bn(curPct)}%)` : ""}</p>
-        <div class="fgrid"><label>ছাড়ের ধরন<select id="dscMode"><option value="percent">শতাংশ (%) — যেমন ৫০%</option><option value="taka">টাকা (৳)</option></select></label>
-        <label>ছাড়<input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div>
+        <section class="dsc-fixed"><h4>এই শিক্ষার্থীর ${monthly ? "মাসিক " : ""}ফি <small>(শুধু এর জন্য — ভর্তির তারিখ থেকে এই টাকাই ধরা হবে, মডিউলের ফি যাই হোক)</small></h4>
+          <label>${monthly ? "মাসিক ফি" : "ফি"} (৳)<input id="feeVal" type="number" min="0" step="1" value="${fee}" placeholder="যেমন: 700"></label>
+          <small class="dsc-note">এখন: <b>${money(fee)}${monthly ? "/মাস" : ""}</b>${locked ? " — এই শিক্ষার্থীর নির্ধারিত ফি" : " — মডিউলের ফি"}। অন্য কোনো শিক্ষার্থীর ফি বদলাবে না।</small>
+          ${locked ? `<label class="check"><input type="checkbox" id="feeReset"> মডিউলের আগের ফি-তে ফিরুন (${money(e.feeBefore)}${monthly ? "/মাস" : ""})</label>` : ""}</section>
+        <details class="dsc-more"${cur ? " open" : ""}><summary>ছাড়ও দিতে চান? (ঐচ্ছিক)</summary>
+          <p style="margin:6px 0">এখনকার ছাড়: <b>${money(cur)}</b>${cur ? ` (${bn(curPct)}%)` : ""}</p>
+          <div class="fgrid"><label>ছাড়ের ধরন<select id="dscMode"><option value="percent">শতাংশ (%) — যেমন ৫০%</option><option value="taka">টাকা (৳)</option></select></label>
+          <label>ছাড় <small style="font-weight:400;color:var(--muted)">(ফাঁকা = আগের ছাড় যেমন আছে)</small><input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div></details>
         <div class="toolbar"><button type="button" class="btn gold" id="dscPrev">নতুন হিসাব দেখুন</button></div><div id="dscRes" aria-live="polite"></div>`,
-      saveText: "ছাড় সংরক্ষণ",
+      saveText: "সংরক্ষণ",
       onSave: async () => {
         if (!preview) throw new Error("আগে নতুন হিসাব দেখুন");
-        await api("/api/admin/enrollment-discount", { body: { id: e.id, mode: $("#dscMode").value, value: Number($("#dscVal").value), commit: true, token: preview.token } });
-        await load(); if (after) { closeModal(); after(); } else viewStudent(student.id); toast("ছাড় সংরক্ষণ হয়েছে — বকেয়া নতুন হিসাবে বদলেছে"); return true;
+        await api("/api/admin/enrollment-discount", { body: payload({ commit: true, token: preview.token }) });
+        await load(); if (after) { closeModal(); after(); } else viewStudent(student.id); toast("সংরক্ষণ হয়েছে — বকেয়া নতুন হিসাবে বদলেছে"); return true;
       },
     });
     $("#modalSave").disabled = true;
     const reset = () => { preview = null; $("#modalSave").disabled = true; $("#dscRes").textContent = ""; };
     $("#dscMode").onchange = () => { $("#dscVal").value = $("#dscMode").value === "percent" ? (curPct || "") : (cur || ""); reset(); };
-    $("#dscVal").oninput = reset;
+    $$("#modalBody input").forEach((x) => { x.oninput = reset; x.onchange = reset; });
     $("#dscPrev").onclick = async () => {
       const btn = $("#dscPrev"); btn.disabled = true; $("#modalErr").textContent = ""; reset();
       try {
-        const r = await api("/api/admin/enrollment-discount", { body: { id: e.id, mode: $("#dscMode").value, value: Number($("#dscVal").value) } });
-        preview = r; const p = r.proposed;
-        $("#dscRes").innerHTML = `<div class="fee-sum"><p>নতুন ছাড়: <b>${money(p.discount)}</b> (${bn(p.percent)}%)</p>
-          <p>${monthly ? "মাসিক ফি" : "ফি (ছাড়ের পর)"}: <b>${money(r.current.net)}</b> → <b>${money(p.net)}</b>${monthly ? "/মাস" : ""}</p>
+        const r = await api("/api/admin/enrollment-discount", { body: payload() });
+        preview = r; const p = r.proposed, per = monthly ? "/মাস" : "";
+        $("#dscRes").innerHTML = `<div class="fee-sum"><p>${monthly ? "মাসিক ফি" : "ফি"}: <b>${money(r.current.fee)}${per}</b> → <b>${money(p.fee)}${per}</b>${p.feeChanged ? (p.locked ? " <small>(এই শিক্ষার্থীর নির্ধারিত ফি, ভর্তির তারিখ থেকে)</small>" : " <small>(মডিউলের ফি-তে ফিরছে)</small>") : ""}</p>
+          ${p.discount || r.current.discount ? `<p>ছাড়: <b>${money(p.discount)}</b> (${bn(p.percent)}%) → ${monthly ? "দেয়" : "ফি"}: <b>${money(p.net)}${per}</b></p>` : ""}
           <p>এখন পর্যন্ত মোট দেনা: <b>${money(r.current.due)}</b> → <b>${money(p.due)}</b></p>
           <p>নতুন বকেয়া: <b>${p.balance > 0 ? money(p.balance) : p.balance < 0 ? "অগ্রিম " + money(-p.balance) : "নেই"}</b></p>
-          ${monthly ? "<small>আগের মাসগুলোতেও নতুন হারে ফি ধরা হবে; আগের পেমেন্ট যেমন ছিল তেমনই থাকবে।</small>" : ""}</div>`;
-        $("#modalSave").disabled = false;
+          ${monthly && (p.feeChanged || p.discount !== r.current.discount) ? "<small>আগের মাসগুলোতেও নতুন হারে ফি ধরা হবে; আগের পেমেন্ট যেমন ছিল তেমনই থাকবে।</small>" : ""}</div>`;
+        $("#modalSave").disabled = !(p.feeChanged || p.discount !== r.current.discount);
+        if ($("#modalSave").disabled) $("#dscRes").insertAdjacentHTML("beforeend", '<p class="muted" style="margin:6px 0 0">কিছু বদলায়নি — ফি বা ছাড় বদলে আবার দেখুন।</p>');
       } catch (er) { $("#modalErr").textContent = er.message; }
       finally { btn.disabled = false; }
     };
@@ -1685,7 +1695,7 @@ ${list.map(receiptHtml).join("")}
         <h3 style="font-size:16px;margin:18px 0 8px">মডিউল ও ফি</h3>
         <div class="tbl-wrap"><table><thead><tr><th>মডিউল</th><th>শুরু</th><th class="num">ফি</th><th class="num">ছাড়</th><th class="num">মোট দেনা</th><th></th></tr></thead><tbody>
           ${f.items.map((it) => { const m = courseById(it.courseId) || {}; return `<tr><td><b>${esc(it.course)}</b> ${it.status === "ended" ? '<span class="chip">শেষ</span>' : ""}${it.chapters.length ? `<small>${esc(chapterNames(m, it.chapters).join(", "))}</small>` : ""}</td><td>${U.date(it.startDate)}</td>
-            <td class="num">${money(it.fee)}${it.monthly ? "/মাস" : ""}</td><td class="num">${it.discount ? money(it.discount) : "—"}</td><td class="num">${money(it.due)}${it.monthly ? `<small>${bn(it.months)} মাস</small>${feeAdjustHtml(it)}` : ""}</td>
+            <td class="num">${money(it.fee)}${it.monthly ? "/মাস" : ""}${it.feeLocked ? "<small>এই শিক্ষার্থীর নির্ধারিত</small>" : ""}</td><td class="num">${it.discount ? money(it.discount) : "—"}</td><td class="num">${money(it.due)}${it.monthly ? `<small>${bn(it.months)} মাস</small>${feeAdjustHtml(it)}` : ""}</td>
             <td class="num"><button type="button" class="btn sm line" data-disc="${it.enrollmentId}">ছাড় বদলান</button> ${it.monthly ? `<button type="button" class="btn sm line" data-start="${it.enrollmentId}">শুরুর তারিখ সংশোধন</button> ` : ""}${it.monthly && it.status === "active" ? `<button type="button" class="btn sm line" data-end="${it.enrollmentId}">শেষ করুন</button>` : ""}</td></tr>`; }).join("") || '<tr><td colspan="6" class="empty">কোনো মডিউলে ভর্তি নেই</td></tr>'}
           <tr><td colspan="4"><b>মোট</b> · পরিশোধ ${money(f.paid)}</td><td class="num" colspan="2">${balanceChip(f)}</td></tr>
         </tbody></table></div>

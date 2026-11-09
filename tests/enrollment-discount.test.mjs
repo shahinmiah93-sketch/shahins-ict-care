@@ -58,3 +58,36 @@ test('Screens: change button in the fee table, preview form, percent box in admi
   assert.match(admin, /editEnrollmentDiscount\(s, b\.dataset\.discEdit, \(\) => route\(\)\)/);   // সেভের পর ওই পাতাতেই থাকে
   assert.match(source, /p === "\/api\/admin\/enrollment-discount" && m === "POST"/);
 });
+
+test('A student gets his own fixed monthly fee (700) from joining date; locked, with the old fee kept for going back', async () => {
+  const f = fixture(); const body = { id: 'e1', fee: 700, value: null };
+  const r = await f.c.enrollmentDiscountAction({ body }, {});
+  assert.equal(r.status, 200); assert.equal(r.data.proposed.fee, 700); assert.equal(r.data.proposed.feeChanged, true); assert.equal(r.data.proposed.locked, true);
+  assert.equal(r.data.proposed.due, 2100); assert.equal(r.data.proposed.net, 700);                     // ৩ মাস × ৭০০
+  assert.equal(f.e.fee, 1000);                                                                         // প্রিভিউতে কিছু বদলায় না
+  const ok = await f.c.enrollmentDiscountAction({ body: { ...body, commit: true, token: r.data.token } }, {});
+  assert.equal(ok.status, 200); assert.equal(f.e.fee, 700); assert.equal(f.e.feeLocked, true); assert.equal(f.e.feeBefore, 1000);
+});
+test('Going back restores the previous fee and unlocks; unchanged fee is not a change', async () => {
+  const f = fixture(); f.e.fee = 700; f.e.feeLocked = true; f.e.feeBefore = 1000;
+  const r = await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 700, feeReset: true, value: null } }, {});
+  assert.equal(r.data.proposed.fee, 1000); assert.equal(r.data.proposed.locked, false);
+  await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 700, feeReset: true, value: null, commit: true, token: r.data.token } }, {});
+  assert.equal(f.e.fee, 1000); assert.equal(f.e.feeLocked, undefined); assert.equal(f.e.feeBefore, undefined);
+  const g = fixture(); assert.equal((await g.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 1000, value: null } }, {})).data.proposed.feeChanged, false);
+});
+test('Fee and discount together; discount never exceeds the new fee; bad fee refused', async () => {
+  const f = fixture();
+  const r = await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 800, mode: 'percent', value: 50 } }, {});
+  assert.equal(r.data.proposed.discount, 400); assert.equal(r.data.proposed.net, 400);                // ছাড় নতুন ফি-র ওপর
+  f.e.discount = 900; assert.equal((await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 500, value: null } }, {})).data.proposed.discount, 500);
+  assert.equal((await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: -1, value: null } }, {})).status, 400);
+  assert.equal((await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 'abc', value: null } }, {})).status, 400);
+});
+test('Own fee bypasses the module month-wise fee list; shown on screens', () => {
+  assert.match(source, /const rule = enrollment\.feeLocked \? null : \(course\.monthlyFees/);
+  assert.match(source, /feeLocked: !!e\.feeLocked, discount: e\.discount/);
+  const admin = fs.readFileSync(new URL('../public/js/admin.js', import.meta.url), 'utf8'), student = fs.readFileSync(new URL('../public/js/student.js', import.meta.url), 'utf8');
+  assert.match(admin, /id="feeVal"/); assert.match(admin, /id="feeReset"/); assert.match(admin, /এই শিক্ষার্থীর নির্ধারিত<\/small>/);
+  assert.match(student, /i\.feeLocked \? "আপনার নির্ধারিত ফি" : "মূল ফি"/);
+});
