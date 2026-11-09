@@ -593,7 +593,8 @@ function cleanMonthlyFees(rows) {
 }
 function monthlyFeeFor(course, enrollment, month) {
   const rule = enrollment.feeLocked ? null : (course.monthlyFees || []).find(r => r.from <= month && (!r.to || r.to >= month)); // feeLocked = এই শিক্ষার্থীর নির্ধারিত ফি: ভর্তির তারিখ থেকে সব মাসে এটাই
-  return Math.max(0, num(rule ? rule.fee : enrollment.fee) - num(enrollment.discount));
+  const base = num(rule ? rule.fee : enrollment.fee), pct = Math.min(100, Math.max(0, num(enrollment.discountPct)));
+  return Math.max(0, base - (pct > 0 ? Math.round(base * pct / 100) : num(enrollment.discount)));
 }
 function enrollmentDue(e, context = {}) {
   const c = context.course || db.courses.find((x) => x.id === e.courseId) || {};
@@ -638,7 +639,7 @@ function enrollmentDue(e, context = {}) {
 function feeSummary(s) {
   const items = db.enrollments.filter((e) => e.studentId === s.id).map((e) => {
     const c = db.courses.find((x) => x.id === e.courseId) || {};
-    return { enrollmentId: e.id, courseId: e.courseId, course: c.name || "", status: e.status, chapters: e.chapters || [], fee: e.fee, feeLocked: !!e.feeLocked, discount: e.discount, startDate: e.startDate, ...enrollmentDue(e) };
+    return { enrollmentId: e.id, courseId: e.courseId, course: c.name || "", status: e.status, chapters: e.chapters || [], fee: e.fee, feeLocked: !!e.feeLocked, discount: e.discount, discountPct: num(e.discountPct) || 0, startDate: e.startDate, ...enrollmentDue(e) };
   });
   const totalDue = items.reduce((t, i) => t + i.due, 0);
   const mine = db.payments.filter((p) => p.studentId === s.id); // ছাড় (discount) নগদ জমা নয়, কিন্তু বকেয়া কমায়
@@ -1655,11 +1656,13 @@ async function enrollmentDiscountAction(req, res) {
   const feeChanged = newFee !== num(e.fee);
   const percent = input.mode === "percent", keep = input.value === null || input.value === undefined || input.value === "", value = num(input.value);
   if (!keep && (!(value >= 0) || (percent && value > 100))) return send(res, 400, { error: percent ? "শতাংশ ০ থেকে ১০০-র মধ্যে দিন" : "ছাড় ০ বা তার বেশি দিন" });
-  const discount = Math.min(newFee, keep ? num(e.discount) : Math.max(0, Math.round(percent ? newFee * value / 100 : value))); // ছাড়ের ঘর ফাঁকা = আগের ছাড় (নতুন ফি-র বেশি হলে ফি পর্যন্ত)
-  const proposedEnr = { ...e, fee: newFee, discount };
+  // ছাড়ের ঘর ফাঁকা = আগের ছাড় যেমন (শতাংশ থাকলে শতাংশই, নতুন ফি-র ওপর)। শতাংশ দিলে প্রতি মাসের আসল ফি-র সেই শতাংশ; টাকা দিলে প্রতি মাসের ফি থেকে ঠিক সেই টাকা
+  const pct = keep ? Math.min(100, Math.max(0, num(e.discountPct))) : percent ? value : 0;
+  const discount = pct > 0 ? Math.round(newFee * pct / 100) : Math.min(newFee, keep ? num(e.discount) : Math.max(0, Math.round(value)));
+  const proposedEnr = { ...e, fee: newFee, discount, discountPct: pct };
   if (reset) delete proposedEnr.feeLocked; else if (feeChanged) proposedEnr.feeLocked = true;
   const before = enrollmentDue(e), after = enrollmentDue(proposedEnr), fees = feeSummary(s);
-  const result = { fee: num(e.fee), locked: !!e.feeLocked, current: { fee: num(e.fee), discount: num(e.discount), due: before.due, net: before.net }, proposed: { fee: newFee, locked: !!proposedEnr.feeLocked, feeChanged, discount, percent: newFee ? Math.round(discount / newFee * 1000) / 10 : 0, due: after.due, net: after.net, monthly: !!after.monthly, balance: fees.balance - before.due + after.due } };
+  const result = { fee: num(e.fee), locked: !!e.feeLocked, current: { fee: num(e.fee), discount: num(e.discount), pct: num(e.discountPct) || 0, due: before.due, net: before.net }, proposed: { fee: newFee, locked: !!proposedEnr.feeLocked, feeChanged, discount, pct, percent: newFee ? Math.round(discount / newFee * 1000) / 10 : 0, due: after.due, net: after.net, monthly: !!after.monthly, balance: fees.balance - before.due + after.due } };
   const token = crypto.createHash("sha256").update(JSON.stringify({ enrollment: e, result })).digest("hex");
   if (input.commit !== true) return send(res, 200, { ...result, token });
   if (input.token !== token) return send(res, 409, { error: "হিসাব বদলেছে। আবার প্রিভিউ দেখে সংরক্ষণ করুন" });
@@ -1667,10 +1670,11 @@ async function enrollmentDiscountAction(req, res) {
   fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-fee-discount-${Date.now()}.json`));
   try {
     const at = new Date().toISOString();
-    e.discountHistory = [...(e.discountHistory || []), { from: num(e.discount), to: discount, feeFrom: num(e.fee), feeTo: newFee, at }].slice(-50);
+    e.discountHistory = [...(e.discountHistory || []), { from: num(e.discount), to: discount, pct, feeFrom: num(e.fee), feeTo: newFee, at }].slice(-50);
     if (reset) { e.fee = newFee; delete e.feeLocked; delete e.feeBefore; }
     else if (feeChanged) { if (!e.feeLocked) e.feeBefore = num(e.fee); e.fee = newFee; e.feeLocked = true; }
-    e.discount = discount; e.updatedAt = at; saveDb();
+    e.discount = discount; if (pct > 0) e.discountPct = pct; else delete e.discountPct;
+    e.updatedAt = at; saveDb();
     return send(res, 200, { ok: true, ...result, fees: feeSummary(s) });
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }

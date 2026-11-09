@@ -91,3 +91,32 @@ test('Own fee bypasses the module month-wise fee list; shown on screens', () => 
   assert.match(admin, /id="feeVal"/); assert.match(admin, /id="feeReset"/); assert.match(admin, /এই শিক্ষার্থীর নির্ধারিত<\/small>/);
   assert.match(student, /i\.feeLocked \? "আপনার নির্ধারিত ফি" : "মূল ফি"/);
 });
+
+test('50% means half of each month\'s real fee (incl. the module month-wise fee list): 800/month → 400, not 800-500=300', () => {
+  const a2 = source.indexOf('function monthlyFeeFor('), b2 = source.indexOf('\n}', a2) + 2;
+  const c2 = { Math, Number }; c2.num = (v) => Number(v) || 0; vm.createContext(c2); vm.runInContext(source.slice(a2, b2), c2);
+  const fee = vm.runInContext('monthlyFeeFor', c2), course = { monthlyFees: [{ from: '2026-09', to: '', fee: 800 }] };
+  assert.equal(fee(course, { fee: 1000, discount: 500, discountPct: 50 }, '2026-10'), 400);       // শতাংশ: প্রতি মাসের আসল ফি-র অর্ধেক
+  assert.equal(fee(course, { fee: 1000, discount: 500 }, '2026-10'), 300);                          // টাকার ছাড়: আগের মতো ঠিক ৫০০ বাদ
+  assert.equal(fee({}, { fee: 1000, discount: 500, discountPct: 50 }, '2026-10'), 500);            // তালিকা না থাকলে ফি-র অর্ধেক
+  assert.equal(fee(course, { fee: 700, feeLocked: true, discount: 0 }, '2026-10'), 700);           // নিজস্ব ফি হলে তালিকা এড়ায়
+  assert.equal(fee(course, { fee: 700, feeLocked: true, discount: 350, discountPct: 50 }, '2026-10'), 350);
+});
+test('Percent is stored as a percent on the enrollment (and cleared when a taka discount is set); empty box keeps it', async () => {
+  const f = fixture(); const body = { id: 'e1', mode: 'percent', value: 50 };
+  const r = await f.c.enrollmentDiscountAction({ body }, {}); assert.equal(r.data.proposed.pct, 50);
+  await f.c.enrollmentDiscountAction({ body: { ...body, commit: true, token: r.data.token } }, {});
+  assert.equal(f.e.discountPct, 50); assert.equal(f.e.discount, 500);
+  const keep = await f.c.enrollmentDiscountAction({ body: { id: 'e1', fee: 800, value: null } }, {});          // ফি বদলালে শতাংশ নতুন ফি-র ওপর
+  assert.equal(keep.data.proposed.pct, 50); assert.equal(keep.data.proposed.discount, 400);
+  const t = await f.c.enrollmentDiscountAction({ body: { id: 'e1', mode: 'taka', value: 300 } }, {});
+  await f.c.enrollmentDiscountAction({ body: { id: 'e1', mode: 'taka', value: 300, commit: true, token: t.data.token } }, {});
+  assert.equal(f.e.discountPct, undefined); assert.equal(f.e.discount, 300);
+});
+test('Screens show a percent discount as a percent', () => {
+  const admin = fs.readFileSync(new URL('../public/js/admin.js', import.meta.url), 'utf8'), student = fs.readFileSync(new URL('../public/js/student.js', import.meta.url), 'utf8'), common = fs.readFileSync(new URL('../public/js/common.js', import.meta.url), 'utf8');
+  assert.match(admin, /প্রতি মাসের ফি-র <b>\$\{bn\(p\.pct\)\}%<\/b>/);
+  assert.match(admin, /it\.discountPct \? `\$\{bn\(it\.discountPct\)\}%<small>/);
+  assert.match(student, /i\.discountPct \? `<span>/);
+  assert.match(common, /enrollment\.feeLocked \? null/); assert.match(common, /enrollment\.discountPct/);
+});
