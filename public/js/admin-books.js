@@ -112,12 +112,13 @@ window.SICBooks = function (X) {
     const st = s.buyerType === "student" && s.studentId ? DB().students.find((x) => x.id === s.studentId.trim()) : null;
     return `<section class="card bk-sell"><h3>নতুন বিক্রি</h3>
       <div class="sms-tabs">${[["student", "শিক্ষার্থী"], ["outside", "বাইরের ক্রেতা"]].map(([k, t]) => `<button type="button" data-buyer="${k}" class="${s.buyerType === k ? "on" : ""}">${t}</button>`).join("")}</div>
-      ${s.buyerType === "student" ? `<div class="bk-row">
+      ${s.buyerType === "student" ? `<div class="bk-row"><label class="sms-f">শিক্ষার্থীর আইডি<input data-s="studentId" value="${esc(s.studentId)}" placeholder="যেমন: 270001" list="bkStuList"></label>
+          <div class="bk-who" id="bkWho">${st ? `<b>${esc(st.name)}</b><small>${esc(X.batchName(st.batchId))} · ${esc(st.phone || st.guardianPhone || "")}</small>` : s.studentId ? '<span class="bk-low">এই আইডিতে কেউ নেই</span>' : '<small>আইডি লিখলে নাম দেখাবে</small>'}</div></div>
+          <div class="bk-row">
           <label class="sms-f">সেশন<select data-student-session>${X.opt([["", "সব সেশন"], ...DB().sessions.map((x) => [x.name, x.name])], S.studentSession)}</select></label>
           <label class="sms-f">ব্যাচ<select data-student-batch>${X.opt([["", "সব ব্যাচ"], ...DB().batches.filter((x) => !S.studentSession || x.session === S.studentSession).map((x) => [x.id, x.name + ([x.days, x.time].filter(Boolean).length ? " (" + [x.days, x.time].filter(Boolean).join(" · ") + ")" : "")])], S.studentBatch)}</select></label>
           <label class="sms-f">শিক্ষার্থী বেছে নিন<select data-student-pick>${X.opt([["", saleStudents().length ? "— শিক্ষার্থী বেছে নিন —" : "এই সেশন / ব্যাচে শিক্ষার্থী নেই"], ...saleStudents().map((x) => [x.id, x.id + " · " + x.name])], s.studentId)}</select></label>
-        </div><div class="bk-row"><label class="sms-f">শিক্ষার্থীর আইডি<input data-s="studentId" value="${esc(s.studentId)}" placeholder="যেমন: 270001" list="bkStuList"></label>
-          <div class="bk-who" id="bkWho">${st ? `<b>${esc(st.name)}</b><small>${esc(X.batchName(st.batchId))} · ${esc(st.phone || st.guardianPhone || "")}</small>` : s.studentId ? '<span class="bk-low">এই আইডিতে কেউ নেই</span>' : '<small>আইডি লিখলে নাম দেখাবে</small>'}</div></div>
+        </div>
           <datalist id="bkStuList">${saleStudents().map((x) => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}</datalist>`
         : `<div class="bk-row"><label class="sms-f">ক্রেতার নাম<input data-s="name" value="${esc(s.name)}" placeholder="নাম"></label><label class="sms-f">মোবাইল<input data-s="phone" value="${esc(s.phone)}" placeholder="01XXXXXXXXX" inputmode="tel"></label></div>`}
       <div class="tbl-wrap"><table class="exam-entry-table bk-lines"><thead><tr><th>বই / শিট</th><th class="num">স্টকে</th><th class="num">পরিমাণ</th><th class="num">দাম (প্রতিটি)</th><th class="num">মোট</th><th></th></tr></thead><tbody>
