@@ -1910,6 +1910,20 @@ function studentByLogin(idRaw, pinRaw) {
   if (!id || !pin) return null;
   return db.students.find((x) => loginText(x.id).toUpperCase() === id && loginText(x.pin) === pin) || null;
 }
+// শিক্ষার্থীর লগইনে ভুলের তালা — আইডি ধরে: একই নেটওয়ার্কের (কোচিং-এর ওয়াইফাই / একই মোবাইল নেটওয়ার্ক) একজনের ভুলে অন্য শিক্ষার্থী আটকায় না।
+// একই আইডিতে এই নেটওয়ার্ক থেকে ৫ বার ভুল হলে ৫ মিনিট শুধু সেই আইডির জন্য তালা। অনেক আইডি ঘুরে PIN আন্দাজের চেষ্টা ঠেকাতে পুরো নেটওয়ার্কের জন্য ১০ মিনিটে ৪০ বার ভুলের সীমা।
+const idFails = new Map(), wideFails = new Map();
+const LOCK_MS = 5 * 60e3, WIDE_WINDOW = 10 * 60e3, ID_LIMIT = 5, WIDE_LIMIT = 40;
+function pruneFails(map) { if (map.size > 5000) { const now = Date.now(); for (const [k, v] of map) if (v.until <= now && now - (v.at || 0) > WIDE_WINDOW) map.delete(k); } }
+const loginLocked = (ip, id) => { const now = Date.now(), a = idFails.get(ip + "|" + id), w = wideFails.get(ip); return !!((a && a.until > now) || (w && w.until > now)); };
+function noteLoginFail(ip, id) {
+  const now = Date.now(), k = ip + "|" + id;
+  const a = idFails.get(k) || { count: 0, until: 0, at: now }; a.count++; a.at = now; if (a.count >= ID_LIMIT) { a.until = now + LOCK_MS; a.count = 0; } idFails.set(k, a);
+  let w = wideFails.get(ip); if (!w || now - w.at > WIDE_WINDOW) w = { count: 0, until: (w && w.until) || 0, at: now };
+  w.count++; if (w.count >= WIDE_LIMIT) { w.until = now + LOCK_MS; w.count = 0; } wideFails.set(ip, w);
+  pruneFails(idFails); pruneFails(wideFails);
+}
+const clearLoginFails = (ip, id) => idFails.delete(ip + "|" + id);
 async function api(req, res, url) {
   const p = url.pathname;
   const m = req.method;
@@ -2508,11 +2522,11 @@ async function api(req, res, url) {
   };
   // ---- শিক্ষার্থী লগইন ----
   if (p === "/api/student/login" && m === "POST") {
-    if (tooManyFails(ip)) return send(res, 429, { error: "অনেকবার ভুল হয়েছে। ৫ মিনিট পরে চেষ্টা করুন।" });
-    const b = await readBody(req);
+    const b = await readBody(req), idKey = loginText(str(b.id, 40)).toUpperCase();
+    if (loginLocked(ip, idKey)) return send(res, 429, { error: "অনেকবার ভুল হয়েছে। ৫ মিনিট পরে চেষ্টা করুন।" });
     const s = studentByLogin(str(b.id, 40), str(b.pin, 10));
-    if (!s || s.status === "inactive") { noteFail(ip); return send(res, 401, { error: "আইডি বা PIN মেলেনি। ভর্তির সময় পাওয়া আইডি ও PIN দিন — সংখ্যা ইংরেজিতে (0-9) লিখুন।" }); }
-    loginFails.delete(ip);
+    if (!s || s.status === "inactive") { noteLoginFail(ip, idKey); return send(res, 401, { error: "আইডি বা PIN মেলেনি। ভর্তির সময় পাওয়া আইডি ও PIN দিন — সংখ্যা ইংরেজিতে (0-9) লিখুন।" }); }
+    clearLoginFails(ip, idKey);
     newLogin(res, "student", s.id);
     return send(res, 200, { ok: true });
   }
