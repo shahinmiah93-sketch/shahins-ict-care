@@ -25,10 +25,30 @@
   function card(b) {
     const q = cart[b.id] || 0;
     return `<article class="bk-card${b.inStock ? "" : " out"}">
-      <div class="bk-cv">${b.cover ? `<img src="${esc(b.cover)}" alt="" loading="lazy">` : `<div class="bk-cv-ph"><span>${b.kind === "sheet" ? "📄" : "📘"}</span><b>${esc(b.title)}</b></div>`}<span class="bk-kind">${KIND[b.kind] || "বই"}</span>${b.oldPrice > b.price ? `<span class="bk-off">${bn(Math.round((1 - b.price / b.oldPrice) * 100))}% ছাড়</span>` : ""}</div>
-      <div class="bk-cb"><h3>${esc(b.title)}</h3>${b.author ? `<small>${esc(b.author)}</small>` : ""}${b.short ? `<p>${esc(b.short)}</p>` : ""}
+      <div class="bk-cv" data-open="${b.id}" role="button" tabindex="0" aria-label="${esc(b.title)} — বিস্তারিত দেখুন">${b.cover ? `<img src="${esc(b.cover)}" alt="" loading="lazy">` : `<div class="bk-cv-ph"><span>${b.kind === "sheet" ? "📄" : "📘"}</span><b>${esc(b.title)}</b></div>`}<span class="bk-kind">${KIND[b.kind] || "বই"}</span>${b.oldPrice > b.price ? `<span class="bk-off">${bn(Math.round((1 - b.price / b.oldPrice) * 100))}% ছাড়</span>` : ""}</div>
+      <div class="bk-cb"><h3 data-open="${b.id}">${esc(b.title)}</h3>${b.author ? `<small>${esc(b.author)}</small>` : ""}${b.short ? `<button type="button" class="bk-more" data-open="${b.id}">বিবরণ দেখুন →</button>` : ""}
         <div class="bk-price"><b>${b.price ? money(b.price) : "ফ্রি"}</b>${b.oldPrice > b.price ? `<s>${money(b.oldPrice)}</s>` : ""}${b.left ? `<em>মাত্র ${bn(b.left)}টি বাকি</em>` : ""}</div>
         ${!b.inStock ? '<span class="bk-none">স্টক শেষ</span>' : q ? `<div class="bk-step"><button type="button" data-dec="${b.id}" aria-label="কম">−</button><b>${bn(q)}</b><button type="button" data-inc="${b.id}" aria-label="বেশি">+</button></div>` : `<button type="button" class="btn gold bk-add" data-inc="${b.id}">কার্টে যোগ করুন</button>`}</div></article>`;
+  }
+
+  // বইয়ের বিবরণের পপআপ: বড় ছবি, নাম, লেখক, দাম, ছোট বিবরণ, কার্টে যোগ করার বোতাম
+  function openBook(id) {
+    const b = byId(id); if (!b) return;
+    const d = document.createElement("dialog"); d.className = "bk-dlg";
+    const desc = String(b.short || "").split(/\n{2,}|\r?\n/).map((x) => x.trim()).filter(Boolean).map((x) => `<p>${esc(x)}</p>`).join("");
+    d.innerHTML = `<button type="button" class="bk-dx" aria-label="বন্ধ করুন">✕</button>
+      <div class="bk-dcv">${b.cover ? `<img src="${esc(b.cover)}" alt="${esc(b.title)}">` : `<div class="bk-cv-ph"><span>${b.kind === "sheet" ? "📄" : "📘"}</span></div>`}</div>
+      <div class="bk-dbody"><span class="bk-kind2">${KIND[b.kind] || "বই"}</span><h3>${esc(b.title)}</h3>${b.author ? `<small>${esc(b.author)}</small>` : ""}
+        <div class="bk-price"><b>${b.price ? money(b.price) : "ফ্রি"}</b>${b.oldPrice > b.price ? `<s>${money(b.oldPrice)}</s><span class="bk-off2">${bn(Math.round((1 - b.price / b.oldPrice) * 100))}% ছাড়</span>` : ""}${b.left ? `<em>মাত্র ${bn(b.left)}টি বাকি</em>` : ""}</div>
+        ${desc ? `<div class="bk-ddesc">${desc}</div>` : ""}
+        ${!b.inStock ? '<span class="bk-none">স্টক শেষ</span>' : `<button type="button" class="btn gold bk-dadd">কার্টে যোগ করুন</button>`}</div>`;
+    document.body.append(d);
+    d.addEventListener("close", () => d.remove());
+    d.addEventListener("click", (e) => {
+      if (e.target === d || e.target.closest(".bk-dx")) return d.close();
+      if (e.target.closest(".bk-dadd")) { cart[id] = Math.min(20, (cart[id] || 0) + 1); keep(); reCard(id); reCart(); d.close(); }
+    });
+    d.showModal();
   }
 
   function cartHtml() {
@@ -76,10 +96,12 @@
 
   main.addEventListener("click", (e) => {
     const t = (s) => e.target.closest(s); let el;
+    if ((el = t("[data-open]"))) return openBook(el.dataset.open);
     if ((el = t("[data-inc]"))) { const id = el.dataset.inc; cart[id] = Math.min(20, (cart[id] || 0) + 1); keep(); reCard(id); return reCart(); }
     if ((el = t("[data-dec]"))) { const id = el.dataset.dec; cart[id] = (cart[id] || 0) - 1; if (cart[id] <= 0) delete cart[id]; keep(); reCard(id); return reCart(); }
     if ((el = t("[data-rm]"))) { const id = el.dataset.rm; delete cart[id]; keep(); reCard(id); return reCart(); }
   });
+  main.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".bk-cv[data-open]")) { e.preventDefault(); openBook(e.target.dataset.open); } });
   main.addEventListener("input", (e) => { const f = e.target.form; if (f && f.id === "orderForm" && e.target.name in form && e.target.type !== "radio" && e.target.tagName !== "SELECT") form[e.target.name] = e.target.value; });
   main.addEventListener("change", (e) => {
     const n = e.target.name; if (!e.target.form || e.target.form.id !== "orderForm") return;
