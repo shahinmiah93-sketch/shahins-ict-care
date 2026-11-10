@@ -20,5 +20,5 @@ test('Video popup is sized by screen height so the skip buttons are never cut of
   for (const f of ['css/site.css', 'css/exams.css']) assert.match(read(f), /\.vp-dlg\{width:min\(960px,94vw,calc\(\(100vh - 160px\) \* 16 \/ 9\)\);max-height:calc\(100vh - 16px\);/, f);
 });
 test('Pages that show lesson / popup videos load the skip script', () => {
-  for (const p of ['index', 'student', 'learn', 'module', 'admin']) assert.match(read(p + '.html'), /<script src="\/js\/video-skip\.js"><\/script>/, p);
+  for (const p of ['index', 'student', 'learn', 'module', 'admin']) assert.match(read(p + '.html'), /<script src="\/js\/video-skip\.js(\?v=[0-9a-f]+)?"><\/script>/, p);
 });

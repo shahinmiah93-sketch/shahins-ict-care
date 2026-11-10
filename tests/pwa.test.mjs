@@ -65,6 +65,6 @@ test('Install button still appears (with menu steps) when the browser does not o
 test('Student page links the manifest and the install helper; server knows the manifest type', () => {
   const html = fs.readFileSync(pub('student.html'), 'utf8');
   assert.match(html, /<link rel="manifest" href="\/manifest\.webmanifest">/);
-  assert.match(html, /<script src="\/js\/pwa\.js"><\/script>/);
+  assert.match(html, /<script src="\/js\/pwa\.js(\?v=[0-9a-f]+)?"><\/script>/);
   assert.match(fs.readFileSync(new URL('../server.mjs', import.meta.url), 'utf8'), /"\.webmanifest": "application\/manifest\+json/);
 });
