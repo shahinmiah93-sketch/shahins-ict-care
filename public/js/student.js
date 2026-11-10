@@ -466,14 +466,18 @@ ${inner}
       const filtered = list.filter((h) => !selected || h.kind === selected);
       const items = filtered.filter((h) => period === "all" || isPast(h) === (period === "past"));
       if (period === "open") items.reverse();
+      // অবস্থা: বড় রঙিন বার — সবুজ ✓ করেছ/পেরেছ, লাল ✗ করোনি/পারোনি, ধূসর অনুপস্থিত, হলুদ যাচাই হয়নি
       const status = (h, kind) => {
-        if (h.status === "done") return `<span class="chip ok">✓ ${kind.yes}</span>`;
-        if (h.status === "not") return `<span class="chip bad">✗ ${kind.no}</span>`;
-        if (h.status === "absent") return '<span class="chip">অনুপস্থিত</span>';
-        return '<span class="chip warn">যাচাই হয়নি</span>';
+        const lesson = kind === kinds.lesson, what = lesson ? "পড়া" : "বাড়ির কাজ";
+        const S = h.status === "done" ? ["done", "✓", kind.yes, lesson ? "পড়াটা ঠিকমতো পেরেছ — চালিয়ে যাও!" : "বাড়ির কাজটা করে এনেছ — চালিয়ে যাও!"]
+          : h.status === "not" ? ["not", "✗", kind.no, lesson ? "পড়াটা পারোনি — আবার শিখে নাও" : "বাড়ির কাজটা করা হয়নি — সময়মতো করে নিও"]
+          : h.status === "absent" ? ["absent", "—", "অনুপস্থিত ছিলে", "ওই দিন ক্লাসে ছিলে না, তাই এটা হিসাবে ধরা হয়নি"]
+          : ["pending", "…", "যাচাই হয়নি", "শিক্ষক এখনো " + what + " দেখেননি"];
+        return `<div class="hw-state ${S[0]}" role="status"><i aria-hidden="true">${S[1]}</i><span><b>${S[2]}</b><small>${S[3]}</small></span></div>`;
       };
-      const item = (h, kind) => `<article class="stu-hw-item">
-        <div class="stu-hw-meta"><span class="stu-hw-kind">${kind.title}</span>${status(h, kind)}</div>
+      const item = (h, kind) => `<article class="stu-hw-item st-${["done", "not", "absent"].includes(h.status) ? h.status : "pending"}">
+        ${status(h, kind)}
+        <div class="stu-hw-meta"><span class="stu-hw-kind">${kind.title}</span></div>
         <div class="stu-hw-topic">
           ${h.subject ? `<span>বিষয় · ${esc(h.subject)}</span>` : ""}
           ${h.chapter ? `<span class="stu-hw-chapter">অধ্যায় · ${esc(h.chapter)}</span>` : ""}

@@ -1133,3 +1133,15 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .hw-day .stu-hw-item{display:flex;flex-direction:column}
 .hw-day .stu-hw-item>.stu-hw-details{margin-bottom:auto}
 .hw-day .stu-hw-item>.stu-hw-date{margin-top:auto}
+/* কাজ / পড়ার অবস্থা: বড় রঙিন বার, কার্ডের কিনারাও একই রঙে */
+.hw-state{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px}
+.hw-state i{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;font-style:normal;font-size:21px;font-weight:800;color:#fff}
+.hw-state b{display:block;font-size:18px;line-height:1.25}.hw-state small{display:block;margin-top:1px;font-size:12.5px;font-weight:500;line-height:1.4;opacity:.9}
+.hw-state.done{background:#e1f5ea;color:#0b6a3d}.hw-state.done i{background:#1f9d63}
+.hw-state.not{background:#fde6e9;color:#a01d2d}.hw-state.not i{background:#d6384a}
+.hw-state.absent{background:#eceff2;color:#47535f}.hw-state.absent i{background:#8693a0}
+.hw-state.pending{background:#fff2d1;color:#775000}.hw-state.pending i{background:#e5a117}
+.stu-hw-item.st-done{border-color:#bfe5d0;border-inline-start-color:#1f9d63}
+.stu-hw-item.st-not{border-color:#f3c3c9;border-inline-start-color:#d6384a}
+.stu-hw-item.st-absent{border-color:#d9dfe5;border-inline-start-color:#8693a0}
+.stu-hw-item.st-pending{border-color:#f1dca0;border-inline-start-color:#e5a117}
