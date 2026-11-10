@@ -569,3 +569,12 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .hw-check-topic .ln-syl { white-space: pre-line; padding: 10px; background: #f5f8fa; border-radius: 8px; }
 .hw-row .ln-syl strong, .hw-check-topic .ln-syl strong { display: block; margin-bottom: 4px; }
 .exam-syllabus-row{display:grid;gap:6px;margin:12px 0;font-weight:600}.exam-syllabus-row small{color:var(--muted);font-weight:400}.exam-syllabus-row textarea{width:100%;min-height:120px;resize:vertical;white-space:pre-wrap;line-height:1.8;box-sizing:border-box}
+/* দেওয়া কাজ ও পড়া: শিক্ষার্থী প্যানেলের মতো তারিখ-কার্ড (কার্ড ও কলামের বাকি স্টাইল app.css-এ) */
+.hw-page .hw-panel{padding:18px 20px;margin-bottom:6px}
+.hw-panel .hw-list-heading{color:#173b4a;margin:0 0 12px}.hw-panel .hw-list-heading h3{color:#173b4a;margin:0 0 4px;font-size:20px}.hw-panel .hw-list-heading p{color:#546773;margin:0;font-size:13px}
+.hw-panel-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.hw-panel .hw-period{margin-bottom:0}.hw-panel .hw-period button{border-color:#ccdae5;color:#24476a;background:#fff}.hw-panel .hw-period button.on{background:#24476a;border-color:#24476a;color:#fff}
+.hw-add{display:flex;flex-wrap:wrap;gap:8px}
+.hw-ac{align-content:start}.hw-ac .hw-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}.hw-ac .hw-status{display:flex;flex-wrap:wrap;gap:6px}
+.hw-day .hw-col .hw-wholine{color:#546773}
+.hw-day .hw-topic-title>b{color:#173b4a}.hw-day .hw-ac{color:#173b4a}

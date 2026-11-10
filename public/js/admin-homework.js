@@ -181,13 +181,41 @@ window.SICHomework = function (X) {
       <span class="ln-side"><span class="hw-status">${dueTag(h)}${c.done + c.not + c.absent ? `<span class="ln-tag done">✓ ${bn(c.done)}</span><span class="ln-tag" style="background:#fde3e8;color:#9b1c3c">✗ ${bn(c.not)}</span>${c.absent ? `<span class="ln-tag">অনু ${bn(c.absent)}</span>` : ""}` : ""}${c.pending && h.dueDate && h.dueDate <= today() ? `<span class="ln-tag today">যাচাই বাকি ${bn(c.pending)}</span>` : ""}
         </span><span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান" aria-label="কাজ বদলান">✎ বদলান</button>${copyButton(h)}<button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন" aria-label="কাজ মুছুন">✕ মুছুন</button></span></span></div>`;
   }
+  // শিক্ষার্থী প্যানেলের মতো: তারিখ ধরে কার্ড (নতুন তারিখ আগে), বাঁ দিকে তারিখ-ব্লক, ভেতরে পাশাপাশি বাড়ির কাজ আর ক্লাসের পড়া
+  function dayItem(h) {
+    const c = counts(h);
+    const tags = c.done + c.not + c.absent ? `<span class="ln-tag done">✓ ${bn(c.done)}</span><span class="ln-tag" style="background:#fde3e8;color:#9b1c3c">✗ ${bn(c.not)}</span>${c.absent ? `<span class="ln-tag">অনু ${bn(c.absent)}</span>` : ""}` : "";
+    const given = h.givenDate ? `<small class="stu-hw-date">${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "কাজ দেওয়ার তারিখ"} <b>${esc(U.dateWithWeekday(h.givenDate))}</b></small>` : "";
+    return `<div class="stu-hw-item hw-ac">
+      ${topic(h)}
+      ${h.details ? `<div class="ln-syl"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
+      <small class="hw-wholine">${esc(whoText(h))} · ${bn(c.total)} জন</small>
+      <span class="hw-status">${dueTag(h)}${tags}${c.pending && h.dueDate && h.dueDate <= today() ? `<span class="ln-tag today">যাচাই বাকি ${bn(c.pending)}</span>` : ""}</span>
+      ${given}
+      <span class="hw-acts"><button type="button" class="btn gold sm" data-check="${h.id}">✓ যাচাই</button><button type="button" class="icon-btn" data-edit="${h.id}" title="বদলান" aria-label="কাজ বদলান">✎ বদলান</button>${copyButton(h)}<button type="button" class="icon-btn" data-del="${h.id}" title="মুছুন" aria-label="কাজ মুছুন">✕ মুছুন</button></span>
+    </div>`;
+  }
   function listTab() {
     const all = list(), open = all.filter((h) => !h.dueDate || h.dueDate >= today()).reverse(), past = all.filter((h) => h.dueDate && h.dueDate < today());
     const show = S.show === "past" ? past : S.show === "open" ? open : all;
-    const group = (kind, title, hint) => { const items = show.filter(h => h.kind === kind); return `<section class="card hw-group" style="--k:${KIND[kind][1]}"><div class="hw-group-title"><div><h3>${title} <small class="ln-count">${bn(items.length)}টি</small></h3><p>${hint}</p></div><button type="button" class="btn line sm" data-add-kind="${kind}">＋ ${kind === "lesson" ? "পড়া দিন" : "কাজ দিন"}</button></div>${items.length ? `<div class="ln-list">${items.map(row).join("")}</div>` : empty("এই বাছাইয়ে কোনো " + title + " নেই।")}</section>`; };
-    return `<div class="hw-list-heading"><h3>আপনার ${S.f.kind === "lesson" ? "দেওয়া পড়া" : S.f.kind === "homework" ? "দেওয়া বাড়ির কাজ" : "দেওয়া কাজ ও পড়া"}</h3><p>${esc(session())} · ${S.f.batch ? esc(X.batchName(S.f.batch)) : "সব ব্যাচ"} · মোট ${bn(all.length)}টি</p></div><div class="hw-period">${[["all","সব তারিখ",all.length],["open","চলমান ও সামনে",open.length],["past","আগের",past.length]].map(([k,t,n]) => `<button type="button" data-show="${k}" class="${S.show === k ? "on" : ""}">${t} <span>${bn(n)}</span></button>`).join("")}</div>
-    ${!S.f.kind || S.f.kind === "homework" ? group("homework", "বাড়ির কাজ", "খাতায় লিখে বা সমাধান করে আনবে · যাচাই: করেছে / করেনি") : ""}
-    ${!S.f.kind || S.f.kind === "lesson" ? group("lesson", "ক্লাসের পড়া", "শিখে বা প্রস্তুতি নিয়ে আসবে · যাচাই: পেরেছে / পারেনি") : ""}`;
+    const KT = { homework: ["বাড়ির কাজ", "খাতায় লিখে বা সমাধান করে আনবে · যাচাই: করেছে / করেনি"], lesson: ["ক্লাসের পড়া", "শিখে বা প্রস্তুতি নিয়ে আসবে · যাচাই: পেরেছে / পারেনি"] };
+    const kinds = Object.keys(KT).filter((k) => !S.f.kind || k === S.f.kind);
+    const dayKey = (h) => h.dueDate || h.givenDate || "";
+    const days = {};
+    show.forEach((h) => { (days[dayKey(h)] ||= { homework: [], lesson: [] })[h.kind]?.push(h); });
+    const keys = Object.keys(days).filter(Boolean).sort((x, y) => y.localeCompare(x));
+    if (S.show === "open") keys.reverse();
+    if (days[""]) keys.push("");
+    const dayCard = (key) => {
+      const d = days[key], dt = key ? new Date(key + "T00:00") : null, left = key ? Math.round((dt - new Date(today() + "T00:00")) / 864e5) : 0;
+      const badge = !key ? "" : key === today() ? '<span class="ex-badge now">📌 আজ</span>' : left > 0 ? `<span class="ex-badge">আর ${bn(left)} দিন</span>` : "";
+      const cols = kinds.map((k) => `<div class="hw-col stu-hw-${k}"><h3>${KT[k][0]} <small>${bn(d[k].length)}টি</small></h3>${d[k].length ? d[k].map(dayItem).join("") : `<p class="empty">এই তারিখে ${KT[k][0]} নেই</p>`}</div>`).join("");
+      return `<article class="ex-card hw-day${key === today() ? " today" : ""}"><div class="ex-date">${key ? `<b>${bn(dt.getDate())}</b><small>${dt.toLocaleDateString("bn-BD", { month: "long" })}</small><em>${dt.toLocaleDateString("bn-BD", { weekday: "long" })}</em>` : "<b>—</b><small>তারিখ নেই</small>"}</div><div class="ex-body"><div class="ex-top"><h3>${key ? esc(U.dateWithWeekday(key)) : "তারিখ ঠিক করা হয়নি"}</h3>${badge}</div><div class="hw-cols${kinds.length === 1 ? " one" : ""}">${cols}</div></div></article>`;
+    };
+    return `<section class="card hw-panel"><div class="hw-list-heading"><h3>আপনার ${S.f.kind === "lesson" ? "দেওয়া পড়া" : S.f.kind === "homework" ? "দেওয়া বাড়ির কাজ" : "দেওয়া কাজ ও পড়া"}</h3><p>${esc(session())} · ${S.f.batch ? esc(X.batchName(S.f.batch)) : "সব ব্যাচ"} · মোট ${bn(all.length)}টি</p></div>
+      <div class="hw-panel-bar"><div class="hw-period">${[["all","সব তারিখ",all.length],["open","চলমান ও সামনে",open.length],["past","আগের",past.length]].map(([k,t,n]) => `<button type="button" data-show="${k}" class="${S.show === k ? "on" : ""}">${t} <span>${bn(n)}</span></button>`).join("")}</div>
+      <div class="hw-add">${kinds.map((k) => `<button type="button" class="btn line sm" data-add-kind="${k}">＋ ${k === "lesson" ? "পড়া দিন" : "কাজ দিন"}</button>`).join("")}</div></div></section>
+    ${keys.length ? keys.map(dayCard).join("") : `<section class="card">${empty("এই বাছাইয়ে কোনো কাজ বা পড়া নেই।")}</section>`}`;
   }
 
   // ================= ✓ যাচাই =================
