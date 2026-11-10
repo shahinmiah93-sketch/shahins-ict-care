@@ -1430,7 +1430,7 @@ const CLEAN = {
   // ব্যাচ বন্ধ / ছুটি: কোন ব্যাচ, কবে থেকে কবে, কারণ; reduceFee = বন্ধের ক্লাসের টাকা কমবে কি না (ঈদের ছুটিতে সাধারণত না)
   closures: (b) => ({
     batchIds: (Array.isArray(b.batchIds) ? b.batchIds : []).map((x) => str(x, 60)).filter((x) => db.batches.some((bt) => bt.id === x)),
-    from: str(b.from, 10), to: str(b.to, 10), reason: str(b.reason, 120), reduceFee: !!b.reduceFee,
+    from: str(b.from, 10), to: str(b.to, 10), noticeFrom: str(b.noticeFrom, 40), reason: str(b.reason, 120), reduceFee: !!b.reduceFee,
   }),
 };
 const SETTINGS_KEYS = ["name", "shortName", "tagline", "taglineAccent", "intro", "location", "phone", "phone2", "whatsapp", "email", "address", "facebook", "mapUrl", "hours", "motto", "bannerSeconds", "achieverSeconds", "aplus", "experience", "studentsTotal", "mentorName", "mentorRole", "payBkash", "payNagad", "payRocket", "payBank", "payNote", "cardNote"];
@@ -2721,7 +2721,7 @@ async function api(req, res, url) {
         .map(({ id, kind, title, details, subject, chapter, givenDate, dueDate, checks }) => ({ id, kind, title, details, subject, chapter, givenDate, dueDate, status: (checks || {})[s.id] || "" }))
         .sort((a, b) => (b.dueDate || b.givenDate).localeCompare(a.dueDate || a.givenDate)).slice(0, 60),
       // নিজের ব্যাচের চলমান / সামনের বন্ধ (ছুটি)
-      closures: db.closures.filter((c) => (c.batchIds || []).includes(s.batchId) && c.to >= today()).map(({ from, to, reason }) => ({ from, to, reason })).sort((a, b) => a.from.localeCompare(b.from)),
+      closures: db.closures.filter((c) => (c.batchIds || []).includes(s.batchId) && c.to >= today() && (!c.noticeFrom || c.noticeFrom <= today())).map(({ from, to, reason }) => ({ from, to, reason })).sort((a, b) => a.from.localeCompare(b.from)),
       myRating: (({ stars, comment } = {}) => (stars ? { stars, comment } : null))(db.ratings.find((r) => r.studentId === s.id)),
       // ভর্তি থাকা মডিউলের রেকর্ড ক্লাস (ক্রম অনুযায়ী) — YouTube আইডি বা নিজের সার্ভারের ভিডিও
       // মেয়াদ শেষ হলে সেই মডিউলের ক্লাসের তালিকা পাঠানো হয় না (locked) — শুধু মেয়াদের তথ্য
@@ -3713,6 +3713,11 @@ async function api(req, res, url) {
         if (!clean.batchIds.length) return send(res, 400, { error: "অন্তত একটি ব্যাচ বেছে নিন" });
         if (!/^\d{4}-\d{2}-\d{2}$/.test(clean.from) || !/^\d{4}-\d{2}-\d{2}$/.test(clean.to)) return send(res, 400, { error: "কবে থেকে আর কবে পর্যন্ত — দুটো তারিখই দিন" });
         if (clean.to < clean.from) return send(res, 400, { error: "শেষ তারিখ শুরুর তারিখের আগে হতে পারে না" });
+        if (clean.noticeFrom) {
+          const date = new Date(clean.noticeFrom + "T00:00:00Z");
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(clean.noticeFrom) || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== clean.noticeFrom) return send(res, 400, { error: "নোটিশ দেখানোর জন্য সঠিক তারিখ দিন" });
+          if (clean.noticeFrom > clean.to) return send(res, 400, { error: "নোটিশ দেখানোর তারিখ বন্ধের শেষ দিনের পরে হতে পারে না" });
+        }
       }
       if (col === "exams") {
         if (!clean.title) return send(res, 400, { error: "পরীক্ষার নাম লিখুন" });

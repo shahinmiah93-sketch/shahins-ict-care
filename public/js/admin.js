@@ -3071,6 +3071,7 @@ ${list.map(receiptHtml).join("")}
           ${groups || '<p class="empty">কোনো ব্যাচ নেই</p>'}</div>
         <label>কবে থেকে *<input type="date" name="from" value="${esc(cl ? cl.from : U.today())}" required></label>
         <label>কবে পর্যন্ত *<input type="date" name="to" value="${esc(cl ? cl.to : "")}" required></label>
+        <label class="wide">নোটিশ দেখানো শুরু হবে<input type="date" name="noticeFrom" value="${esc(cl?.noticeFrom || "")}"><small>খালি রাখলে সেভ করার পরই স্টুডেন্ট প্যানেলে দেখাবে।</small></label>
         <label class="wide">কারণ<input name="reason" value="${esc(cl ? cl.reason : "")}" placeholder="যেমন: ঈদের ছুটি" data-combo="CLOSE_REASONS"></label>
         <div class="wide"><b>এই বন্ধে মাসের ফি?</b>
           <label class="cl-fee"><input type="radio" name="reduceFee" value="0"${!cl || !cl.reduceFee ? " checked" : ""}><span><b>ফি পুরো থাকবে</b><small>যেমন ঈদের ছুটি — বন্ধ থাকলেও মাসের পুরো ফি</small></span></label>
@@ -3082,12 +3083,14 @@ ${list.map(receiptHtml).join("")}
         const body = {
           batchIds: $$('#modalBody [name="clb"]:checked').map((x) => x.value),
           from: $('#modalBody [name="from"]').value, to: $('#modalBody [name="to"]').value,
+          noticeFrom: $('#modalBody [name="noticeFrom"]').value,
           reason: $('#modalBody [name="reason"]').value.trim(),
           reduceFee: $('#modalBody [name="reduceFee"]:checked').value === "1",
         };
         if (!body.batchIds.length) throw new Error("অন্তত একটি ব্যাচ বেছে নিন");
         if (!body.from || !body.to) throw new Error("কবে থেকে আর কবে পর্যন্ত — দুটো তারিখই দিন");
         if (body.to < body.from) throw new Error("শেষ তারিখ শুরুর তারিখের আগে হতে পারে না");
+        if (body.noticeFrom && body.noticeFrom > body.to) throw new Error("নোটিশ দেখানোর তারিখ বন্ধের শেষ দিনের পরে হতে পারে না");
         // আগের মাসের বকেয়া বদলাবে — জানিয়ে নেওয়া
         const feeChanges = cl ? (cl.reduceFee !== body.reduceFee || cl.from !== body.from || cl.to !== body.to || String(cl.batchIds) !== String(body.batchIds)) && (cl.reduceFee || body.reduceFee) : body.reduceFee;
         if (feeChanges && (pastMonthTouched(cl) || pastMonthTouched(body)) && !confirm("এই বন্ধ আগের মাসের সাথে জড়িত। সেভ করলে ঐ মাসের শিক্ষার্থীদের বকেয়া হিসাবও বদলে যাবে। তবুও সেভ করবেন?")) return true;
