@@ -2497,10 +2497,10 @@ ${list.map(receiptHtml).join("")}
         <style>${U.TIRO_CSS}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4 portrait;margin:6mm}
         body{margin:0;background:#e9eeec;font-family:'Hind Siliguri','Nirmala UI',sans-serif;color:#1d2b28;font-size:11px}
         .pg{width:198mm;height:285mm;margin:8mm auto;background:#fff;display:grid;grid-template-rows:repeat(3,1fr);box-shadow:0 6px 24px rgba(0,0,0,.08)}
-        .cd{position:relative;padding:3.5mm 5mm 2mm;display:flex;flex-direction:column;gap:1.8mm;border:1.2px solid #0b3b36;border-radius:2mm;margin:3mm 2.5mm;min-height:0}
+        .cd{position:relative;padding:4.8mm 5mm 2mm;display:flex;flex-direction:column;gap:1.8mm;border:1.2px solid #0b3b36;border-radius:2mm;margin:3mm 2.5mm;min-height:0}
         .cd+.cd::before{content:"✂";position:absolute;left:-2.5mm;right:-2.5mm;top:-3.6mm;height:0;border-top:1.2px dashed #8a9a95;color:#5f6f6a;font-size:12px;line-height:0;text-indent:-1mm}
-        .hd{display:flex;align-items:stretch;gap:2.5mm;padding-bottom:1.6mm;border-bottom:1.4px solid #0b3b36}
-        .hd img{flex:none;width:auto;height:11mm;max-width:26mm;object-fit:contain;object-position:left center}.org{display:flex;flex-direction:column;justify-content:center;min-width:0}.org b{display:block;font:700 15px/1.2 'Hind Siliguri','Nirmala UI',sans-serif;color:#0b3b36}.org small{display:block;color:#000;font-size:10px;line-height:1.3}
+        .hd{display:flex;align-items:flex-start;gap:2.5mm;padding-bottom:1.6mm;border-bottom:1.4px solid #0b3b36}
+        .hd img{flex:none;width:auto;height:10.5mm;max-width:26mm;object-fit:contain;margin-top:-2.4mm}.org{display:block;min-width:0}.org b{display:block;font:700 15px/1.2 'Hind Siliguri','Nirmala UI',sans-serif;color:#0b3b36}.org small{display:block;color:#000;font-size:10px;line-height:1.3}
         .tt{margin-left:auto;text-align:center}.tt b{display:block;font:700 15px/1.1 'Hind Siliguri',sans-serif;color:#fff;background:#0b3b36;padding:1mm 3mm;border-radius:1.2mm}.tt small{display:block;margin-top:1mm;color:#0f766e;font:700 12px/1.1 'Hind Siliguri',sans-serif;letter-spacing:.3px} /* মাস-বছর (যেমন November-26) বেতন কার্ডের নিচে, মাঝ বরাবর, গাঢ় সবুজ */
         .mg .pv{background:#f3f5f4}.mg .tt2{background:#eef2f0;font-weight:700}.mg .tt2.one{font-size:15px;color:#b4233c;text-align:center;vertical-align:middle}.mg .tt2.one.paid{color:#15803d}
         .info{display:grid;grid-template-columns:50mm repeat(6,auto);gap:0;border:1px solid #cfd8d4;border-radius:1.2mm;overflow:hidden} /* নামের ঘর ৫০ মিমি (এর বেশি লম্বা নাম ছোট হয়ে এক লাইনে), বাকি জায়গা ডানের ঘরগুলোয় ভাগ হয় */
