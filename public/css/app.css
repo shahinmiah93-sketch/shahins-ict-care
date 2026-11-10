@@ -1126,3 +1126,10 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .hw-day .stu-hw-item{padding:12px}.hw-day .stu-hw-item h4{font-size:16px}
 .stu-hw-rates{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 @media(max-width:700px){.hw-cols{grid-template-columns:minmax(0,1fr)}}
+/* দুই কলামের কার্ড সমান উচ্চতা: ছোটটার নিচে ফাঁকা থাকে, তারিখের লাইন সবসময় নিচে */
+.hw-cols{align-items:stretch}
+.hw-col{display:flex;flex-direction:column;align-content:normal}
+.hw-col>.stu-hw-item:last-child{flex:1}
+.hw-day .stu-hw-item{display:flex;flex-direction:column}
+.hw-day .stu-hw-item>.stu-hw-details{margin-bottom:auto}
+.hw-day .stu-hw-item>.stu-hw-date{margin-top:auto}
