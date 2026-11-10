@@ -11,7 +11,7 @@ test('Salary card says পাওনা, not দেনা', () => {
 });
 test('Logo is lifted so its "শাহিন\'স" wordmark sits on the same line as the institute name', () => {
   assert.match(card, /\.hd\{display:flex;align-items:flex-start/);
-  assert.match(card, /\.hd img\{[^}]*height:10\.5mm[^}]*margin-top:-2\.4mm/);
+  assert.match(card, /\.hd img\{[^}]*height:10\.5mm[^}]*margin-top:-2\.7mm/);
 });
 test('Institute name is Hind Siliguri; address, fee-rule box are black; info labels are bold', () => {
   assert.match(card, /\.org b\{[^}]*'Hind Siliguri'/);
