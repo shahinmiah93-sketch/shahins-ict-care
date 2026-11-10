@@ -11,6 +11,8 @@ test('The rating tile on the home page jumps to the students\' reviews section',
   assert.match(site, /!t\.hidden\) t\.scrollIntoView/);             // hidden section: do nothing
   assert.match(site, /e\.key === "Enter" \|\| e\.key === " "/);     // keyboard works too
   assert.match(css, /\.stats \.stat-go\{cursor:pointer\}/);
-  assert.match(html, /site\.css\?v=20261110-rating-link/);
-  assert.ok(html.includes('id="reviews"'));
+  assert.match(site, /"সফল শিক্ষার্থী", "trophy", "#achievers"\]/); // the successful-students tile too
+  assert.match(css, /#achievers\{scroll-margin-top/);
+  assert.match(html, /site\.css\?v=20261110-stat-links/);
+  assert.ok(html.includes('id="reviews"') && html.includes('id="achievers"'));
 });

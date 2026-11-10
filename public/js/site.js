@@ -68,9 +68,9 @@
     // শিক্ষার্থীরা প্যানেল থেকে যে রেটিং দেয় তার গড়; কেউ না দেওয়া পর্যন্ত আগের মতো ক্লাস ব্যাচ
     data.rating && data.rating.count ? [bn(data.rating.avg.toFixed(1)) + "★", `রেটিং · ${bn(data.rating.count)} জন`, "star", "#reviews"] : [bn(data.batches.length), "ক্লাস ব্যাচ", "cal"],
     // সফল শিক্ষার্থীর সংখ্যা অ্যাডমিন → সেটিংস থেকে; না দিলে "সফল শিক্ষার্থী" অংশের ছবির সংখ্যা
-    [S.aplus || bn(324), "সফল শিক্ষার্থী", "trophy"],
-  ].map(([v, l, i, go]) => `<div${go ? ` class="stat-go" role="link" tabindex="0" data-go="${go}" title="সব মতামত দেখুন"` : ""}><i aria-hidden="true"><svg viewBox="0 0 24 24">${ico[i]}</svg></i><dt>${v}</dt><dd>${l}</dd></div>`).join("");
-  // রেটিংয়ের ঘরে চাপলে নিচের "শিক্ষার্থীদের মতামত" অংশে নিয়ে যায় (অংশটা লুকানো থাকলে কিছু হয় না)
+    [S.aplus || bn(324), "সফল শিক্ষার্থী", "trophy", "#achievers"],
+  ].map(([v, l, i, go]) => `<div${go ? ` class="stat-go" role="link" tabindex="0" data-go="${go}" title="বিস্তারিত দেখুন"` : ""}><i aria-hidden="true"><svg viewBox="0 0 24 24">${ico[i]}</svg></i><dt>${v}</dt><dd>${l}</dd></div>`).join("");
+  // রেটিংয়ের ঘরে চাপলে "শিক্ষার্থীদের মতামত", সফল শিক্ষার্থীর ঘরে চাপলে "সফল শিক্ষার্থী" অংশে নিয়ে যায় (অংশটা লুকানো থাকলে কিছু হয় না)
   $$("#stats .stat-go").forEach((el) => {
     const go = () => { const t = $(el.dataset.go); if (t && !t.hidden) t.scrollIntoView({ behavior: "smooth", block: "start" }); };
     el.onclick = go; el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
