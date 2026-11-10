@@ -318,11 +318,18 @@ ${inner}
       if (!types.some(([k]) => k === TABS._rt)) TABS._rt = "";
       const l = routineList(), up = l.filter((x) => x.date >= t), past = l.filter((x) => x.date < t).reverse();
       const url = (r, dl) => { const q = new URLSearchParams(Q.replace(/^\?/, "")); if (dl) q.set("download", "1"); q.set("v", r.pdf.v); return `/api/student/routine/${encodeURIComponent(r.id)}/pdf?${q}`; };
-      const row = (x) => `<li><b>${x.date === t ? "📌 আজ — " : ""}${esc(examName(x))}</b><p>${U.date(x.date)} (${dayName(x.date)})${x.time ? " · " + esc(x.time) : ""} · পূর্ণমান ${bn(x.full)}${x.chapter ? " · " + esc(x.chapter) : ""}</p>${x.syllabus ? `<p class="pre">সিলেবাস:\n${esc(x.syllabus)}</p>` : ""}</li>`;
+      const row = (x, past) => {
+        const dt = new Date(x.date + "T00:00"), left = Math.round((dt - new Date(t + "T00:00")) / 864e5);
+        const badge = past ? "" : x.date === t ? '<span class="ex-badge now">📌 আজ</span>' : `<span class="ex-badge">আর ${bn(left)} দিন</span>`;
+        return `<li class="ex-card${x.date === t ? " today" : ""}"><div class="ex-date"><b>${bn(dt.getDate())}</b><small>${dt.toLocaleDateString("bn-BD", { month: "long" })}</small><em>${dayName(x.date)}</em></div><div class="ex-body"><div class="ex-top"><h3>${esc(examName(x))}</h3>${badge}</div>
+          <div class="ex-meta"><span><small>তারিখ</small><b>${U.date(x.date)}</b></span><span><small>সময়</small><b>${x.time ? esc(x.time) : "—"}</b></span><span><small>পূর্ণমান</small><b>${bn(x.full)}</b></span></div>
+          ${x.chapter ? `<div class="ex-chap"><small>অধ্যায় / সিলেবাস</small><b>${esc(x.chapter)}</b></div>` : ""}
+          ${x.syllabus ? `<div class="ex-syl"><small>বিস্তারিত সিলেবাস</small><div class="pre">${esc(x.syllabus)}</div></div>` : ""}</div></li>`;
+      };
       return `${pdfs.length ? `<div class="card"><h2>📄 রুটিন PDF</h2><ul class="list" style="margin-top:12px">${pdfs.map((r) => `<li><b>${esc(r.title)}</b><p>${r.type ? esc(EC.typeName(r.type)) + " · " : ""}${U.date(String(r.createdAt).slice(0, 10))}</p><p><a class="btn sm gold" href="${url(r)}" target="_blank" rel="noopener">খুলে দেখুন</a> <a class="btn sm line" href="${url(r, true)}" download>ডাউনলোড</a></p></li>`).join("")}</ul></div>` : ""}
         <div class="card"><div class="rx-bar"><b>ধরন:</b>${[["", "সব"], ...types].map(([k, n]) => `<button type="button" class="rx-chip${k === TABS._rt ? " on" : ""}" data-rt="${k}">${esc(n)} <i>${bn(all.filter((x) => !k || x.type === k).length)}</i></button>`).join("")}${l.length ? '<button type="button" class="btn gold sm rx-print" data-rt-print>🖨 রুটিন প্রিন্ট / PDF</button>' : ""}</div>
-          <h2 style="margin-top:14px">সামনের পরীক্ষা</h2>${up.length ? `<ul class="list" style="margin-top:12px">${up.map(row).join("")}</ul>` : '<p class="empty">সামনে কোনো পরীক্ষার তারিখ দেওয়া নেই</p>'}
-          ${past.length ? `<h2 style="margin-top:18px">হয়ে যাওয়া পরীক্ষা</h2><ul class="list" style="margin-top:12px;opacity:.7">${past.map(row).join("")}</ul>` : ""}</div>`;
+          <h2 style="margin-top:14px">সামনের পরীক্ষা</h2>${up.length ? `<ul class="ex-list">${up.map((x) => row(x, false)).join("")}</ul>` : '<p class="empty">সামনে কোনো পরীক্ষার তারিখ দেওয়া নেই</p>'}
+          ${past.length ? `<h2 style="margin-top:18px">হয়ে যাওয়া পরীক্ষা</h2><ul class="ex-list past">${past.map((x) => row(x, true)).join("")}</ul>` : ""}</div>`;
     },
     eval() {
       setTimeout(() => parent.postMessage({ sicAct: "evalhtml", id: AS }, location.origin), 0);

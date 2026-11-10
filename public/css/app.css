@@ -1096,3 +1096,23 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .dsc-more{margin:8px 0}.dsc-more summary{cursor:pointer;font-weight:600;color:#183658;padding:4px 0}
 /* সিলেবাস: লেখকের দেওয়া লাইন ভাঙা অক্ষত থাকে */
 .pre,.sy{white-space:pre-line;overflow-wrap:anywhere}
+/* পরীক্ষার রুটিন কার্ড (শিক্ষার্থী) */
+.ex-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:14px}
+.ex-list.past{opacity:.72}
+.ex-card{display:grid;grid-template-columns:84px minmax(0,1fr);gap:0;border:1px solid #dbe5f0;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 4px 14px rgba(11,42,91,.07)}
+.ex-card.today{border-color:#e8b923;box-shadow:0 0 0 3px rgba(232,185,35,.25),0 4px 14px rgba(11,42,91,.1)}
+.ex-date{display:grid;align-content:center;justify-items:center;gap:2px;padding:14px 6px;background:linear-gradient(165deg,#0b2a5b,#18478f);color:#fff;text-align:center}
+.ex-date b{font-size:34px;line-height:1;color:#ffd24d}.ex-date small{font-size:14px;font-weight:700}.ex-date em{font-style:normal;font-size:12px;opacity:.85}
+.ex-body{display:grid;gap:12px;padding:14px 16px;min-width:0}
+.ex-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ex-top h3{margin:0;font-size:18px;line-height:1.4;color:#0b2a5b}
+.ex-badge{flex:none;padding:4px 12px;border-radius:999px;background:#e8f1ff;color:#0b4fa8;font-size:13px;font-weight:700}.ex-badge.now{background:#ffe9a8;color:#7a5200}
+.ex-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.ex-meta span{display:grid;gap:2px;padding:8px 12px;border-radius:12px;background:#f2f6fb}
+.ex-meta small,.ex-chap small,.ex-syl small{font-size:12px;font-weight:700;color:#5a6b80;letter-spacing:.2px}
+.ex-meta b{font-size:15px;color:#10233f}
+.ex-chap{display:grid;gap:3px;padding:10px 14px;border-radius:12px;background:#fff7e0;border-left:4px solid #e8b923}.ex-chap b{font-size:15.5px;color:#4a3500;line-height:1.6}
+.ex-syl{display:grid;gap:6px;padding:12px 14px;border-radius:12px;background:#f2f9f5;border-left:4px solid #1f9d63}
+.ex-syl .pre{font-size:15px;line-height:1.95;color:#14301f}
+@media(max-width:520px){.ex-card{grid-template-columns:62px minmax(0,1fr)}.ex-date b{font-size:26px}.ex-date small{font-size:12px}.ex-date em{font-size:10.5px}.ex-body{padding:12px}.ex-top h3{font-size:16px}}
+@media(max-width:520px){.ex-meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ex-meta span{padding:6px 8px}.ex-meta b{font-size:13px;line-height:1.35}.ex-meta small{font-size:11px}.ex-chap b{font-size:14.5px}.ex-syl .pre{font-size:14.5px}}

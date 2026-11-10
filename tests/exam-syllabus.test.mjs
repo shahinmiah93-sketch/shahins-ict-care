@@ -1,4 +1,4 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const read = (p) => fs.readFileSync(new URL('../' + p, import.meta.url), 'utf8');
@@ -8,14 +8,18 @@ test('Exam form has a multi-line syllabus box that is loaded and saved', () => {
   assert.match(exams, /<textarea name="syllabus"/);
   assert.match(exams, /f\.syllabus\.value = ex \? ex\.syllabus \|\| ""/);
   assert.match(exams, /syllabus: f\.syllabus\.value\.trim\(\)/);
-  assert.doesNotMatch(exams, /syllabus: ex \? ex\.syllabus/); // আগের মতো পুরোনো মান ধরে রাখে না
+  assert.doesNotMatch(exams, /syllabus: ex \? ex\.syllabus/); // old value must not be kept silently
 });
 test('Server keeps a long syllabus (up to 5000 chars)', () => {
   assert.match(server, /syllabus: str\(b\.syllabus, 5000\)/);
 });
-test('Students see the syllabus with line breaks kept, and the CSS is loaded fresh', () => {
-  assert.match(student, /class="pre">সিলেবাস:/);
-  assert.match(student, /filter\(Boolean\)\.join\("\\n"\)/);
+test('Students see each exam as a card: date, time, full marks, chapter and the detailed syllabus with line breaks', () => {
+  assert.match(student, /class="ex-card/);
+  assert.match(student, /class="ex-meta"/);
+  assert.match(student, /class="ex-chap"/);
+  assert.match(student, /class="ex-syl"/);
+  assert.match(student, /filter\(Boolean\)\.join\("\\n"\)/); // routine table keeps chapter + syllabus lines
   assert.match(css, /\.pre,\.sy\{white-space:pre-line/);
-  assert.match(html, /app\.css\?v=20261110-syllabus-pre/);
+  assert.match(css, /\.ex-card\{/);
+  assert.match(html, /app\.css\?v=20261110-exam-card/);
 });
