@@ -1315,7 +1315,7 @@ const CLEAN = {
       type, mode, subjects, title: str(b.title, 150), session: str(b.session, 20), date: str(b.date, 10), time: str(b.time, 20),
       batchIds: (Array.isArray(b.batchIds) ? b.batchIds : []).map((x) => str(x, 60)).filter((x) => db.batches.some((bt) => bt.id === x)),
       studentIds: [...new Set((Array.isArray(b.studentIds) ? b.studentIds : []).map((x) => str(x, 40)))].filter((x) => db.students.some((s) => s.id === x)),
-      chapter: str(b.chapter, 120), syllabus: str(b.syllabus, 600), passCq: Math.max(0, Math.min(100, num(b.passCq))), passMcq: Math.max(0, Math.min(100, num(b.passMcq))),
+      chapter: str(b.chapter, 120), syllabus: str(b.syllabus, 5000), passCq: Math.max(0, Math.min(100, num(b.passCq))), passMcq: Math.max(0, Math.min(100, num(b.passMcq))),
     };
     // Chapter Final: ৩ বারের তারিখ (১ম বার = পরীক্ষার তারিখ)
     ex.attemptDates = type === "chapter" ? [ex.date, str((b.attemptDates || [])[1], 10), str((b.attemptDates || [])[2], 10)] : [];

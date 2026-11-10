@@ -1094,3 +1094,5 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .dsc-fixed input[type=number]{font-size:20px;font-weight:700;max-width:220px}
 .dsc-note{display:block;margin:6px 0 4px;color:#586b83;line-height:1.7}
 .dsc-more{margin:8px 0}.dsc-more summary{cursor:pointer;font-weight:600;color:#183658;padding:4px 0}
+/* সিলেবাস: লেখকের দেওয়া লাইন ভাঙা অক্ষত থাকে */
+.pre,.sy{white-space:pre-line;overflow-wrap:anywhere}

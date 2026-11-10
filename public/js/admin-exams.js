@@ -393,7 +393,7 @@ window.SICExams = function (X) {
         <p style="margin:10px 0 0"><button type="button" class="btn line sm" data-go-entry="bulk">✎ নম্বর এন্ট্রিতে যান →</button> <button type="button" class="btn line sm" data-go-entry="rank">মেধাক্রম</button></p>`
       : empty(i.done ? "এই পরীক্ষার নম্বর এখনো দেওয়া হয়নি।" : "পরীক্ষা এখনো হয়নি।") + `<p style="margin:10px 0 0"><button type="button" class="btn line sm" data-go-entry="bulk">✎ নম্বর দিন →</button></p>`;
     const head = `<div class="ln-bar"><button type="button" class="btn line" data-back>‹ সব পরীক্ষা</button><span>${statusTag(i)} <button type="button" class="btn line sm" data-edit-exam="${ex.id}">✎ সম্পাদনা</button></span></div>
-      <section class="ln-hero" style="--k:${TYPE_C[ex.type]}"><span class="ln-date big">${d ? `<b>${d.day}</b><small>${d.mon}</small>` : "<b>—</b>"}</span><div><small>${esc(EC.typeName(ex.type))}${n > 1 ? " · " + EC.ATTEMPT_NAMES[i.a] : ""}</small><h2>${esc(ex.title)}</h2>${ex.chapter || ex.syllabus ? `<p>${esc([ex.chapter, ex.syllabus].filter(Boolean).join(" — "))}</p>` : ""}</div></section>
+      <section class="ln-hero" style="--k:${TYPE_C[ex.type]}"><span class="ln-date big">${d ? `<b>${d.day}</b><small>${d.mon}</small>` : "<b>—</b>"}</span><div><small>${esc(EC.typeName(ex.type))}${n > 1 ? " · " + EC.ATTEMPT_NAMES[i.a] : ""}</small><h2>${esc(ex.title)}</h2>${ex.chapter ? `<p>${esc(ex.chapter)}</p>` : ""}${ex.syllabus ? `<p class="pre">${esc(ex.syllabus)}</p>` : ""}</div></section>
       <div class="ln-two"><section class="card"><h3>তথ্য</h3><div class="ln-info">${info.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join("")}</div></section>
         <section class="card"><h3>ফলাফলের সারসংক্ষেপ${n > 1 ? ` <small class="ln-count">${EC.ATTEMPT_NAMES[i.a]}</small>` : ""}</h3>${summary}</section></div>`;
     const SUBS = [["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"], ["script", "মূল্যায়ন খাতা"]];
@@ -475,7 +475,8 @@ window.SICExams = function (X) {
         </div>
         <div class="form-grid exam-builder-more">
           <label>সেশন<select name="session"></select></label>
-          <label class="span2">অধ্যায় / সিলেবাস<input name="chapter" placeholder="যেমন: অধ্যায় ১ — তথ্য ও যোগাযোগ প্রযুক্তি: বিশ্ব ও বাংলাদেশ প্রেক্ষিত"></label>
+          <label class="span2">অধ্যায় (ছোট করে) <small style="color:var(--muted);font-weight:400">— অধ্যায়ভিত্তিক ফলাফলের হিসাবে এটা ধরা হয়</small><input name="chapter" maxlength="120" placeholder="যেমন: অধ্যায় ১ — তথ্য ও যোগাযোগ প্রযুক্তি"></label>
+          <label class="span2">সিলেবাস (বিস্তারিত) <small style="color:var(--muted);font-weight:400">— যত খুশি লিখুন; Enter দিয়ে নতুন লাইন করা যায়, শিক্ষার্থী ঠিক এভাবেই দেখবে</small><textarea name="syllabus" rows="5" maxlength="5000" style="resize:vertical;min-height:110px;white-space:pre-wrap" placeholder="যেমন:&#10;১. বাংলাদেশ পরিচিতি — পৃষ্ঠা ২&#10;২. অন্যান্য জাতীয় বিষয়াবলি — পৃষ্ঠা ৫–৮"></textarea></label>
           <label>সময় (ঐচ্ছিক)<input name="time" placeholder="যেমন: সকাল ১০:০০"></label>
           <label class="builder-pass-cq">CQ পাস (%)<input name="passCq" inputmode="decimal" autocomplete="off"></label>
           <label class="builder-pass-mcq">MCQ পাস (%)<input name="passMcq" inputmode="decimal" autocomplete="off"></label>
@@ -597,7 +598,7 @@ window.SICExams = function (X) {
     f.passCq.value = ex ? ex.passCq || EC.passPctDefault(ex.type) : ""; f.passMcq.value = ex ? ex.passMcq || EC.passPctDefault(ex.type) : ""; f.passCq.dataset.auto = f.passMcq.dataset.auto = "";
     f.date.value = ex ? ex.date || "" : date || today();
     f.title.value = ex ? ex.title : ""; f.title.dataset.auto = "";
-    f.chapter.value = ex ? ex.chapter || "" : ""; f.time.value = ex ? ex.time || "" : "";
+    f.chapter.value = ex ? ex.chapter || "" : ""; f.syllabus.value = ex ? ex.syllabus || "" : ""; f.time.value = ex ? ex.time || "" : "";
     f.d2.value = ex ? (ex.attemptDates || [])[1] || "" : ""; f.d3.value = ex ? (ex.attemptDates || [])[2] || "" : "";
     $(".exam-subject-builder", dlg).innerHTML = "";
     if (ex) (ex.subjects || []).forEach((s) => addRow(s.name, s.cq, s.mcq, s.cq > 0 || ex.mode === "mcq", s.mcq > 0 || ex.mode === "cq"));
@@ -625,7 +626,7 @@ window.SICExams = function (X) {
     if (f.mode.value !== "cq" && !(passMcq > 0 && passMcq <= 100)) return err("MCQ পাস মার্ক ১ থেকে ১০০-এর মধ্যে লিখুন (শতকরা হিসাবে)।", f.passMcq);
     const ex = B.edit, type = f.type.value;
     const body = {
-      type, passCq: passCq || 0, passMcq: passMcq || 0, mode: f.mode.value, title, date: f.date.value, time: f.time.value.trim(), session: f.session.value, chapter: f.chapter.value.trim(), syllabus: ex ? ex.syllabus || "" : "",
+      type, passCq: passCq || 0, passMcq: passMcq || 0, mode: f.mode.value, title, date: f.date.value, time: f.time.value.trim(), session: f.session.value, chapter: f.chapter.value.trim(), syllabus: f.syllabus.value.trim(),
       attemptDates: type === "chapter" ? [f.date.value, f.d2.value, f.d3.value] : [],
       subjects: subjects.map(({ name, cq, mcq }) => ({ name, cq, mcq })), studentIds: [...B.sel],
       batchIds: [...new Set([...B.sel].map((id) => (X.studentById(id) || {}).batchId).filter(Boolean))], marks: ex ? ex.marks : {},

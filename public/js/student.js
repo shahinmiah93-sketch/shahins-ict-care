@@ -299,7 +299,7 @@ ${inner}
   const routineList = () => (D.schedule || []).filter((x) => !TABS._rt || x.type === TABS._rt);
   function printRoutine() {
     const l = routineList();
-    openCard("পরীক্ষার রুটিন", `<table><thead><tr><th class="c">নং</th><th>তারিখ</th><th>দিন</th><th>পরীক্ষা</th><th>সময়</th><th class="n">পূর্ণমান</th><th>সিলেবাস</th></tr></thead><tbody>${l.map((x, i) => `<tr><td class="c">${bn(i + 1)}</td><td>${U.date(x.date)}</td><td>${dayName(x.date)}</td><td>${esc(examName(x))}</td><td>${esc(x.time || "—")}</td><td class="n">${bn(x.full)}</td><td class="sy">${esc(x.chapter || x.syllabus || "—")}</td></tr>`).join("")}</tbody></table>`, null);
+    openCard("পরীক্ষার রুটিন", `<table><thead><tr><th class="c">নং</th><th>তারিখ</th><th>দিন</th><th>পরীক্ষা</th><th>সময়</th><th class="n">পূর্ণমান</th><th>সিলেবাস</th></tr></thead><tbody>${l.map((x, i) => `<tr><td class="c">${bn(i + 1)}</td><td>${U.date(x.date)}</td><td>${dayName(x.date)}</td><td>${esc(examName(x))}</td><td>${esc(x.time || "—")}</td><td class="n">${bn(x.full)}</td><td class="sy">${esc([x.chapter, x.syllabus].filter(Boolean).join("\n") || "—")}</td></tr>`).join("")}</tbody></table>`, null);
   }
   // জন্মদিনের দিন: রঙিন ব্যানার (বেলুন + কেক) — সার্ভার জন্মদিনের নোটিশে birthday চিহ্ন দেয়; সাধারণ নোটিশের তালিকায় এটা আর আলাদা করে আসে না
   const birthdayCard = () => {
@@ -318,7 +318,7 @@ ${inner}
       if (!types.some(([k]) => k === TABS._rt)) TABS._rt = "";
       const l = routineList(), up = l.filter((x) => x.date >= t), past = l.filter((x) => x.date < t).reverse();
       const url = (r, dl) => { const q = new URLSearchParams(Q.replace(/^\?/, "")); if (dl) q.set("download", "1"); q.set("v", r.pdf.v); return `/api/student/routine/${encodeURIComponent(r.id)}/pdf?${q}`; };
-      const row = (x) => `<li><b>${x.date === t ? "📌 আজ — " : ""}${esc(examName(x))}</b><p>${U.date(x.date)} (${dayName(x.date)})${x.time ? " · " + esc(x.time) : ""} · পূর্ণমান ${bn(x.full)}${x.chapter ? " · " + esc(x.chapter) : ""}</p>${x.syllabus ? `<p>সিলেবাস: ${esc(x.syllabus)}</p>` : ""}</li>`;
+      const row = (x) => `<li><b>${x.date === t ? "📌 আজ — " : ""}${esc(examName(x))}</b><p>${U.date(x.date)} (${dayName(x.date)})${x.time ? " · " + esc(x.time) : ""} · পূর্ণমান ${bn(x.full)}${x.chapter ? " · " + esc(x.chapter) : ""}</p>${x.syllabus ? `<p class="pre">সিলেবাস:\n${esc(x.syllabus)}</p>` : ""}</li>`;
       return `${pdfs.length ? `<div class="card"><h2>📄 রুটিন PDF</h2><ul class="list" style="margin-top:12px">${pdfs.map((r) => `<li><b>${esc(r.title)}</b><p>${r.type ? esc(EC.typeName(r.type)) + " · " : ""}${U.date(String(r.createdAt).slice(0, 10))}</p><p><a class="btn sm gold" href="${url(r)}" target="_blank" rel="noopener">খুলে দেখুন</a> <a class="btn sm line" href="${url(r, true)}" download>ডাউনলোড</a></p></li>`).join("")}</ul></div>` : ""}
         <div class="card"><div class="rx-bar"><b>ধরন:</b>${[["", "সব"], ...types].map(([k, n]) => `<button type="button" class="rx-chip${k === TABS._rt ? " on" : ""}" data-rt="${k}">${esc(n)} <i>${bn(all.filter((x) => !k || x.type === k).length)}</i></button>`).join("")}${l.length ? '<button type="button" class="btn gold sm rx-print" data-rt-print>🖨 রুটিন প্রিন্ট / PDF</button>' : ""}</div>
           <h2 style="margin-top:14px">সামনের পরীক্ষা</h2>${up.length ? `<ul class="list" style="margin-top:12px">${up.map(row).join("")}</ul>` : '<p class="empty">সামনে কোনো পরীক্ষার তারিখ দেওয়া নেই</p>'}
