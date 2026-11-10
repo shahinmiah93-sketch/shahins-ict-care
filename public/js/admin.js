@@ -3131,6 +3131,7 @@ ${list.map(receiptHtml).join("")}
   function noticeForm(n) {
     const selB = new Set((n && n.batchIds) || []), selS = new Set((n && n.sessions) || []);
     const targetHtml = `<div id="ntTarget"><b>কাদের দেখাবে?</b> <small style="color:var(--muted)">কিছু না বাছলে সব শিক্ষার্থী দেখবে। সেশন বা ব্যাচ বাছলে শুধু তারাই দেখবে (ওয়েবসাইটে যাবে না)।</small>
+      <p id="ntNote" hidden style="margin:6px 0;padding:8px 12px;border-radius:10px;background:#fff7e0;color:#6b4a00;font-size:13.5px"></p>
       ${DB.sessions.map((se) => { const list = DB.batches.filter((b) => b.session === se.name); return `<div class="cl-sess"><label class="check"><input type="checkbox" name="nts" value="${esc(se.name)}"${selS.has(se.name) ? " checked" : ""}> <b>পুরো সেশন — ${esc(se.name)}</b></label>${list.length ? `<div class="cl-batches">${list.map((b) => `<label class="cl-b"><input type="checkbox" name="ntb" value="${b.id}"${selB.has(b.id) || selS.has(se.name) ? " checked" : ""}><span><b>${esc(b.name)}</b><small>${esc(b.days || "")}${b.time ? " · " + esc(b.time) : ""}</small></span></label>`).join("")}</div>` : ""}</div>`; }).join("")}</div>`;
     openForm({
       title: n ? "নোটিশ বদলান" : "নতুন নোটিশ",
@@ -3165,12 +3166,27 @@ ${list.map(receiptHtml).join("")}
     });
   }
   // নোটিশের "কাদের দেখাবে?": পুরো সেশন টিক দিলে তার সব ব্যাচ টিক হয়; কোনো ব্যাচ বাদ দিলে সেশনের টিক উঠে যায়
+  // সেশন/ব্যাচের নোটিশ ওয়েবসাইটে যায় না — তাই দুটো একসাথে টিক থাকে না: সেশন/ব্যাচ বাছলে "ওয়েবসাইটেও দেখান" নিজে উঠে যায়, আর "ওয়েবসাইটেও দেখান" টিক দিলে সেশন/ব্যাচের টিক সরে যায় (এরর দেখানোর বদলে)
   document.addEventListener("change", (e) => {
-    const t = e.target, sec = t && t.closest && t.closest("#ntTarget .cl-sess");
+    const t = e.target;
+    if (t && t.name === "public" && t.closest && t.closest("#modalBody") && $("#ntTarget")) {
+      if (t.checked) {
+        const had = $$("#ntTarget input:checked").length > 0;
+        $$("#ntTarget input:checked").forEach((x) => { x.checked = false; });
+        const note = $("#ntNote"); if (note) { note.hidden = !had; note.textContent = "ওয়েবসাইটে দেখালে নোটিশটা সবার জন্য — তাই সেশন / ব্যাচের টিক সরিয়ে দিয়েছি।"; }
+      }
+      return;
+    }
+    const sec = t && t.closest && t.closest("#ntTarget .cl-sess");
     if (!sec || !t.name) return;
     const batches = [...sec.querySelectorAll('[name="ntb"]')];
     if (t.name === "nts") batches.forEach((x) => { x.checked = t.checked; });
     else if (t.name === "ntb") { const s = sec.querySelector('[name="nts"]'); if (s) s.checked = batches.length > 0 && batches.every((x) => x.checked); }
+    const pub = $('#modalBody [name="public"]'), note = $("#ntNote");
+    if (pub && pub.checked && $$("#ntTarget input:checked").length) {
+      pub.checked = false;
+      if (note) { note.hidden = false; note.textContent = "নির্দিষ্ট সেশন / ব্যাচের নোটিশ ওয়েবসাইটে যায় না — তাই \"ওয়েবসাইটেও দেখান\" টিক তুলে দিয়েছি।"; }
+    } else if (note && !$$("#ntTarget input:checked").length) note.hidden = true;
   });
   function noticeTargetChip(n) {
     const parts = [...(n.sessions || []).map((s) => "সেশন " + s), ...(n.batchIds || []).map((id) => batchName(id))];
