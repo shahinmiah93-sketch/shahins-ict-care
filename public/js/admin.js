@@ -1210,7 +1210,9 @@ ${list.map(receiptHtml).join("")}
       if (!showModule) return { fee: 0 };
       const m = courseById(pick.courseId);
       const fee = !m ? 0 : m.feeType === "chapter" ? (m.chapters || []).filter((x) => pick.chapters.includes(x.id)).reduce((t, x) => t + x.fee, 0) : m.fee;
-      const discount = Math.min(Math.max(0, Number(q("discount").value || 0)), fee);
+      // % ঘরে সংখ্যা থাকলে ছাড় = প্রতি মাসের আসল ফি-র সেই শতাংশ (মাসভিত্তিক তালিকা ধরে)
+      const pct = q("discountPct") ? Math.min(100, Math.max(0, Number(q("discountPct").value) || 0)) : 0;
+      const discount = pct > 0 ? Math.round(fee * pct / 100) : Math.min(Math.max(0, Number(q("discount").value || 0)), fee);
       const paid = Math.max(0, Number(q("paid").value || 0));
       let net = fee - discount;
       // রেগুলার (মাসিক) ব্যাচ: ভর্তির মাসে যত ক্লাস পাবে সেই হিসাবে ফি (১–৬ তারিখে ভর্তি হলে পুরো মাস; "টাকা কমবে" এমন বন্ধের ক্লাস বাদ)
@@ -1218,11 +1220,11 @@ ${list.map(receiptHtml).join("")}
       if (m && m.feeType === "monthly") {
         const b = curBatch(), sd = (mode === "enroll" ? q("startDate")?.value : q("admissionDate")?.value) || U.today(), st = new Date(sd + "T00:00:00");
         grace = st.getDate() <= U.FULL_FEE_UNTIL_DAY;
-        const monthNet = U.monthlyFeeFor(m, { fee, discount }, sd.slice(0, 7)); net = monthNet;
+        const monthNet = U.monthlyFeeFor(m, { fee, discount, discountPct: pct }, sd.slice(0, 7)); net = monthNet;
         fm = b ? U.monthFee(monthNet, b.days, st.getFullYear(), st.getMonth(), grace ? 1 : st.getDate(), U.feeClosedDates(DB.closures, b.id)) : null;
         first = fm ? fm.fee : monthNet;
       }
-      return { m, fee, discount, paid, net, first, fm, grace, due: Math.max(0, first - paid), extra: Math.max(0, paid - first) };
+      return { m, fee, discount, pct, paid, net, first, fm, grace, due: Math.max(0, first - paid), extra: Math.max(0, paid - first) };
     };
     const drawFee = () => {
       if (!showModule) return;
@@ -1373,7 +1375,7 @@ ${list.map(receiptHtml).join("")}
       $$(".adm-actions .btn").forEach((b) => (b.disabled = true));
       try {
         let stu, enr, pay;
-        const enrollment = { courseId: pick.courseId, chapters: pick.chapters, discount: k.discount, startDate: q("startDate") ? q("startDate").value : "", planEnd: q("planEnd") ? q("planEnd").value : "" };
+        const enrollment = { courseId: pick.courseId, chapters: pick.chapters, discount: k.discount, discountPct: k.pct || 0, startDate: q("startDate") ? q("startDate").value : "", planEnd: q("planEnd") ? q("planEnd").value : "" };
         const payment = { amount: k.paid, method: q("method") ? q("method").value : "" };
         if (mode === "edit") stu = (await save("students", { ...s, ...d }, s.id)).item;
         else if (mode === "enroll") { const r = await api("/api/admin/enroll", { body: { studentId: s.id, enrollment, payment, replaceId } }); stu = s; enr = r.enrollment; pay = r.payment; }
@@ -1431,7 +1433,8 @@ ${list.map(receiptHtml).join("")}
         <div class="mny"><small>জমা</small><b>${money(pay ? pay.amount : 0)}</b></div>
         <div class="mny ${s.fees.balance > 0 ? "due" : ""}"><small>মোট বকেয়া</small><b>${money(Math.max(0, s.fees.balance))}</b></div>
       </div>
-      ${enrolled || !DB.attendance[`${U.today()}|${s.batchId}`] ? "" : `<div class="adm-att" style="margin:12px auto;padding:10px 14px;border:1px dashed #c9a24a;border-radius:12px;max-width:460px;background:#fffaf0"><b>আজ (${esc(U.date(U.today()))}) এই ব্যাচের হাজিরা আগেই নেওয়া হয়ে গেছে।</b><br><small>${esc(s.name)} কি আজ ক্লাসে এসেছিল?</small><div class="toolbar" style="justify-content:center;margin:8px 0 0"><button type="button" class="btn line" id="dnAttP" data-st="P">✓ হ্যাঁ, এসেছিল</button><button type="button" class="btn line" id="dnAttA" data-st="A">✗ না, আসেনি</button></div><small id="dnAttNote" class="muted"></small></div>`}
+      ${enrolled || !DB.attendance[`${U.today()}|${s.batchId}`] || U.closureOn(DB.closures, s.batchId, U.today()) ? "" : `<div class="adm-att" style="margin:12px auto;padding:10px 14px;border:1px dashed #c9a24a;border-radius:12px;max-width:460px;background:#fffaf0"><b>আজ (${esc(U.date(U.today()))}) এই ব্যাচের হাজিরা আগেই নেওয়া হয়ে গেছে।</b><br><small>${esc(s.name)} কি আজ ক্লাসে এসেছিল?</small><div class="toolbar" style="justify-content:center;margin:8px 0 0"><button type="button" class="btn line" id="dnAttP" data-st="P">✓ হ্যাঁ, এসেছিল</button><button type="button" class="btn line" id="dnAttA" data-st="A">✗ না, আসেনি</button></div><small id="dnAttNote" class="muted"></small><br><small class="muted">"না" দিলে অন্য অনুপস্থিতদের মতো সন্ধ্যায় অভিভাবকের কাছে অনুপস্থিতির SMS যেতে পারে।</small></div>`}
+      ${(() => { const it = (s.fees?.items || []).find((x) => x.enrollmentId === enr?.id); if (!(it && m && m.feeType === "monthly" && it.due > 0 && it.due < enr.fee - enr.discount)) return ""; const d = new Date((enr.startDate || U.today()) + "T00:00:00"); d.setDate(1); d.setMonth(d.getMonth() + 1); const next = U.monthlyFeeFor(m, enr, d.toLocaleDateString("en-CA").slice(0, 7)); return `<p class="muted" style="margin:6px 0"><small>বকেয়া ${money(it.due)} — ভর্তির মাসে ক্লাস কম পাওয়ায় (বা মাসভিত্তিক ফি-তালিকা অনুযায়ী) এ মাসের ফি কম ধরা হয়েছে। পরের মাস থেকে ${money(next)} করে।</small></p>`; })()}
       ${enrolled ? "" : `<p class="muted"><span id="dnSmsNote">${esc(loginSmsNote(s))}</span> — এটা দিয়ে শিক্ষার্থী প্যানেলে লগইন করবে।</p>`}
       <div class="toolbar" style="justify-content:center">
         ${pay ? '<button type="button" class="btn gold" id="dnRec">রসিদ প্রিন্ট</button>' : '<button type="button" class="btn gold" id="dnPay">৳ পেমেন্ট নিন</button>'}

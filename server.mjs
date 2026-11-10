@@ -1440,8 +1440,10 @@ function validateEnrollment(e) {
   const chapters = course.feeType === "chapter" ? [...new Set((Array.isArray(e.chapters) ? e.chapters : []).map((x) => str(x, 10)))].filter((x) => valid.includes(x)) : [];
   if (course.feeType === "chapter" && !chapters.length) return { error: "অন্তত একটি অধ্যায় বেছে নিন" };
   const fee = moduleFee(course, chapters);
-  const discount = Math.min(Math.max(0, num(e.discount)), fee);
-  return { course, chapters, fee, discount };
+  // শতাংশ দিলে সেটা প্রতি মাসের আসল ফি-র শতাংশ (মাসভিত্তিক তালিকা ধরে); টাকা দিলে ঠিক সেই টাকা
+  const pct = Math.min(100, Math.max(0, num(e.discountPct)));
+  const discount = pct > 0 ? Math.round(fee * pct / 100) : Math.min(Math.max(0, num(e.discount)), fee);
+  return { course, chapters, fee, discount, ...(pct > 0 ? { pct } : {}) };
 }
 // ---------- মেয়াদ (রেকর্ড ক্লাস / প্রিমিয়াম ই-বুক) ----------
 // মডিউলের validityDays (০ = আজীবন) ভর্তির দিন (startDate) থেকে গোনা হয়; অ্যাডমিন বাড়ালে enrollment-এ accessUntil (তারিখ) বা accessLifetime বসে।
@@ -1471,7 +1473,7 @@ function ebookSyncBuyers(e) { // নতুন ক্রেতার যোগে
 }
 function createEnrollment(studentId, v, startDate, planEnd) {
   // planEnd = কোর্স শেষ হওয়ার (পরিকল্পিত) তারিখ; endDate = মাসিক কোর্স আসলে বন্ধ করার তারিখ
-  const enr = { id: uid("enr"), studentId, courseId: v.course.id, chapters: v.chapters, fee: v.fee, discount: v.discount, startDate: startDate || today(), planEnd: str(planEnd, 10), endDate: "", status: "active", createdAt: new Date().toISOString() };
+  const enr = { id: uid("enr"), studentId, courseId: v.course.id, chapters: v.chapters, fee: v.fee, discount: v.discount, ...(v.pct > 0 ? { discountPct: v.pct } : {}), startDate: startDate || today(), planEnd: str(planEnd, 10), endDate: "", status: "active", createdAt: new Date().toISOString() };
   setFirstMonth(enr);
   db.enrollments.push(enr);
   return enr;
@@ -3016,6 +3018,8 @@ async function api(req, res, url) {
     const s = db.students.find((x) => x.id === str(b.studentId, 40));
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
     const st = b.status === "P" || b.status === "A" ? b.status : "";
+    const cl = (db.closures || []).find((c) => (c.batchIds || []).includes(s.batchId) && c.from <= today() && (c.to || c.from) >= today());
+    if (cl && st) return send(res, 400, { error: `আজ এই ব্যাচ বন্ধ${cl.reason ? " (" + cl.reason + ")" : ""} — হাজিরা লেখা যাবে না` });
     const key = `${today()}|${s.batchId}`;
     const marks = { ...(db.attendance[key] || {}) };
     if (st) marks[s.id] = st; else delete marks[s.id];
