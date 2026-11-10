@@ -1166,3 +1166,4 @@ body.home{--muted:#a1a1aa;--line:rgba(255,255,255,.1);background:#070707;color:#
 .pd-body h3{margin:0 0 4px;padding-right:34px;color:#fff;font-size:26px;line-height:1.35}.pd-sub{margin:0 0 16px;color:var(--gold,#f3c55d);font-weight:700}
 .pd-body p{margin:0 0 14px;font-size:16.5px;line-height:1.95}.pd-body p.pd-sub{font-size:15.5px;line-height:1.5}
 @media(max-width:640px){.person-dialog[open]{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);max-height:88vh}.pd-ph{min-height:0;height:230px}.pd-body{padding:20px 20px 24px;max-height:none}.pd-body h3{font-size:22px}}
+.stats .stat-go{cursor:pointer}.stats .stat-go:focus-visible{outline:2px solid var(--gold);outline-offset:3px}#reviews{scroll-margin-top:84px}

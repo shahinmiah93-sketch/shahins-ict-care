@@ -722,7 +722,9 @@ function syncQuizNotice(q, gone) {
 // ---- অনলাইন (ব্যাচের বাইরের) শিক্ষার্থী ----
 // ছোট ফর্ম (নাম, মোবাইল, এইচএসসি ব্যাচ, গ্রুপ, কলেজ) পূরণ করে "সবার জন্য খোলা" কুইজ দেয়। মোবাইল দিয়ে চেনা হয়, আইডি G0001…
 const QUIZ_GROUPS = ["বিজ্ঞান", "মানবিক", "ব্যবসায় শিক্ষা"];
-const hscOptions = () => { const y = new Date().getFullYear() % 100; return [...new Set([y, y + 1, y + 2].map((n) => `HSC-${n}`).concat(db.sessions.map((s) => s.name).filter((n) => /^HSC-\d{2}$/.test(n))))].sort(); };
+// গেস্ট / কুইজ অ্যাকাউন্টের "HSC batch": HSC-05 (২০০৫) থেকে HSC-30 পর্যন্ত; তার বাইরের কোনো সেশন থাকলে সেটাও যোগ হয়
+const HSC_FROM = 5, HSC_TO = 30;
+const hscOptions = () => [...new Set(Array.from({ length: HSC_TO - HSC_FROM + 1 }, (_, i) => `HSC-${String(HSC_FROM + i).padStart(2, "0")}`).concat(db.sessions.map((s) => s.name).filter((n) => /^HSC-\d{2}$/.test(n))))].sort();
 const quizForGuest = (q) => !!(q.live && q.open);
 const guestOf = (req) => { const g = getLogin(req, "guest"); return g && db.quizGuests.find((x) => x.id === g.sid); };
 const nextGuestId = () => "G" + String(db.quizGuests.reduce((n, g) => Math.max(n, Number(g.id.slice(1)) || 0), 0) + 1).padStart(4, "0");
