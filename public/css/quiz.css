@@ -24,7 +24,7 @@
 .qp-tiles b.ok{color:#0b6b52}.qp-tiles b.bad{color:#b4233c}
 /* কুইজ দেওয়ার সময় (শিক্ষার্থী প্যানেলের মতো) */
 .qr-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}.qr-top p{margin:4px 0 0;color:var(--muted)}
-.qr-timer{position:sticky;top:90px;padding:10px 18px;border-radius:16px;background:linear-gradient(150deg,var(--em2),var(--navy));color:var(--gold);font:800 26px/1 Consolas,'Hind Siliguri',monospace;letter-spacing:.05em}
+.qr-timer{position:sticky;top:90px;padding:10px 18px;border-radius:16px;background:linear-gradient(150deg,var(--em2),var(--navy));color:var(--gold);font:700 26px/1 'Hind Siliguri','Nirmala UI',sans-serif;letter-spacing:.05em}
 .qr-timer.low{background:linear-gradient(150deg,#9b1c3c,#b4233c);color:#fff;animation:qrblink 1s infinite}@keyframes qrblink{50%{opacity:.6}}
 .qr-prog{height:8px;border-radius:999px;background:#eef3f1;overflow:hidden;margin:14px 0 4px}.qr-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--em2),var(--gold2));transition:width .2s}
 .qr-cnt{margin:0 0 10px;color:var(--muted);font-weight:600;font-size:14px}
@@ -41,7 +41,7 @@
 @media(max-width:640px){.qr-os,.qp-form{grid-template-columns:1fr}.qp-tiles{grid-template-columns:1fr 1fr}}
 /* ট্যালেন্ট হান্ট পেজ (/talent-hunt) */
 .th-done{display:grid;gap:8px;justify-items:start;margin-top:6px}
-.th-roll{padding:12px 22px;border:2px dashed var(--gold2);border-radius:16px;background:#fff8e6;text-align:center}.th-roll small{display:block;color:#8a5a00;font-weight:700}.th-roll b{font:800 30px/1.2 Consolas,'Hind Siliguri',monospace;color:var(--em2)}
+.th-roll{padding:12px 22px;border:2px dashed var(--gold2);border-radius:16px;background:#fff8e6;text-align:center}.th-roll small{display:block;color:#8a5a00;font-weight:700}.th-roll b{font:700 30px/1.2 'Hind Siliguri','Nirmala UI',sans-serif;color:var(--em2)}
 .th-table{width:100%;border-collapse:collapse;font-size:15px}.th-table th,.th-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}.th-table th{background:#f6efdf;font-size:14px}.th-table .num{text-align:right}
 .th-table tr.top td{background:#fff8e6}
 /* অনলাইন কোর্সের পাতা (/course, /courses, /free-classes) */

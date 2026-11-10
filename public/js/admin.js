@@ -214,11 +214,11 @@
     w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><title>${esc(title)} — ${esc(U.date(U.today()))}</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${O}/css/app.css"><link rel="stylesheet" href="${O}/css/exams.css">${U.DOC_FONTS}
-<style>${U.DOC_CSS}.pt{font:800 18px "Noto Serif Bengali","Nirmala UI",serif;color:#0b2e28;margin:0 0 3mm}.pw table th{background:#1f6b52!important;color:#fff!important}.pw tbody tr:nth-child(even) td{background:#f5f9f7}@font-face{font-family:'BnNum';src:local('Kalpurush'),url('${O}/fonts/kalpurush.ttf') format('truetype');unicode-range:U+0030-0039}${U.TIRO_CSS}
+<style>${U.DOC_CSS}.pt{font:700 18px "Hind Siliguri","Nirmala UI",sans-serif;color:#0b2e28;margin:0 0 3mm}.pw table th{background:#1f6b52!important;color:#fff!important}.pw tbody tr:nth-child(even) td{background:#f5f9f7}@font-face{font-family:'BnNum';src:local('Kalpurush'),url('${O}/fonts/kalpurush.ttf') format('truetype');unicode-range:U+0030-0039}${U.TIRO_CSS}
 @page{size:A4 ${wide ? "landscape" : "portrait"};margin:9mm}html,body{background:#fff!important}body{font-family:'BnNum','Hind Siliguri','Nirmala UI',sans-serif;margin:0;color:#16302b}
 .pb{position:sticky;top:0;z-index:5;background:#0b3b36;padding:10px;text-align:center}.pb button{font:700 14px 'Hind Siliguri',sans-serif;background:#f3c55d;border:0;border-radius:999px;padding:8px 22px;cursor:pointer}
 .pw{max-width:${wide ? "1100px" : "800px"};margin:0 auto;padding:14px}.ph{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;background:#f3f6f4;border-radius:10px;padding:10px 14px;border-bottom:2px solid #1f6b52;margin-bottom:12px}
-.ph .lg{height:52px;justify-self:end}.ph .org{text-align:center}.ph .org b{display:block;font:900 20px 'Noto Serif Bengali','Nirmala UI',serif;color:#0b2e28}.ph .org small{display:block;font-size:12px;font-weight:600;color:#33433f}.ph .tl{font-weight:800;font-size:17px;color:#0b2e28}.ph .tl small{display:block;font-weight:500;font-size:11px;color:#5d7570}
+.ph .lg{height:52px;justify-self:end}.ph .org{text-align:center}.ph .org b{display:block;font:700 20px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0b2e28}.ph .org small{display:block;font-size:12px;font-weight:600;color:#33433f}.ph .tl{font-weight:700;font-size:17px;color:#0b2e28}.ph .tl small{display:block;font-weight:500;font-size:11px;color:#5d7570}
 .pv{font-weight:700;padding:0 4px;border-bottom:1px dotted #9bb0aa}.card{box-shadow:none!important;border:1px solid #e2e8e5;break-inside:avoid}.tbl-wrap{overflow:visible!important;max-height:none!important}table{font-size:12px}
 th,td{padding:5px 7px!important}thead{display:table-header-group}tr{break-inside:avoid}.ft{text-align:center;font-size:10px;color:#7b8884;margin-top:14px;border-top:1px dashed #d4dcd8;padding-top:5px}
 @media print{.pb{display:none}.pw{padding:0;max-width:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>
@@ -315,16 +315,16 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><title>${esc(title)}</title>${U.DOC_FONTS}
       <style>${U.DOC_CSS}*{box-sizing:border-box}@page{size:A4;margin:9mm}body{font-family:"BnNum","Hind Siliguri","Nirmala UI",sans-serif;color:#1d2b28;margin:0;background:#eef2f0;font-size:13px}
       .pg{max-width:200mm;margin:14px auto;background:#fff;padding:8mm;box-shadow:0 4px 18px rgba(0,0,0,.08)}
-      h1,h2{font-family:"Noto Serif Bengali","Nirmala UI",serif;margin:0;color:#0b2e28}h1{font-size:20px}h3{color:#0b2e28}
+      h1,h2{font-family:"Hind Siliguri","Nirmala UI",sans-serif;margin:0;color:#0b2e28}h1{font-size:20px}h3{color:#0b2e28}
       table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}th,td{border:1px solid #d6e3de;padding:6px 9px;text-align:left}
       th{background:#1f6b52;color:#fff;font-weight:700}tbody tr:nth-child(even) td{background:#f5f9f7}thead{display:table-header-group}tr{break-inside:avoid}
       .r{text-align:right}.big{font-size:22px;font-weight:700}
       .sign{display:flex;justify-content:space-between;gap:12mm;margin-top:16mm}.sign span{flex:0 0 52mm;border-top:1.2px solid #1d2b28;padding-top:1.5mm;text-align:center;font-weight:600}
       .card{width:54mm;height:85.6mm;border:1px solid #ccc;border-radius:10px;overflow:hidden;text-align:center;display:inline-block;vertical-align:top;margin:6px;font-size:11px}
-      .card .t{background:linear-gradient(150deg,#0b3b36,#071f3a);color:#fff;padding:8px 4px}.card .t img{display:block;width:56px;margin:0 auto 2px}.card .t b{display:block;font-size:12px}.card .t .ct{display:block;font-size:10px;line-height:1.3;color:#f3c55d}.card .t .lb{display:inline-block;margin-top:6px;padding:2px 10px;border:1px solid #f8dc91;border-radius:999px;background:#f5d47f;color:#143e42;font-size:10px;font-weight:800;line-height:1.5}
-      .card .ph{width:48px;height:48px;border-radius:14px;background:#f3c55d;margin:8px auto 4px;display:grid;place-items:center;font-size:26px;font-weight:900;overflow:hidden}
+      .card .t{background:linear-gradient(150deg,#0b3b36,#071f3a);color:#fff;padding:8px 4px}.card .t img{display:block;width:56px;margin:0 auto 2px}.card .t b{display:block;font-size:12px}.card .t .ct{display:block;font-size:10px;line-height:1.3;color:#f3c55d}.card .t .lb{display:inline-block;margin-top:6px;padding:2px 10px;border:1px solid #f8dc91;border-radius:999px;background:#f5d47f;color:#143e42;font-size:10px;font-weight:700;line-height:1.5}
+      .card .ph{width:48px;height:48px;border-radius:14px;background:#f3c55d;margin:8px auto 4px;display:grid;place-items:center;font-size:26px;font-weight:700;overflow:hidden}
       .card .card-sign{display:flex;flex-direction:column;align-items:center;margin:0 8px 4px}.card-sign img{height:14px;width:auto;max-width:68px;object-fit:contain}.card-sign span{border-top:1px solid #7b9390;min-width:90px;font-size:9px;padding-top:2px}
-      .card h3{margin:2px;font-size:13px}.card .id{font-family:Consolas,Hind Siliguri,monospace;font-weight:700;color:#b07d1c}.card dl{display:grid;grid-template-columns:auto 1fr;gap:1px 6px;text-align:left;padding:6px 8px;margin:0}.card dt{color:#5d7570}.card dd{margin:0;font-weight:600}
+      .card h3{margin:2px;font-size:13px}.card .id{font-family:'Hind Siliguri','Nirmala UI',sans-serif;font-weight:700;color:#b07d1c}.card dl{display:grid;grid-template-columns:auto 1fr;gap:1px 6px;text-align:left;padding:6px 8px;margin:0}.card dt{color:#5d7570}.card dd{margin:0;font-weight:600}
       @media print{body{background:#fff}.pg{margin:0;padding:0;box-shadow:none;max-width:none}button{display:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}${U.PRINT_BAR_CSS}</style></head><body>${U.PRINT_BAR}
       <main class="pg">${U.docHead(title, DB.settings)}${html}${U.docFoot(DB.settings)}</main></body></html>`);
     w.document.close();
@@ -360,7 +360,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
       .sr-top{display:grid;grid-template-columns:auto 1fr auto;gap:5mm;align-items:center;padding:4mm 5mm;border-radius:3mm;background:linear-gradient(125deg,#0b3b36,#176b5d);color:#fff;margin-bottom:4mm}
       .sr-top img{width:24mm;height:28mm;object-fit:cover;border-radius:2.5mm;border:2px solid rgba(255,255,255,.5);background:#fff}
       .sr-top h1{color:#fff;margin:0 0 1mm;font-size:22px}.sr-top p{margin:0;color:#d4ebe6;font-size:12.5px}
-      .sr-st{padding:1.5mm 4mm;border-radius:99px;background:#dff7ee;color:#0b5a4b;font-weight:800;font-size:12px}.sr-st.off{background:#ffe3e3;color:#a72929}
+      .sr-st{padding:1.5mm 4mm;border-radius:99px;background:#dff7ee;color:#0b5a4b;font-weight:700;font-size:12px}.sr-st.off{background:#ffe3e3;color:#a72929}
       .sr-k{display:grid;grid-template-columns:repeat(5,1fr);gap:2.5mm;margin-bottom:4mm}
       .sr-k div{border-radius:2.5mm;padding:2.5mm 3mm;border:1px solid #dfe7e4}.sr-k small{display:block;color:#475569;font-size:11px;font-weight:600}.sr-k b{font-size:18px}
       .sr-k div:nth-child(1){background:#e3f5ed}.sr-k div:nth-child(2){background:#eef2ff}.sr-k div:nth-child(3){background:#fff0c9}.sr-k div:nth-child(4){background:#fdeef0}.sr-k div:nth-child(5){background:#f3effb}
@@ -483,7 +483,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
       .wm{position:absolute;left:50%;top:56%;width:96mm;transform:translate(-50%,-50%);opacity:.07;pointer-events:none}
       .hd{display:grid;grid-template-columns:40mm 1fr 40mm;align-items:center;gap:5mm;padding-bottom:3mm;border-bottom:1.6px solid #1d2b28}
       .mr{font:700 24px/0.95 Oswald,'Arial Narrow',sans-serif;color:#2c2f33;letter-spacing:.3px}
-      .org{text-align:center}.org b{display:block;font:900 20px/1.25 'Noto Serif Bengali',serif;color:#0b3b36}.org small{display:block;font-size:12.5px;color:#3a4a46}
+      .org{text-align:center}.org b{display:block;font:700 20px/1.25 'Hind Siliguri',sans-serif;color:#0b3b36}.org small{display:block;font-size:12.5px;color:#3a4a46}
       .lg{justify-self:end;width:36mm;height:auto;max-height:24mm;object-fit:contain}
       .bar{display:flex;justify-content:space-between;align-items:center;margin:4mm 0 0;padding:1.5mm 4mm;background:#3fae74;color:#06301c;font-weight:700;font-size:15px}
       .bar span{display:grid;text-align:right;line-height:1.15}.bar small{font-size:11px;font-weight:600;color:#063d22;letter-spacing:.06em}
@@ -2418,7 +2418,7 @@ ${list.map(receiptHtml).join("")}
         body{margin:0;background:#eef2f0;font-family:'Hind Siliguri','Nirmala UI',sans-serif;color:#1d2b28;font-size:12.5px}
         .pg{width:277mm;margin:8mm auto;padding:8mm 9mm;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.08)}
         .hd{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:2px solid #0b3b36}
-        .hd img{width:46px;height:46px;object-fit:contain}.hd b{display:block;font:900 20px/1.2 'Noto Serif Bengali',serif;color:#0b3b36}.hd small{color:#55625f}
+        .hd img{width:46px;height:46px;object-fit:contain}.hd b{display:block;font:700 20px/1.2 'Hind Siliguri',sans-serif;color:#0b3b36}.hd small{color:#55625f}
         .hd .tt{margin-left:auto;text-align:right}.hd .tt b{font:700 17px 'Hind Siliguri',sans-serif;color:#1d2b28}
         .meta{display:flex;flex-wrap:wrap;gap:6px 22px;margin:10px 0;font-size:13px}.meta span b{color:#0b3b36}
         table{width:100%;border-collapse:collapse}th,td{border:1px solid #cfd8d4;padding:5px 6px;text-align:left;vertical-align:middle}
@@ -2453,7 +2453,7 @@ ${list.map(receiptHtml).join("")}
       const st = DB.settings, org = st.nameBn || "শাহিন'স আইসিটি কেয়ার", mo = $("#bpM").value || thisMonth();
       const trs = [...$$("#bpRows tr[data-sid]")];
       if (!trs.length) return toast("এই ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই", true);
-      // বাছাই করা মাসসহ শেষ ৩ মাস; আগে "পূর্বের দেনা" (তার আগের সব মাস), শেষে "মোট দেনা"
+      // বাছাই করা মাসসহ শেষ ৩ মাস; আগে "পূর্বের পাওনা" (তার আগের সব মাস), শেষে "মোট পাওনা"
       const [Y, M] = mo.split("-").map(Number);
       const months = [2, 1, 0].map((k) => { const d = new Date(Y, M - 1 - k, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; });
       const short = (mk) => U.month(mk).replace(/\s*২০\S\S$/, "") + " '" + bn(mk.slice(2, 4));
@@ -2468,13 +2468,13 @@ ${list.map(receiptHtml).join("")}
         const s = studentById(tr.dataset.sid), it = itemOf(s, $(".bp-enr", tr).value), monthly = it && it.monthly;
         const dues = monthly ? monthDues(s, it) : {};
         const feeOf = (mk) => { const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
-        // পূর্বের দেনা = দেখানো ৩ মাসের আগের সব মাস; মোট দেনা = বাছাই করা মাস পর্যন্ত সব মাস
+        // পূর্বের পাওনা = দেখানো ৩ মাসের আগের সব মাস; মোট পাওনা = বাছাই করা মাস পর্যন্ত সব মাস
         const keys = Object.keys(dues).filter((mk) => mk <= mo), prev = keys.filter((mk) => mk < months[0]);
         const sum = (list, f) => list.reduce((t, mk) => t + f(mk), 0);
         const col = (list) => ({ fee: sum(list, feeOf), paid: sum(list, (mk) => feeOf(mk) - dues[mk]), due: sum(list, (mk) => dues[mk]) });
         const P = col(prev), T = col(keys);
         const stat = (d, has) => (!has ? "—" : d > 0 ? "বাকি " + money(d) : "পরিশোধ");
-        const grid = monthly ? `<table class="mg"><tr><th></th><th class="pv">পূর্বের দেনা</th>${months.map((mk) => `<th>${short(mk)}</th>`).join("")}<th class="tt2">মোট দেনা</th></tr>
+        const grid = monthly ? `<table class="mg"><tr><th></th><th class="pv">পূর্বের পাওনা</th>${months.map((mk) => `<th>${short(mk)}</th>`).join("")}<th class="tt2">মোট পাওনা</th></tr>
           <tr><td>ফি</td><td class="pv">${prev.length ? money(P.fee) : "—"}</td>${months.map((mk) => `<td>${mk in dues ? money(feeOf(mk)) : "—"}</td>`).join("")}<td class="tt2 one${T.due > 0 ? "" : " paid"}" rowspan="3">${money(T.due)}</td></tr>
           <tr><td>জমা</td><td class="pv">${prev.length ? money(P.paid) : "—"}</td>${months.map((mk) => `<td>${mk in dues ? money(feeOf(mk) - dues[mk]) : "—"}</td>`).join("")}</tr>
           <tr><td>অবস্থা</td><td class="pv ${prev.length ? (P.due > 0 ? "due" : "ok") : ""}">${stat(P.due, prev.length)}</td>${months.map((mk) => `<td class="${!(mk in dues) ? "" : dues[mk] > 0 ? "due" : "ok"}">${stat(dues[mk], mk in dues)}</td>`).join("")}</tr></table>` : "";
@@ -2499,15 +2499,15 @@ ${list.map(receiptHtml).join("")}
         .pg{width:198mm;height:285mm;margin:8mm auto;background:#fff;display:grid;grid-template-rows:repeat(3,1fr);box-shadow:0 6px 24px rgba(0,0,0,.08)}
         .cd{position:relative;padding:3.5mm 5mm 2mm;display:flex;flex-direction:column;gap:1.8mm;border:1.2px solid #0b3b36;border-radius:2mm;margin:3mm 2.5mm;min-height:0}
         .cd+.cd::before{content:"✂";position:absolute;left:-2.5mm;right:-2.5mm;top:-3.6mm;height:0;border-top:1.2px dashed #8a9a95;color:#5f6f6a;font-size:12px;line-height:0;text-indent:-1mm}
-        .hd{display:flex;align-items:center;gap:3mm;padding-bottom:1.6mm;border-bottom:1.4px solid #0b3b36}
-        .hd img{width:15mm;height:10mm;object-fit:contain}.org b{display:block;font:900 14px/1.15 'Noto Serif Bengali',serif;color:#0b3b36}.org small{color:#55625f;font-size:9.5px}
-        .tt{margin-left:auto;text-align:center}.tt b{display:block;font:800 15px/1.1 'Hind Siliguri',sans-serif;color:#fff;background:#0b3b36;padding:1mm 3mm;border-radius:1.2mm}.tt small{display:block;margin-top:1mm;color:#0f766e;font:800 12px/1.1 'Hind Siliguri',sans-serif;letter-spacing:.3px} /* মাস-বছর (যেমন November-26) বেতন কার্ডের নিচে, মাঝ বরাবর, গাঢ় সবুজ */
-        .mg .pv{background:#f3f5f4}.mg .tt2{background:#eef2f0;font-weight:800}.mg .tt2.one{font-size:15px;color:#b4233c;text-align:center;vertical-align:middle}.mg .tt2.one.paid{color:#15803d}
+        .hd{display:flex;align-items:stretch;gap:2.5mm;padding-bottom:1.6mm;border-bottom:1.4px solid #0b3b36}
+        .hd img{flex:none;width:auto;height:11mm;max-width:26mm;object-fit:contain;object-position:left center}.org{display:flex;flex-direction:column;justify-content:center;min-width:0}.org b{display:block;font:700 15px/1.2 'Hind Siliguri','Nirmala UI',sans-serif;color:#0b3b36}.org small{display:block;color:#000;font-size:10px;line-height:1.3}
+        .tt{margin-left:auto;text-align:center}.tt b{display:block;font:700 15px/1.1 'Hind Siliguri',sans-serif;color:#fff;background:#0b3b36;padding:1mm 3mm;border-radius:1.2mm}.tt small{display:block;margin-top:1mm;color:#0f766e;font:700 12px/1.1 'Hind Siliguri',sans-serif;letter-spacing:.3px} /* মাস-বছর (যেমন November-26) বেতন কার্ডের নিচে, মাঝ বরাবর, গাঢ় সবুজ */
+        .mg .pv{background:#f3f5f4}.mg .tt2{background:#eef2f0;font-weight:700}.mg .tt2.one{font-size:15px;color:#b4233c;text-align:center;vertical-align:middle}.mg .tt2.one.paid{color:#15803d}
         .info{display:grid;grid-template-columns:50mm repeat(6,auto);gap:0;border:1px solid #cfd8d4;border-radius:1.2mm;overflow:hidden} /* নামের ঘর ৫০ মিমি (এর বেশি লম্বা নাম ছোট হয়ে এক লাইনে), বাকি জায়গা ডানের ঘরগুলোয় ভাগ হয় */
-        .info span{padding:1mm 1.5mm;border-right:1px solid #e3e9e6;white-space:nowrap;min-width:0}.info .nm,.info .cl{display:block;overflow:hidden;text-overflow:ellipsis}.info .cl{max-width:34mm}.info span:last-child{border-right:0}.info i{display:block;font-style:normal;color:#6a7a76;font-size:8.5px}.info b{font-size:11px}
+        .info span{padding:1mm 1.5mm;border-right:1px solid #e3e9e6;white-space:nowrap;min-width:0}.info .nm,.info .cl{display:block;overflow:hidden;text-overflow:ellipsis}.info .cl{max-width:34mm}.info span:last-child{border-right:0}.info i{display:block;font-style:normal;color:#000;font-weight:700;font-size:8.5px}.info b{font-size:11px}
         .body{display:flex;flex-direction:column;gap:2mm;flex:1;min-height:0}
         .nt{display:grid;grid-template-columns:.85fr 1.35fr;flex:none;border:1px solid #cfd8d4;border-radius:1.2mm;overflow:hidden}
-        .nt>div{padding:1mm 2.5mm;display:grid;gap:.4mm;align-content:start}.nt i{font-style:normal;font-weight:700;font-size:9.5px;color:#0f766e}
+        .nt>div{padding:1mm 2.5mm;display:grid;gap:.4mm;align-content:start}.nt i{font-style:normal;font-weight:700;font-size:9.5px;color:#0f766e}.nt-p,.nt-p *{color:#000!important}
         .nt-m{background:#eef2f0;border-right:1px solid #cfd8d4}.nt-m b{font-size:11.5px;color:#0b3b36;line-height:1.35}
         .pw{display:grid;grid-template-columns:max-content 1fr;gap:.3mm 3mm;font-size:10.5px;line-height:1.3}.pw em{font-style:normal;font-weight:600;color:#55625f}.pw b{color:#0b3b36}
         table{width:100%;border-collapse:collapse}th,td{border:1px solid #d7dfdb;padding:.5mm 1.4mm;text-align:center;font-size:10px}

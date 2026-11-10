@@ -3,7 +3,7 @@ body.books-page{background:#07070a;color:#e9e9ef}
 .bks{min-height:70vh;padding-bottom:60px}
 .bks-load{text-align:center;color:#a9a9b2;padding:120px 16px 40px;grid-column:1/-1}
 .bks-hero{padding:140px 0 36px;text-align:center;background:radial-gradient(900px 420px at 20% 0%,rgba(243,197,93,.14),transparent 60%),radial-gradient(900px 420px at 85% 10%,rgba(61,155,255,.12),transparent 60%)}
-.bks-hero h1{margin:12px 0 6px;color:#fff;font:900 clamp(30px,5vw,52px)/1.2 var(--serif)}
+.bks-hero h1{margin:12px 0 6px;color:#fff;font:700 clamp(30px,5vw,52px)/1.2 var(--serif)}
 .bks-hero h1 small{display:block;margin-top:4px;font:700 clamp(13px,1.6vw,16px)/1.4 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:#f3c55d}
 .bks-hero p{margin:0 auto;max-width:620px;color:#c9c9d2;font-size:clamp(15px,1.8vw,18px)}
 .dl-free{display:inline-block;padding:6px 14px;border-radius:999px;border:1px solid rgba(74,222,128,.5);background:rgba(74,222,128,.1);color:#7ee2a8;font:700 13px/1.4 var(--sans)}

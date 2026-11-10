@@ -345,10 +345,10 @@ body{margin:0;background:#e9eef0;font-family:'BnNum','Hind Siliguri','Nirmala UI
 .cert::before,.cert::after{content:"";position:absolute;width:150mm;height:150mm;border-radius:50%;z-index:0}.cert::before{left:-80mm;top:-90mm;background:#0b3b36}.cert::after{right:-80mm;bottom:-90mm;background:#d9a441}
 .fr{position:relative;z-index:1;height:100%;padding:8mm 16mm 7mm;border:1.4mm solid #0b3b36;outline:.5mm solid #d9a441;outline-offset:-3mm;border-radius:3mm;background:#fff;display:flex;flex-direction:column;align-items:center;text-align:center}
 .lg{height:29mm;width:auto}.ins{margin:1mm 0 0;font-size:14px;color:#44605a}
-h1{margin:3mm 0 0;font:900 46px 'Noto Serif Bengali','Nirmala UI',serif;color:#0b3b36}.rb{width:62mm;height:1mm;margin:1.5mm 0 4mm;background:linear-gradient(90deg,transparent,#d9a441,transparent)}
-.lead{margin:0;font-size:18px;color:#33433f}.nm{margin:2mm 0 1mm;font:800 ${nameSize}px 'Noto Serif Bengali','Nirmala UI',serif;color:#9a6a12;line-height:1.25}
+h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0b3b36}.rb{width:62mm;height:1mm;margin:1.5mm 0 4mm;background:linear-gradient(90deg,transparent,#d9a441,transparent)}
+.lead{margin:0;font-size:18px;color:#33433f}.nm{margin:2mm 0 1mm;font:800 ${nameSize}px 'Hind Siliguri','Nirmala UI',sans-serif;color:#9a6a12;line-height:1.25}
 .meta{margin:0 0 4mm;font-size:15px;font-weight:600;color:#44605a}.body{max-width:215mm;margin:0;font-size:20px;line-height:1.7;color:#1d2b28}.body b{color:#0b3b36}
-.badge{display:inline-block;padding:0 4mm;border-radius:999px;background:#fff0c9;color:#7a5200!important;font-weight:800}
+.badge{display:inline-block;padding:0 4mm;border-radius:999px;background:#fff0c9;color:#7a5200!important;font-weight:700}
 .sg{margin-top:auto;width:100%;display:flex;justify-content:space-between;align-items:flex-end;padding:0 14mm;font-size:14px}.sg>div{width:66mm;position:relative}.sg .sm{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);height:10mm;width:auto}.sg div{text-align:center}.sg .ln{display:block;border-top:.4mm solid #16302b;padding-top:1.5mm;font-weight:700}.sg small{display:block;font-size:12.5px;color:#44605a;font-weight:600}
 @media print{body{background:#fff}.pbar{display:none}.cert{margin:0;box-shadow:none;break-after:avoid}}${U.PRINT_BAR_CSS}</style></head><body>${U.PRINT_BAR}
 <main class="cert"><div class="fr"><img class="lg" src="${O}/images/logo-receipt.png" alt="শাহিন’স আইসিটি কেয়ার"><p class="ins">${esc(set.address || "মাস্টার কলোনি, মাদারীপুর")} · ০১৭৪৯-১০৫৯০২</p>
@@ -684,12 +684,12 @@ h1{margin:3mm 0 0;font:900 46px 'Noto Serif Bengali','Nirmala UI',serif;color:#0
 .pb{position:sticky;top:0;z-index:5;background:#0b3b36;padding:10px;text-align:center}.pb button{font:700 14px 'Hind Siliguri',sans-serif;background:#f3c55d;border:0;border-radius:999px;padding:8px 22px;cursor:pointer}
 .pg{width:194mm;margin:14px auto;background:#fff;padding:7mm 8mm;box-shadow:0 4px 18px rgba(0,0,0,.08);display:grid;gap:3mm}
 .hd{display:grid;grid-template-columns:46mm 1fr 46mm;align-items:center;gap:4mm;padding:2mm 0 3mm;border-bottom:1.6px solid #1f6b52}
-.mk{line-height:1.05;font-family:'Noto Serif Bengali','Nirmala UI',serif}.mk small{display:block;font-size:13px;font-weight:700;color:#1f6b52}.mk b{display:block;font-size:24px;font-weight:900;color:#0b2e28}
-.org{text-align:center}.org b{display:block;font:900 21px 'Noto Serif Bengali','Nirmala UI',serif;color:#0b2e28}.org small{display:block;font-size:11.5px;font-weight:600;color:#33433f}.lg{justify-self:end;width:36mm;max-height:22mm;object-fit:contain}
+.mk{line-height:1.05;font-family:'Hind Siliguri','Nirmala UI',sans-serif}.mk small{display:block;font-size:13px;font-weight:700;color:#1f6b52}.mk b{display:block;font-size:24px;font-weight:700;color:#0b2e28}
+.org{text-align:center}.org b{display:block;font:700 21px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0b2e28}.org small{display:block;font-size:11.5px;font-weight:600;color:#33433f}.lg{justify-self:end;width:36mm;max-height:22mm;object-fit:contain}
 .hero{display:grid;grid-template-columns:auto 1fr;gap:4mm;align-items:center;background:linear-gradient(120deg,#0e5a4b,#1f7a62);color:#fff;border-radius:3mm;padding:4mm 5mm}
 .av{width:19mm;height:22mm;border-radius:3mm;background:#fff;overflow:hidden;border:2px solid rgba(255,255,255,.7);box-shadow:0 4px 12px rgba(0,0,0,.18)}.av img{width:100%;height:100%;object-fit:cover;display:block}
 .hero small{color:#bfeadb;font-size:11px}.hero h2{margin:0;font-size:20px;color:#fff}.hero p{margin:1px 0 0;font-size:11.5px;color:#e2f3ed}
-.stc{grid-column:1/-1;display:inline-block;justify-self:start;padding:1.3mm 5mm;border-radius:2mm;background:#fff;color:#0e5a4b;font-weight:800;font-size:12.5px}
+.stc{grid-column:1/-1;display:inline-block;justify-self:start;padding:1.3mm 5mm;border-radius:2mm;background:#fff;color:#0e5a4b;font-weight:700;font-size:12.5px}
 .stc.wk{color:#b42318}.stc.av{color:#b45309}
 .ts{display:grid;grid-template-columns:repeat(7,1fr);gap:2mm}.t{border-radius:2.2mm;padding:2mm 2.4mm;border:1px solid #e2e8e5;background:#fff}.t small{display:block;font-size:9.6px;color:#56645f;line-height:1.25;min-height:6mm}.t b{font-size:17px}.t i{display:block;font-style:normal;font-size:9px;color:#6c7a75}
 .c1{background:#eaf6f0}.c2{background:#eef3fb}.c3{background:#f4f6f5}.c4{background:#fdf4e4}.c5{background:#fdeef0}.c6{background:#eef7f8}.c7{background:#f4effb}
@@ -698,7 +698,7 @@ h1{margin:3mm 0 0;font:900 46px 'Noto Serif Bengali','Nirmala UI',serif;color:#0
 .cn{color:#6c7a75;font-size:10px;font-weight:500}.ev-leg{display:flex;gap:4mm;font-size:10px;color:#56645f}.ev-leg i{display:inline-block;width:5mm;height:0;border-top:2px solid #1f7a62;vertical-align:middle;margin-right:1.2mm}.ev-leg i.k2{border-top:2px dashed #d9a441}
 .ev-ch{width:100%;height:auto}.ev-ch line{stroke:#e3e9e6}.ev-ch .ax{font-size:8px;fill:#7b8884;text-anchor:end}.ev-ch .le{fill:none;stroke:#1f7a62;stroke-width:2.2}.ev-ch .lt{fill:none;stroke:#d9a441;stroke-width:2.2;stroke-dasharray:5 3}
 .ev-ch .ce{fill:#1f7a62;stroke:#fff;stroke-width:1.2}.ev-ch .ct{fill:#d9a441;stroke:#fff;stroke-width:1.2}.ev-ch .v{font-size:8.2px;font-weight:700;fill:#1d2b28;text-anchor:middle}.ev-ch .n{font-size:6.8px;fill:#7b8884;text-anchor:middle}
-.sb{display:grid;grid-template-columns:1fr auto;gap:1mm 3mm;align-items:center;margin-bottom:2mm}.sb span{font-weight:600}.sb em{font-style:normal;font-weight:800}.sb i{grid-column:1/-1;height:2.2mm;background:#e8eeeb;border-radius:9px;overflow:hidden}.sb i u{display:block;height:100%;background:#1f7a62;border-radius:9px}
+.sb{display:grid;grid-template-columns:1fr auto;gap:1mm 3mm;align-items:center;margin-bottom:2mm}.sb span{font-weight:600}.sb em{font-style:normal;font-weight:700}.sb i{grid-column:1/-1;height:2.2mm;background:#e8eeeb;border-radius:9px;overflow:hidden}.sb i u{display:block;height:100%;background:#1f7a62;border-radius:9px}
 .sm{background:#f6f9f7;border:1px solid #e2e8e5;border-radius:2.5mm;padding:2.6mm 3.5mm}.sm p{margin:.5mm 0}
 .rc>div{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm}.rc span{display:grid;gap:1px;padding:2mm 2.6mm;border-radius:2mm;background:#dff3eb;font-size:11px;color:#3f504b}.rc span b{font-size:17px;color:#16302b}
 .rc span:nth-child(2){background:#ffe5e5}.rc span:nth-child(3){background:#fff0c9}.rc.hw span:nth-child(1){background:#eef3fb}

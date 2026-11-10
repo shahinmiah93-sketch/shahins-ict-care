@@ -181,7 +181,7 @@ ${pays.map((p, k) => `<tr><td class="c">${bn(k + 1)}</td><td>#${bn(p.receiptNo)}
 .a4{width:194mm;min-height:280mm;margin:14px auto;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden;padding-bottom:6mm;display:flex;flex-direction:column}
 .hd{position:relative;height:46mm}.sw{position:absolute;inset:0;width:100%;height:100%}
 .lc{position:absolute;left:8mm;top:5mm;width:36mm;height:36mm;border-radius:50%;background:#fff;border:1.5mm solid #1f7a62;box-shadow:0 6px 18px rgba(0,0,0,.18);display:grid;place-items:center}.lc img{width:27mm}
-.tt{position:absolute;left:51mm;top:8mm;right:8mm}.tt h1{margin:0;font:900 27px 'Noto Serif Bengali','Nirmala UI',serif;color:#fff}.tt p{margin:1mm 0 0;color:#f3c55d;font-weight:600;font-size:13px}
+.tt{position:absolute;left:51mm;top:8mm;right:8mm}.tt h1{margin:0;font:700 27px 'Hind Siliguri','Nirmala UI',sans-serif;color:#fff}.tt p{margin:1mm 0 0;color:#f3c55d;font-weight:600;font-size:13px}
 .inf{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:1.5mm 5mm;margin:1mm 8mm 4mm;font-size:12.5px}.inf span{border-bottom:1px dotted #9aa8a3;padding:.8mm 0}.inf b{color:#0b3b36}
 table{border-collapse:collapse;width:calc(100% - 16mm);margin:0 8mm;font-size:11.5px}th{background:#2f3e46;color:#fff;text-align:left;padding:1.8mm 2mm;font-weight:600}td{border:1px solid #c9d3cf;padding:1.5mm 2mm}
 .n{text-align:right}.c{text-align:center;width:7mm}td small.ty{display:block;color:#6c7a75;font-size:10px}td.sy{font-size:10.5px;color:#33433f;max-width:42mm}td.st{color:#6c7a75;font-size:10.5px}td.fl b{color:#b42318}td.fl small{color:#b42318;font-size:9.5px}tr:nth-child(even) td{background:#f6f9f8}tr.ov td{background:#e3efe9!important;font-weight:700}

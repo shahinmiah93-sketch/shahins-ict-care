@@ -18,5 +18,5 @@ test('Heading sits in a white panel, topic text is dark, and the stylesheet vers
   assert.match(hw, /<section class="card hw-panel">/);
   assert.match(css, /\.hw-panel \.hw-list-heading h3\{color:#173b4a/);
   assert.match(css, /\.hw-day \.hw-topic-title>b\{color:#173b4a\}/);
-  assert.match(html, /exams\.css\?v=20261110-fonts/);
+  assert.match(html, /exams\.css\?v=20261110-onefont/);
 });
