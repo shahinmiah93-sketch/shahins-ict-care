@@ -2515,7 +2515,7 @@ ${list.map(receiptHtml).join("")}
         .pl th,.pl td{text-align:left}.pl .n{text-align:right}.pl .c{text-align:center;color:#6a7a76}.pl .more{text-align:center;color:#6a7a76;font-size:9px}
         .due{color:#b4233c;font-weight:700}.ok{color:#0b6b45;font-weight:700}
         .ft{display:flex;align-items:flex-end;justify-content:flex-end}
-        .sg{width:38mm;border-top:.6px solid #1d2b28;padding-top:.8mm;text-align:center;font-size:9.5px;font-weight:600}
+        .sg{width:38mm;text-align:center;font-size:9.5px;font-weight:600}.sg::before{content:"";display:block;width:32mm;margin:0 auto .8mm;border-top:.6px solid #1d2b28}
         .receipt-signature{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:29mm;height:7mm;object-fit:contain}
       .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px;z-index:2}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
         @media print{body{background:#fff}.pb{display:none}.pg{margin:0 auto;box-shadow:none;break-after:page}.pg:last-child{break-after:auto}}</style></head><body>
