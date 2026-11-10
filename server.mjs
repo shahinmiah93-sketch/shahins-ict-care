@@ -1195,7 +1195,8 @@ function resultsFor(s) {
 const activeNotices = (onlyPublic) =>
   db.notices
     .filter((n) => (!n.until || n.until >= today()) && (!onlyPublic || n.public))
-    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    // জরুরি (📌) আগে; তারপর নতুন তারিখ আগে; একই তারিখে যেটা পরে দেওয়া হয়েছে সেটা আগে
+    .sort((a, b) => (b.important ? 1 : 0) - (a.important ? 1 : 0) || (b.date || "").localeCompare(a.date || "") || (b.createdAt || "").localeCompare(a.createdAt || ""));
 function parseBatchTime(value) {
   const text = String(value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
   const match = text.match(/(\d{1,2})(?:[:ঃ.](\d{2}))?/);
