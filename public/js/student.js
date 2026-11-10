@@ -480,31 +480,33 @@ ${inner}
           <div class="stu-hw-topic-title"><span>টপিক</span><h4>${esc(h.title)}</h4></div>
         </div>
         ${h.details ? `<div class="stu-hw-details"><strong>নির্দেশনা</strong><div>${esc(h.details)}</div></div>` : ""}
-        <div class="stu-hw-date">
-          ${h.kind === "lesson" ? `${h.givenDate ? `<div>পড়া দেওয়ার তারিখ <b>${esc(U.dateWithWeekday(h.givenDate))}</b></div>` : ""}
-          <div>পড়া নেওয়ার তারিখ <b>${h.dueDate ? esc(U.dateWithWeekday(h.dueDate)) : "ঠিক করা হয়নি"}</b></div>`
-          : `জমার তারিখ · <b>${h.dueDate ? esc(U.date(h.dueDate)) : "ঠিক করা হয়নি"}</b>`}
-        </div>
+        ${h.givenDate ? `<div class="stu-hw-date">${h.kind === "lesson" ? "পড়া দেওয়ার তারিখ" : "কাজ দেওয়ার তারিখ"} <b>${esc(U.dateWithWeekday(h.givenDate))}</b></div>` : ""}
       </article>`;
-      const section = ([key, kind]) => {
-        const entries = items.filter((h) => h.kind === key);
-        const checked = list.filter((h) => h.kind === key && ["done", "not"].includes(h.status));
-        const completed = checked.filter((h) => h.status === "done").length;
-        const rate = checked.length ? bn(Math.round(completed / checked.length * 100)) + "%" : "—";
-        return `<section class="card stu-hw-group stu-hw-${key}">
-          <div class="stu-hw-head"><div><h3>${kind.title} <small>${bn(entries.length)}টি</small></h3><p class="stu-hw-hint">${kind.hint}</p></div><span class="stu-hw-rate">${kind.yes} <b>${rate}</b></span></div>
-          ${entries.length ? `<div class="stu-hw-list">${entries.map((h) => item(h, kind)).join("")}</div>` : '<p class="empty">এই তালিকায় কিছু নেই।</p>'}
-        </section>`;
+      // একই তারিখের বাড়ির কাজ আর ক্লাসের পড়া পাশাপাশি; নতুন তারিখ আগে (পরীক্ষার কার্ডের মতো বাঁ দিকে তারিখ)
+      const shown = Object.keys(kinds).filter((k) => !selected || k === selected);
+      const dayKey = (h) => h.dueDate || h.givenDate || "";
+      const days = {};
+      items.forEach((h) => { (days[dayKey(h)] ||= { homework: [], lesson: [] })[h.kind]?.push(h); });
+      let keys = Object.keys(days).filter(Boolean).sort((x, y) => y.localeCompare(x));
+      if (period === "open") keys.reverse();
+      if (days[""]) keys.push("");
+      const dayCard = (key) => {
+        const d = days[key], dt = key ? new Date(key + "T00:00") : null, left = key ? Math.round((dt - new Date(today + "T00:00")) / 864e5) : 0;
+        const badge = !key ? "" : key === today ? '<span class="ex-badge now">📌 আজ</span>' : left > 0 ? `<span class="ex-badge">আর ${bn(left)} দিন</span>` : "";
+        const cols = shown.map((k) => `<div class="hw-col stu-hw-${k}"><h3>${kinds[k].title} <small>${bn(d[k].length)}টি</small></h3>${d[k].length ? d[k].map((h) => item(h, kinds[k])).join("") : `<p class="empty">এই তারিখে ${kinds[k].title} নেই</p>`}</div>`).join("");
+        return `<article class="ex-card hw-day${key === today ? " today" : ""}"><div class="ex-date">${key ? `<b>${bn(dt.getDate())}</b><small>${dt.toLocaleDateString("bn-BD", { month: "long" })}</small><em>${dayName(key)}</em>` : "<b>—</b><small>তারিখ নেই</small>"}</div><div class="ex-body"><div class="ex-top"><h3>${key ? esc(U.dateWithWeekday(key)) : "তারিখ ঠিক করা হয়নি"}</h3>${badge}</div><div class="hw-cols${shown.length === 1 ? " one" : ""}">${cols}</div></div></article>`;
       };
+      const rateOf = (key) => { const c = list.filter((h) => h.kind === key && ["done", "not"].includes(h.status)), ok = c.filter((h) => h.status === "done").length; return c.length ? bn(Math.round(ok / c.length * 100)) + "%" : "—"; };
       const filter = (attr, current, choices) => choices.map(([key, title]) =>
         `<button type="button" ${attr}="${key}" aria-pressed="${current === key}">${title}</button>`).join("");
       return `<section class="card stu-hw-panel">
         <div class="stu-hw-head"><h2>আমার কাজ ও পড়া</h2>${pBtn("hw", "কাজ ও পড়ার রিপোর্ট")}</div>
+        <div class="stu-hw-rates">${Object.entries(kinds).map(([k, kd]) => `<span class="stu-hw-rate stu-hw-${k}">${kd.title} — ${kd.yes} <b>${rateOf(k)}</b></span>`).join("")}</div>
         <div class="stu-hw-filters no-print">
           <div role="group" aria-label="ধরন">${filter("data-stu-hw-kind", selected, [["", "সব"], ...Object.entries(kinds).map(([key, kind]) => [key, kind.title])])}</div>
           <div role="group" aria-label="তারিখ">${filter("data-stu-hw-period", period, [["all", "সব তারিখ"], ["open", "চলমান ও সামনে"], ["past", "আগের"]])}</div>
         </div>
-      </section>${Object.entries(kinds).filter(([key]) => !selected || key === selected).map(section).join("")}`;
+      </section>${keys.length ? keys.map(dayCard).join("") : '<section class="card"><p class="empty">এই তালিকায় কিছু নেই।</p></section>'}`;
     },
     notices() {
       return `${birthdayCard()}<div class="card"><h2>নোটিশ বোর্ড</h2>${D.notices.some((n) => !n.birthday) ? `<ul class="list" style="margin-top:12px">${D.notices.filter((n) => !n.birthday).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b> <small style="float:right;color:var(--muted)">${U.date(n.date)}</small><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>`;

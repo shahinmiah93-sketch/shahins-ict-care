@@ -1117,3 +1117,12 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 @media(max-width:520px){.ex-card{grid-template-columns:62px minmax(0,1fr)}.ex-date b{font-size:26px}.ex-date small{font-size:12px}.ex-date em{font-size:10.5px}.ex-body{padding:12px}.ex-top h3{font-size:16px}}
 @media(max-width:520px){.ex-meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ex-meta span{padding:6px 8px}.ex-meta b{font-size:13px;line-height:1.35}.ex-meta small{font-size:11px}.ex-chap b{font-size:14.5px}.ex-syl .pre{font-size:14.5px}}
 .pay-edited{display:inline-block;margin-top:2px;padding:1px 8px;border-radius:999px;background:#fff1c9;color:#7a5200;font-size:11px;font-weight:700;width:fit-content}
+/* বাড়ির কাজ ও পড়া: তারিখ ধরে কার্ড, ভেতরে পাশাপাশি দুই কলাম */
+.hw-day{margin-top:14px}
+.hw-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}.hw-cols.one{grid-template-columns:minmax(0,1fr)}
+.hw-col{display:grid;gap:10px;align-content:start;min-width:0}
+.hw-col>h3{margin:0;font-size:16px;color:var(--stu-hw-accent)}.hw-col>h3 small{margin-left:6px;padding:2px 9px;border-radius:999px;background:var(--stu-hw-tint);font-size:12px}
+.hw-col>.empty{margin:0;padding:14px 12px;border:1px dashed #cfdbe4;border-radius:12px;color:#6b7a86;font-size:14px;text-align:center}
+.hw-day .stu-hw-item{padding:12px}.hw-day .stu-hw-item h4{font-size:16px}
+.stu-hw-rates{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+@media(max-width:700px){.hw-cols{grid-template-columns:minmax(0,1fr)}}
