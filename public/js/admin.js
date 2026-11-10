@@ -3056,7 +3056,7 @@ ${list.map(receiptHtml).join("")}
     const sel = new Set(cl ? cl.batchIds : []);
     const groups = DB.sessions.map((se) => {
       const list = DB.batches.filter((b) => b.session === se.name);
-      return list.length ? `<div class="cl-sess"><b>${esc(se.name)}</b><div class="cl-batches">${list.map((b) => `<label class="cl-b"><input type="checkbox" name="clb" value="${b.id}"${sel.has(b.id) ? " checked" : ""}><span><b>${esc(b.name)}</b><small>${esc(b.days || "দিন ঠিক হয়নি")} · ${esc(b.time || "")}</small></span></label>`).join("")}</div></div>` : "";
+      return list.length ? `<div class="cl-sess" data-closure-session="${esc(se.name)}"><b>${esc(se.name)}</b><div class="cl-batches">${list.map((b) => `<label class="cl-b"><input type="checkbox" name="clb" value="${b.id}"${sel.has(b.id) ? " checked" : ""}><span><b>${esc(b.name)}</b><small>${esc(b.days || "দিন ঠিক হয়নি")} · ${esc(b.time || "")}</small></span></label>`).join("")}</div></div>` : "";
     }).join("");
     const dayGroups = [...new Set(DB.batches.map((b) => b.days).filter(Boolean))];
     openModal({
@@ -3065,6 +3065,8 @@ ${list.map(receiptHtml).join("")}
       saveText: cl ? "সেভ করুন" : "বন্ধ রাখুন",
       body: `<div class="fgrid">
         <div class="wide"><b>কোন কোন ব্যাচ বন্ধ থাকবে?</b>
+          <label>সেশন<select name="closureSession">${opt([["", "সব সেশন"], ...DB.sessions.map((se) => [se.name, se.name])], "")}</select></label>
+          <p class="cl-days" data-closure-count aria-live="polite"></p>
           <div class="cl-quick">${dayGroups.map((d) => `<button type="button" class="btn sm line" data-qd="${esc(d)}">সব ${esc(d)}</button>`).join("")}<button type="button" class="btn sm line" data-qd="*">সব ব্যাচ</button><button type="button" class="btn sm line" data-qd="">কোনোটা না</button></div>
           ${groups || '<p class="empty">কোনো ব্যাচ নেই</p>'}</div>
         <label>কবে থেকে *<input type="date" name="from" value="${esc(cl ? cl.from : U.today())}" required></label>
@@ -3099,9 +3101,37 @@ ${list.map(receiptHtml).join("")}
       $("#clDays").textContent = f && t && t >= f ? `মোট ${bn(U.closureDays({ from: f, to: t }))} দিন বন্ধ${U.closureDays({ from: f, to: t }) < U.MIN_CLOSURE_DAYS ? ` — ${bn(U.MIN_CLOSURE_DAYS)} দিনের কম, তাই ফি কমবে না` : ""}` : "";
     };
     box.addEventListener("input", showDays); showDays();
+    const sessionFilter = $('[name="closureSession"]', box);
+    const batchInputs = $$('[name="clb"]', box);
+    const visibleBatches = () => batchInputs.filter((input) => !input.closest('[data-closure-session]').hidden);
+    const showSelected = () => {
+      const total = batchInputs.filter((input) => input.checked).length;
+      const hidden = total - visibleBatches().filter((input) => input.checked).length;
+      $('[data-closure-count]', box).textContent = `বাছা হয়েছে ${bn(total)}টি ব্যাচ${hidden ? ` · অন্য সেশনে ${bn(hidden)}টি` : ""}`;
+    };
+    sessionFilter.onchange = () => {
+      $$('[data-closure-session]', box).forEach((group) => {
+        group.hidden = !!sessionFilter.value && group.dataset.closureSession !== sessionFilter.value;
+      });
+      const days = new Set(visibleBatches().map((input) => batchById(input.value)?.days));
+      $$('[data-qd]', box).forEach((button) => {
+        const day = button.dataset.qd;
+        button.hidden = !!day && day !== "*" && !days.has(day);
+      });
+      showSelected();
+    };
+    const selectedSessions = new Set(batchInputs.filter((input) => input.checked).map((input) => batchById(input.value)?.session));
+    if (selectedSessions.size === 1) sessionFilter.value = [...selectedSessions][0] || "";
+    sessionFilter.onchange();
+    batchInputs.forEach((input) => { input.onchange = showSelected; });
     box.onclick = (e) => {
-      const q = e.target.closest("[data-qd]"); if (!q) return;
-      $$('[name="clb"]', box).forEach((x) => { const b = batchById(x.value); x.checked = q.dataset.qd === "*" ? true : q.dataset.qd === "" ? false : x.checked || (b && b.days === q.dataset.qd); });
+      const q = e.target.closest("[data-qd]");
+      if (!q) return;
+      visibleBatches().forEach((input) => {
+        const day = q.dataset.qd;
+        input.checked = day === "*" || (!!day && (input.checked || batchById(input.value)?.days === day));
+      });
+      showSelected();
     };
   }
   // কোর্স মডিউল পাতার প্যানেল-শিরোনাম (রং: t-off / t-on / t-close / t-sess)

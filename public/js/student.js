@@ -338,7 +338,7 @@ ${inner}
     home() {
       const lr = taken()[0], last = lr ? { marks: n2(lr.me.total), fullMarks: lr.full, title: lr.title, rank: lr.me.rank, of: lr.of } : null;
       const f = D.fees;
-      return `${birthdayCard()}${accessNotes()}
+      return `${closureNotices()}${birthdayCard()}${accessNotes()}
         <div class="tiles">
           <div class="tile">${ring(attPct(), "উপস্থিতি", "var(--ok)")}</div>
           <div class="tile">${ring(avgPct(), "পরীক্ষার গড়", "var(--gold2)")}</div>
@@ -350,7 +350,7 @@ ${inner}
         ${nextExamsCard()}
         <div class="grid2">
           <div class="card"><h2>ক্লাসের সময়</h2>${D.batch ? `<dl class="kv" style="margin-top:12px"><dt>মডিউল</dt><dd>${esc(D.courses.join(", ") || "—")}</dd><dt>সেশন</dt><dd>${esc(D.batch.session)}</dd><dt>ক্লাস ব্যাচ</dt><dd>${esc(U.batchLabel(D.batch))}</dd><dt>দিন</dt><dd>${esc(D.batch.days)}</dd><dt>সময়</dt><dd>${esc(D.batch.time)}</dd></dl>` : "<p>ব্যাচ ঠিক করা হয়নি</p>"}
-            ${(D.closures || []).map((c) => `<p class="chip ${c.from <= U.today() ? "bad" : "warn"}" style="margin-top:10px;white-space:normal">⏸ ${c.from <= U.today() ? "এখন বন্ধ" : "বন্ধ থাকবে"}: ${U.date(c.from)} – ${U.date(c.to)}${c.reason ? ` (${esc(c.reason)})` : ""}</p>`).join("")}</div>
+          </div>
           <div class="card"><h2>সাম্প্রতিক নোটিশ</h2>${D.notices.some((n) => !n.birthday) ? `<ul class="list" style="margin-top:12px">${D.notices.filter((n) => !n.birthday).slice(0, 3).map((n) => `<li><b>${n.important ? "📌 " : ""}${esc(n.title)}</b><p>${U.richText(n.body)}</p>${n.pdf ? `<p><a class="btn sm line" href="/api/notice/${n.id}/pdf?download=1&v=${n.pdf.v}" download>📄 ${esc(n.pdf.name)} — ডাউনলোড</a></p>` : ""}</li>`).join("")}</ul>` : '<p class="empty">কোনো নোটিশ নেই</p>'}</div>
         </div>
         <div class="class-moments-row">${rateCard()}${classMomentsCard()}</div>`;
@@ -543,6 +543,22 @@ ${inner}
 
   // মেয়াদের লেখা ("মেয়াদ শেষ হবে: ১৫ মে ২০২৭" / আজীবন) আর ৭ দিনের কম বা শেষ হলে সতর্কবার্তা — হোম আর ক্লাস ভিডিও দুই জায়গায়
   const accessText = (a) => !a || a.lifetime ? " · মেয়াদ: আজীবন" : a.expired ? "" : ` · মেয়াদ শেষ হবে: ${U.date(a.until)}`;
+  function closureNotices() {
+    const today = U.today();
+    return (D.closures || []).filter((c) => c.to >= today).map((c) => {
+      const date = c.from === c.to
+        ? U.dateWithWeekday(c.from)
+        : `${U.dateWithWeekday(c.from)} থেকে ${U.dateWithWeekday(c.to)}`;
+      const active = c.from <= today;
+      return `<aside class="stu-closure${active ? " is-active" : ""}" aria-label="ক্লাস বন্ধের নোটিশ">
+        <span class="stu-closure-icon" aria-hidden="true">!</span>
+        <div><h2>${active ? "ক্লাস বন্ধ আছে" : "ক্লাস বন্ধ থাকবে"}</h2>
+          <p class="stu-closure-date">${esc(date)}</p>
+          ${c.reason ? `<p class="stu-closure-reason">${esc(c.reason)}</p>` : ""}
+        </div>
+      </aside>`;
+    }).join("");
+  }
   function accessNotes() {
     return (D.videos || []).filter((m) => m.access && !m.access.lifetime && (m.access.expired || m.access.daysLeft <= 7)).map((m) => m.access.expired
       ? `<div class="acc-note bad">🔒 <b>${esc(m.name)}</b> — রেকর্ড ক্লাসের মেয়াদ শেষ (${U.date(m.access.until)})। নবায়নের জন্য যোগাযোগ করুন।</div>`

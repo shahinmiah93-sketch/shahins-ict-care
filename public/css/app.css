@@ -1145,3 +1145,12 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .stu-hw-item.st-not{border-color:#f3c3c9;border-inline-start-color:#d6384a}
 .stu-hw-item.st-absent{border-color:#d9dfe5;border-inline-start-color:#8693a0}
 .stu-hw-item.st-pending{border-color:#f1dca0;border-inline-start-color:#e5a117}
+
+/* Student dashboard class closure notice */
+.stu-closure{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:14px;padding:16px 20px;border:1px solid #efcc85;border-inline-start:5px solid #a86108;border-radius:14px;background:#fff7e4;color:#573304}
+.stu-closure.is-active{border-color:#efbab0;border-inline-start-color:#b54331;background:#fff2ed;color:#72281e}
+.stu-closure-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#a86108;color:#fff;font-size:21px;font-weight:800}
+.stu-closure.is-active .stu-closure-icon{background:#b54331}
+.stu-closure h2{margin:0;font-size:19px;line-height:1.4;color:inherit}
+.stu-closure-date{margin:4px 0 0;font-weight:700;font-size:15px}
+.stu-closure-reason{margin:6px 0 0;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
