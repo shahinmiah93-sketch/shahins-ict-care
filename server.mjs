@@ -1684,6 +1684,44 @@ async function enrollmentDiscountAction(req, res) {
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
 
+// পেমেন্ট সম্পাদনা: রসিদ নম্বর একই থাকে; আগে প্রিভিউ (বকেয়া কত হবে), তারপর কারণসহ সংরক্ষণ — আগের মান ইতিহাসে জমা থাকে
+const PAY_EDIT_FIELDS = ["amount", "discount", "month", "method", "date", "note"];
+async function paymentEditAction(req, res) {
+  const input = await readBody(req);
+  const p = db.payments.find((x) => x.id === str(input?.id, 60));
+  if (!p) return send(res, 404, { error: "পেমেন্ট পাওয়া যায়নি" });
+  const s = db.students.find((x) => x.id === p.studentId);
+  // যে ঘর পাঠানো হয়নি সেটা আগের মানই থাকে (মুছে যায় না)
+  const amount = Math.round(Number(input.amount)), discount = input.discount === undefined ? num(p.discount) : input.discount === "" || input.discount === null ? 0 : Math.round(Number(input.discount));
+  if (!(Number.isFinite(amount) && amount >= 0 && amount <= 1e7)) return send(res, 400, { error: "টাকার অঙ্ক সঠিক দিন" });
+  if (!(Number.isFinite(discount) && discount >= 0 && discount <= 1e7)) return send(res, 400, { error: "ছাড়ের অঙ্ক সঠিক দিন" });
+  if (!(amount > 0 || discount > 0)) return send(res, 400, { error: "টাকার পরিমাণ বা ছাড় দিন" });
+  const date = str(input.date, 10) || p.date;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return send(res, 400, { error: "তারিখ সঠিক দিন" });
+  const month = input.month === undefined ? str(p.month, 7) : str(input.month, 7);
+  if (month && !/^\d{4}-\d{2}$/.test(month)) return send(res, 400, { error: "মাস সঠিক দিন" });
+  const before = Object.fromEntries(PAY_EDIT_FIELDS.map((k) => [k, p[k] ?? (k === "amount" || k === "discount" ? 0 : "")]));
+  const after = { amount, discount, month, method: str(input.method, 30) || p.method || "নগদ", date, note: input.note === undefined ? str(p.note, 300) : str(input.note, 300) };
+  const changed = PAY_EDIT_FIELDS.filter((k) => String(before[k]) !== String(after[k]));
+  const credit = (x) => num(x.amount) + num(x.discount), fees = s ? feeSummary(s) : { balance: 0 };
+  const result = { id: p.id, receiptNo: p.receiptNo, student: s ? s.name : p.studentId, before, after, changed, balance: { before: fees.balance, after: fees.balance + credit(before) - credit(after) } };
+  const token = crypto.createHash("sha256").update(JSON.stringify({ p, after })).digest("hex");
+  if (input.commit !== true) return send(res, 200, { ...result, token });
+  if (input.token !== token) return send(res, 409, { error: "হিসাব বদলেছে। আবার প্রিভিউ দেখে সংরক্ষণ করুন" });
+  const reason = str(input.reason, 200);
+  if (!changed.length) return send(res, 400, { error: "কিছু বদলানো হয়নি" });
+  if (reason.length < 2) return send(res, 400, { error: "কেন বদলাচ্ছেন — কারণ লিখুন" });
+  const original = JSON.stringify(db);
+  fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-payment-edit-${Date.now()}.json`));
+  try {
+    const at = new Date().toISOString();
+    p.editHistory = [...(p.editHistory || []), { at, reason, from: before, to: after, changed }].slice(-50);
+    Object.assign(p, after, { edited: true, updatedAt: at });
+    saveDb();
+    return send(res, 200, { ok: true, ...result, item: p, fees: s ? feeSummary(s) : null });
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
+}
+
 // Gallery bulk deletion keeps private copies before removing the public records.
 async function galleryDeleteAction(req, res) {
   const body = await readBody(req, 1024 * 1024);
@@ -3112,6 +3150,7 @@ async function api(req, res, url) {
   if (p === "/api/admin/gallery-delete" && m === "POST") return galleryDeleteAction(req, res);
   if (p === "/api/admin/enrollment-start" && m === "POST") return enrollmentStartAction(req, res);
   if (p === "/api/admin/enrollment-discount" && m === "POST") return enrollmentDiscountAction(req, res);
+  if (p === "/api/admin/payment-edit" && m === "POST") return paymentEditAction(req, res);
 
   // ভর্তি (নতুন শিক্ষার্থী বা অনলাইন আবেদন থেকে): শিক্ষার্থী + মডিউলে ভর্তি + জমা
   if (p === "/api/admin/admit" && m === "POST") {
@@ -3700,6 +3739,7 @@ async function api(req, res, url) {
         if (!clean.title) clean.title = clean.kind === "youtube" ? "YouTube ভিডিও" : "লিংক";
       }
       if (col === "payments") {
+        if (id) return send(res, 400, { error: "পেমেন্ট বদলাতে তালিকার \"সম্পাদনা\" বোতাম ব্যবহার করুন (কারণ ও ইতিহাস সহ সংরক্ষিত হয়)" });
         if (!db.students.some((s) => s.id === clean.studentId)) return send(res, 400, { error: "শিক্ষার্থী বেছে নিন" });
         if (!(clean.amount > 0 || (clean.amount === 0 && clean.discount > 0))) return send(res, 400, { error: "টাকার পরিমাণ বা ছাড় দিন" });
       }

@@ -465,7 +465,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
           ${cell("শিক্ষার্থী আইডি", esc(p.studentId))}${cell("ফি-এর ধরন", esc(kind), esc(mod))}
           ${cell("সেশন / ব্যাচ", esc([s.session, batchName(s.batchId)].filter(Boolean).join(" · ") || "—"))}${cell("পেমেন্টের মাধ্যম", esc(p.method || "নগদ"), p.note ? esc(p.note) : "")}
           ${cov && (cov.list.length || cov.advance) ? `<div class="c cov"><small>এই টাকায় যে মাসের ফি শোধ হলো</small><b>${esc(coverageText(cov))}</b></div>` : ""}
-          <div class="c amt"><small>টাকার পরিমাণ</small><b>${money(p.amount)}</b>${p.discount > 0 ? `<i>এছাড়া ছাড়: ${money(p.discount)}</i>` : ""}</div>
+          <div class="c amt"><small>টাকার পরিমাণ${p.edited ? " (সংশোধিত রসিদ)" : ""}</small><b>${money(p.amount)}</b>${p.discount > 0 ? `<i>এছাড়া ছাড়: ${money(p.discount)}</i>` : ""}</div>
           <div class="c ${due ? "unpaid" : "paid"}"><small>পেমেন্ট স্ট্যাটাস</small><b>${due ? `আংশিক পরিশোধ — বকেয়া ${money(due)}` : "পরিশোধিত (Paid)"}</b></div>
         </div>
         <div class="sg"><span><img class="receipt-signature" src="${location.origin}/images/signature.png" alt="শাহিন স্যারের স্বাক্ষর">গ্রহণকারীর স্বাক্ষর</span><span>প্রদানকারীর স্বাক্ষর</span></div></section>`;
@@ -1514,6 +1514,55 @@ ${list.map(receiptHtml).join("")}
           ${monthly && (p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct) ? "<small>আগের মাসগুলোতেও নতুন হারে ফি ধরা হবে; আগের পেমেন্ট যেমন ছিল তেমনই থাকবে।</small>" : ""}</div>`;
         $("#modalSave").disabled = !(p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct);
         if ($("#modalSave").disabled) $("#dscRes").insertAdjacentHTML("beforeend", '<p class="muted" style="margin:6px 0 0">কিছু বদলায়নি — ফি বা ছাড় বদলে আবার দেখুন।</p>');
+      } catch (er) { $("#modalErr").textContent = er.message; }
+      finally { btn.disabled = false; }
+    };
+  }
+  // পেমেন্ট সম্পাদনা: রসিদ নম্বর একই থাকে; আগে নতুন বকেয়া দেখা, তারপর কারণসহ সংরক্ষণ (আগের মান ইতিহাসে থাকে)
+  function editPayment(p) {
+    const s = studentById(p.studentId) || { name: p.studentId };
+    const methods = METHODS.some(([v]) => v === p.method) || !p.method ? METHODS : [...METHODS, [p.method, p.method]];
+    const LABEL = { amount: "টাকা", discount: "ছাড়", month: "মাস", method: "মাধ্যম", date: "তারিখ", note: "নোট" };
+    const bal = (v) => v > 0 ? money(v) : v < 0 ? "অগ্রিম " + money(-v) : "নেই";
+    let preview = null;
+    const v = (id) => $("#" + id).value;
+    const payload = (extra = {}) => ({ id: p.id, amount: v("peAmt") === "" ? null : Number(v("peAmt")), discount: v("peDisc") === "" ? 0 : Number(v("peDisc")), month: v("peMonth"), method: v("peMethod"), date: v("peDate"), note: v("peNote"), ...extra });
+    openModal({
+      title: "পেমেন্ট সম্পাদনা",
+      body: `<p><b>${esc(s.name)}</b> <small>${esc(p.studentId)}</small> · রসিদ <b>#${bn(p.receiptNo)}</b> <small>(রসিদ নম্বর একই থাকবে)</small></p>
+        <p style="margin:4px 0 10px">এখন লেখা আছে: <b>${money(p.amount)}</b>${p.discount > 0 ? ` + ছাড় ${money(p.discount)}` : ""}${p.edited ? ' <small class="chip">আগে একবার সংশোধিত</small>' : ""}</p>
+        <div class="fgrid"><label>টাকা (৳)<input id="peAmt" type="number" min="0" step="1" value="${Number(p.amount) || 0}"></label>
+          <label>ছাড় (৳) <small style="font-weight:400;color:var(--muted)">(ঐচ্ছিক)</small><input id="peDisc" type="number" min="0" step="1" value="${Number(p.discount) || ""}"></label>
+          <label>কোন মাসের ফি<input id="peMonth" type="month" value="${esc(p.month || "")}"></label>
+          <label>তারিখ<input id="peDate" type="date" value="${esc(p.date || "")}"></label>
+          <label>মাধ্যম<select id="peMethod">${methods.map(([k, t]) => `<option value="${esc(k)}"${k === p.method ? " selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
+          <label>নোট<input id="peNote" maxlength="300" value="${esc(p.note || "")}"></label>
+          <label style="grid-column:1/-1">কেন বদলাচ্ছেন? <small style="font-weight:400;color:#b4233c">(আবশ্যক)</small><input id="peReason" maxlength="200" placeholder="যেমন: ভুল অঙ্ক লেখা হয়েছিল (১৬০০ নয়, ১৩০০)"></label></div>
+        <div class="toolbar"><button type="button" class="btn gold" id="pePrev">নতুন হিসাব দেখুন</button></div><div id="peRes" aria-live="polite"></div>
+        ${(p.editHistory || []).length ? `<details class="dsc-more"><summary>আগের সংশোধনের ইতিহাস (${bn(p.editHistory.length)})</summary>${p.editHistory.slice().reverse().map((h) => `<p style="margin:6px 0"><small>${U.date(String(h.at).slice(0, 10))} · ${esc(h.reason || "")}<br>${(h.changed || []).map((k) => `${LABEL[k] || k}: ${esc(String(h.from[k] ?? "—"))} → ${esc(String(h.to[k] ?? "—"))}`).join(" · ")}</small></p>`).join("")}</details>` : ""}`,
+      saveText: "সংরক্ষণ",
+      onSave: async () => {
+        if (!preview) throw new Error("আগে নতুন হিসাব দেখুন");
+        const reason = v("peReason").trim();
+        if (reason.length < 2) throw new Error("কেন বদলাচ্ছেন — কারণ লিখুন");
+        await api("/api/admin/payment-edit", { body: payload({ commit: true, token: preview.token, reason }) });
+        await load(); closeModal(); route(); toast("পেমেন্ট সংশোধিত হয়েছে — বকেয়া নতুন হিসাবে বদলেছে"); return true;
+      },
+    });
+    $("#modalSave").disabled = true;
+    const reset = () => { preview = null; $("#modalSave").disabled = true; $("#peRes").textContent = ""; };
+    $$("#modalBody input, #modalBody select").forEach((x) => { if (x.id !== "peReason") { x.oninput = reset; x.onchange = reset; } });
+    $("#pePrev").onclick = async () => {
+      const btn = $("#pePrev"); btn.disabled = true; $("#modalErr").textContent = ""; reset();
+      try {
+        const r = await api("/api/admin/payment-edit", { body: payload() });
+        preview = r;
+        const other = r.changed.filter((k) => k !== "amount");
+        $("#peRes").innerHTML = r.changed.length ? `<div class="fee-sum">
+          ${r.changed.includes("amount") ? `<p>টাকা: <b>${money(r.before.amount)}</b> → <b>${money(r.after.amount)}</b> <small>(${r.after.amount > r.before.amount ? money(r.after.amount - r.before.amount) + " বেশি" : money(r.before.amount - r.after.amount) + " কম"})</small></p>` : ""}
+          ${other.map((k) => `<p>${LABEL[k]}: <b>${esc(String(k === "date" ? U.date(r.before[k]) : r.before[k] || "—"))}</b> → <b>${esc(String(k === "date" ? U.date(r.after[k]) : r.after[k] || "—"))}</b></p>`).join("")}
+          <p>${esc(r.student)}-এর বকেয়া: <b>${bal(r.balance.before)}</b> → <b>${bal(r.balance.after)}</b></p></div>` : '<p class="muted" style="margin:6px 0 0">কিছু বদলায়নি — বদলে আবার দেখুন।</p>';
+        $("#modalSave").disabled = !r.changed.length;
       } catch (er) { $("#modalErr").textContent = er.message; }
       finally { btn.disabled = false; }
     };
@@ -2662,12 +2711,12 @@ ${list.map(receiptHtml).join("")}
     const modOf = (p) => { const e = DB.enrollments.find((x) => x.id === p.enrollmentId); return e ? (courseById(e.courseId) || {}).name || "" : "সাধারণ"; };
     const list = () => { const mo = $("#pm").value, qv = $("#pq").value.trim().toLowerCase(); return DB.payments.filter((p) => (!mo || (p.date || "").startsWith(mo)) && (!qv || (p.studentId + " " + studentName(p.studentId)).toLowerCase().includes(qv))).sort((a, b) => (b.date + String(b.receiptNo)).localeCompare(a.date + String(a.receiptNo))); };
     const draw = () => {
-      $("#prows").innerHTML = list().map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td><b>${esc(studentName(p.studentId))}</b><small>${esc(p.studentId)}</small></td><td>${esc(modOf(p))}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td>
-        <td class="num"><button class="icon-btn" title="রসিদ প্রিন্ট" data-print="${p.id}">প্রিন্ট</button><button class="icon-btn" title="মুছুন" data-del="${p.id}">✕</button></td></tr>`).join("") || `<tr><td colspan="8" class="empty">কোনো পেমেন্ট নেই</td></tr>`;
+      $("#prows").innerHTML = list().map((p) => `<tr><td>#${bn(p.receiptNo)}${p.edited ? `<small class="pay-edited" title="${esc((p.editHistory || []).slice(-1).map((h) => h.reason).join(""))}">সংশোধিত</small>` : ""}</td><td>${U.date(p.date)}</td><td><b>${esc(studentName(p.studentId))}</b><small>${esc(p.studentId)}</small></td><td>${esc(modOf(p))}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td>
+        <td class="num"><button class="icon-btn" title="রসিদ প্রিন্ট" data-print="${p.id}">প্রিন্ট</button><button class="icon-btn" title="অঙ্ক বা তথ্য সংশোধন (রসিদ নম্বর একই থাকবে)" data-pedit="${p.id}">✎ সম্পাদনা</button><button class="icon-btn" title="মুছুন" data-del="${p.id}">✕</button></td></tr>`).join("") || `<tr><td colspan="8" class="empty">কোনো পেমেন্ট নেই</td></tr>`;
     };
     draw();
     $("#pm").oninput = draw; $("#pq").oninput = draw;
-    $("#prows").onclick = (e) => { const t = e.target.closest("[data-print],[data-del]"); if (!t) return; if (t.dataset.print) printReceipt(DB.payments.find((p) => p.id === t.dataset.print)); if (t.dataset.del) remove("payments", t.dataset.del, "এই পেমেন্টটি"); };
+    $("#prows").onclick = (e) => { const t = e.target.closest("[data-print],[data-del],[data-pedit]"); if (!t) return; if (t.dataset.pedit) return editPayment(DB.payments.find((p) => p.id === t.dataset.pedit)); if (t.dataset.print) printReceipt(DB.payments.find((p) => p.id === t.dataset.print)); if (t.dataset.del) remove("payments", t.dataset.del, "এই পেমেন্টটি"); };
     $("#pcsv").onclick = () => U.xlsx(`payments-${U.today()}.xlsx`, ["রসিদ", "তারিখ", "আইডি", "নাম", "মডিউল", "মাস", "মাধ্যম", "টাকা", "ছাড়", "নোট"], list().map((p) => [p.receiptNo, p.date, p.studentId, studentName(p.studentId), modOf(p), p.month, p.method, p.amount, p.discount || 0, p.note]));
   }
 
