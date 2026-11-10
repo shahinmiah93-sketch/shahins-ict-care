@@ -568,3 +568,4 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .hw-check-topic { margin: 12px 0; }
 .hw-check-topic .ln-syl { white-space: pre-line; padding: 10px; background: #f5f8fa; border-radius: 8px; }
 .hw-row .ln-syl strong, .hw-check-topic .ln-syl strong { display: block; margin-bottom: 4px; }
+.exam-syllabus-row{display:grid;gap:6px;margin:12px 0;font-weight:600}.exam-syllabus-row small{color:var(--muted);font-weight:400}.exam-syllabus-row textarea{width:100%;min-height:120px;resize:vertical;white-space:pre-wrap;line-height:1.8;box-sizing:border-box}

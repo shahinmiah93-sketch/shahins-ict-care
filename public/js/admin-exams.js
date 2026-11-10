@@ -475,12 +475,12 @@ window.SICExams = function (X) {
         </div>
         <div class="form-grid exam-builder-more">
           <label>সেশন<select name="session"></select></label>
-          <label class="span2">অধ্যায় (ছোট করে) <small style="color:var(--muted);font-weight:400">— অধ্যায়ভিত্তিক ফলাফলের হিসাবে এটা ধরা হয়</small><input name="chapter" maxlength="120" placeholder="যেমন: অধ্যায় ১ — তথ্য ও যোগাযোগ প্রযুক্তি"></label>
-          <label class="span2">সিলেবাস (বিস্তারিত) <small style="color:var(--muted);font-weight:400">— যত খুশি লিখুন; Enter দিয়ে নতুন লাইন করা যায়, শিক্ষার্থী ঠিক এভাবেই দেখবে</small><textarea name="syllabus" rows="5" maxlength="5000" style="resize:vertical;min-height:110px;white-space:pre-wrap" placeholder="যেমন:&#10;১. বাংলাদেশ পরিচিতি — পৃষ্ঠা ২&#10;২. অন্যান্য জাতীয় বিষয়াবলি — পৃষ্ঠা ৫–৮"></textarea></label>
+          <label class="span2" title="অধ্যায়ভিত্তিক ফলাফলের হিসাবে এই ঘর ধরা হয়">অধ্যায় / সিলেবাস<input name="chapter" maxlength="120" placeholder="যেমন: অধ্যায় ১ — তথ্য ও যোগাযোগ প্রযুক্তি"></label>
           <label>সময় (ঐচ্ছিক)<input name="time" placeholder="যেমন: সকাল ১০:০০"></label>
           <label class="builder-pass-cq">CQ পাস (%)<input name="passCq" inputmode="decimal" autocomplete="off"></label>
           <label class="builder-pass-mcq">MCQ পাস (%)<input name="passMcq" inputmode="decimal" autocomplete="off"></label>
         </div>
+        <label class="exam-syllabus-row"><span>সিলেবাস (বিস্তারিত) <small>— যত খুশি লিখুন; Enter দিয়ে নতুন লাইন করা যায়, শিক্ষার্থী ঠিক এভাবেই দেখবে</small></span><textarea name="syllabus" rows="5" maxlength="5000" placeholder="যেমন:&#10;১. বাংলাদেশ পরিচিতি — পৃষ্ঠা ২&#10;২. অন্যান্য জাতীয় বিষয়াবলি — পৃষ্ঠা ৫–৮"></textarea></label>
         <div class="exam-chapter-dates" data-only-ch>
           <p><b>Chapter Final Test — একই অধ্যায়ে ৩ বার পরীক্ষা।</b> ফলাফল = যতবার দিয়েছে তার গড় (সবচেয়ে ভালোটা নয়)। ১ম বার = উপরের তারিখ।</p>
           <label>২য় বারের তারিখ<input type="date" name="d2"></label><label>৩য় বারের তারিখ<input type="date" name="d3"></label>
