@@ -1154,3 +1154,16 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .stu-closure h2{margin:0;font-size:19px;line-height:1.4;color:inherit}
 .stu-closure-date{margin:4px 0 0;font-weight:700;font-size:15px}
 .stu-closure-reason{margin:6px 0 0;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+
+/* Exam documents in the student panel */
+.rx-docs{display:grid;gap:8px;margin-top:12px}
+.rx-doc-card{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;margin-top:8px;padding:10px;border:1px solid #d7e7f0;border-radius:12px;background:#f7fbff;color:#15384c;text-decoration:none}
+.rx-docs .rx-doc-card{margin-top:0}
+.rx-doc-card:hover{background:#edf6ff;border-color:#84b5d7;color:#15384c;text-decoration:none}
+.rx-doc-card:focus-visible{outline:2px solid #286fa3;outline-offset:2px}
+.rx-doc-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;background:#e3f1fc;color:#21618f}
+.rx-doc-icon svg{width:20px;height:20px}
+.rx-doc-info{display:grid;gap:2px;min-width:0;overflow-wrap:anywhere}
+.rx-doc-card .rx-doc-info small{font-size:11px;font-weight:700;color:#446679}
+.rx-doc-info strong{font-size:14px;line-height:1.5}
+.rx-doc-action{padding:4px 8px;border-radius:7px;background:#e3f1fc;color:#1d577e;font-weight:700;font-size:12px;white-space:nowrap}

@@ -205,7 +205,15 @@ ${inner}
     const w = window.open("", "_blank"); if (!w) return alert("পপ-আপ বন্ধ আছে — ব্রাউজারে পপ-আপের অনুমতি দিন");
     w.document.write(html); w.document.close();
   }
-  const docLink = (d) => `<a class="chip" href="${esc(d.url || `/api/student/docs/${encodeURIComponent(d.id)}/file${Q}`)}" target="_blank" rel="noopener">${{ question: "📝 প্রশ্ন", answer: "✅ উত্তরপত্র", script: "📒 আমার খাতা" }[d.category] || "📎"}: ${esc(d.title)}</a>`;
+  const docLink = (d) => {
+    const category = { question: "প্রশ্ন", answer: "উত্তরপত্র", script: "আমার খাতা" }[d.category] || "ডকুমেন্ট";
+    const href = d.url || `/api/student/docs/${encodeURIComponent(d.id)}/file${Q}`;
+    return `<a class="rx-doc-card" href="${esc(href)}" target="_blank" rel="noopener">
+      <span class="rx-doc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10zM13 3v7h7M8 14h8m-8 3h5"/></svg></span>
+      <span class="rx-doc-info"><small>${category}${d.fileName && /\.pdf$/i.test(d.fileName) ? " · PDF" : ""}</small><strong>${esc(d.title)}</strong></span>
+      <span class="rx-doc-action" aria-hidden="true">দেখুন ↗</span>
+    </a>`;
+  };
 
   // অ্যাডমিন ভিউ: শিক্ষার্থী, অভিভাবক, বাবা, মা — সবার নাম ও নম্বর, পাশে কল / SMS / WhatsApp
   function contactCard() {
