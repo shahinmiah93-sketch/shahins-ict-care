@@ -13,6 +13,6 @@ test('The rating tile on the home page jumps to the students\' reviews section',
   assert.match(css, /\.stats \.stat-go\{cursor:pointer\}/);
   assert.match(site, /"সফল শিক্ষার্থী", "trophy", "#achievers"\]/); // the successful-students tile too
   assert.match(css, /#achievers\{scroll-margin-top/);
-  assert.match(html, /site\.css\?v=20261110-stat-links/);
+  assert.match(html, /site\.css\?v=20261110-fonts/);
   assert.ok(html.includes('id="reviews"') && html.includes('id="achievers"'));
 });

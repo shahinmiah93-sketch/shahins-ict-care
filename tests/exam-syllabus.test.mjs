@@ -21,5 +21,5 @@ test('Students see each exam as a card: date, time, full marks, chapter and the 
   assert.match(student, /filter\(Boolean\)\.join\("\\n"\)/); // routine table keeps chapter + syllabus lines
   assert.match(css, /\.pre,\.sy\{white-space:pre-line/);
   assert.match(css, /\.ex-card\{/);
-  assert.match(html, /app\.css\?v=20261110-hw-state/);  // student page always loads the latest app.css
+  assert.match(html, /app\.css\?v=20261110-fonts/);  // student page always loads the latest app.css
 });

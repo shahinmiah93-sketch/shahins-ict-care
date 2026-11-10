@@ -18,7 +18,7 @@
 .md-teacher p{margin:8px 0 0;color:var(--muted);line-height:1.7}
 .md-routine{display:inline-flex;align-items:center;padding:11px 22px;border-radius:12px;background:#17945f;color:#fff;font-weight:700;text-decoration:none;box-shadow:0 10px 20px -10px #17945f;transition:background .2s}
 .md-routine:hover{background:#0f7a4c}
-.md-sess{margin-top:14px}.md-sname{display:inline-block;padding:3px 14px;border-radius:9px;background:linear-gradient(135deg,#6d28d9,#4c1d95);color:#fff;font:800 17px/1.4 var(--sans);letter-spacing:.5px}
+.md-sess{margin-top:14px}.md-sname{display:inline-block;padding:3px 14px;border-radius:9px;background:linear-gradient(135deg,#6d28d9,#4c1d95);color:#fff;font:700 17px/1.4 var(--sans);letter-spacing:.5px}
 .md-batches{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}
 .md-bt{display:grid;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fffdf8;font-size:14px;color:#3d524d}
 .md-bt b{font-size:16px;color:var(--em2)}.md-bt small{color:#17945f;font-weight:700}.md-bt small.full{color:var(--bad,#b4233c)}

@@ -32,7 +32,7 @@
 .qr-qs>li{padding:14px;border-radius:16px;border:1px solid var(--line);background:#fffdf8}.qr-qs>li>b{display:block;margin-bottom:10px;font-size:16px}
 .qr-os{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .qr-os button,.qr-r{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;text-align:left;font:inherit;font-weight:600;color:var(--ink);cursor:pointer}
-.qr-os button span,.qr-r span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;font-weight:800}
+.qr-os button span,.qr-r span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;font-weight:700}
 .qr-os button:hover{border-color:var(--gold2)}.qr-os button.on{border-color:var(--em2);background:#e1f4ea}.qr-os button.on span{background:var(--em2);color:var(--gold)}
 .qr-r{cursor:default}.qr-r.ok{border-color:#187460;background:#e1f4ea}.qr-r.bad{border-color:#b4233c;background:#fde3e8}
 .qr-clear{margin-top:8px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
@@ -56,7 +56,7 @@
 .lc-now small{color:var(--gold2);font-weight:700}.lc-now b{display:block;font-size:20px;color:var(--em2)}
 .lc-list{margin-top:18px}.lc-list ol{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
 .lc-list li button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:#fffdf8;font:inherit;text-align:left;cursor:pointer}
-.lc-list li button span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;font-weight:800;font-size:13px}
+.lc-list li button span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f3ecdb;font-weight:700;font-size:13px}
 .lc-list li button.on{border-color:var(--em2);background:#e1f4ea;font-weight:700}.lc-list li button.on span{background:var(--em2);color:var(--gold)}
 .lc-my{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px}
 .lc-myc{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;border:1px solid var(--line);background:#fffdf8;text-decoration:none;color:var(--ink)}
