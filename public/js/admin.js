@@ -444,8 +444,17 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     }
     return out ? { list: out, advance } : null;
   }
-  // পুরো মাস = শুধু টাকা; আগের বাকিটুকু শোধ = "(বাকি শোধ)"; এখনো বাকি থাকলে = "(আংশিক, বাকি ৳…)"
-  const coverageText = (cv) => [...cv.list.map((x) => `${U.month(x.mk)} — ${money(x.amt)}${x.rest > 0 ? ` (আংশিক, বাকি ${money(x.rest)})` : x.amt < x.fee ? " (বাকি শোধ)" : ""}`), ...(cv.advance > 0 ? [`অগ্রিম — ${money(cv.advance)}`] : [])].join(" · ");
+  function receiptCoverage(cv) {
+    if (!cv || (!cv.list.length && !cv.advance)) return "";
+    const rows = cv.list.map(({ mk, amt, rest }) => `<tr>
+      <td>${esc(U.month(mk))}</td><td>${money(amt)}</td>
+      <td class="${rest > 0 ? "unpaid" : "paid"}">${rest > 0 ? money(rest) : "পুরো শোধ"}</td>
+    </tr>`).join("");
+    return `<div class="c cov">
+      ${rows ? `<table><caption>মাসভিত্তিক হিসাব</caption><thead><tr><th scope="col">মাস</th><th scope="col">এই রসিদে জমা</th><th scope="col">ওই মাসে বাকি</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
+      ${cv.advance > 0 ? `<p class="cov-advance">অগ্রিম জমা <strong>${money(cv.advance)}</strong></p>` : ""}
+    </div>`;
+  }
   function receiptHtml(p) {
     const s = studentById(p.studentId) || { name: p.studentId };
     const enr = DB.enrollments.find((e) => e.id === p.enrollmentId);
@@ -464,9 +473,9 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
           ${cell("শিক্ষার্থীর নাম", esc(s.name))}${cell("তারিখ", U.date(p.date))}
           ${cell("শিক্ষার্থী আইডি", esc(p.studentId))}${cell("ফি-এর ধরন", esc(kind), esc(mod))}
           ${cell("সেশন / ব্যাচ", esc([s.session, batchName(s.batchId)].filter(Boolean).join(" · ") || "—"))}${cell("পেমেন্টের মাধ্যম", esc(p.method || "নগদ"), p.note ? esc(p.note) : "")}
-          ${cov && (cov.list.length || cov.advance) ? `<div class="c cov"><small>এই টাকায় যে মাসের ফি শোধ হলো</small><b>${esc(coverageText(cov))}</b></div>` : ""}
-          <div class="c amt"><small>টাকার পরিমাণ${p.edited ? " (সংশোধিত রসিদ)" : ""}</small><b>${money(p.amount)}</b>${p.discount > 0 ? `<i>এছাড়া ছাড়: ${money(p.discount)}</i>` : ""}</div>
-          <div class="c ${due ? "unpaid" : "paid"}"><small>পেমেন্ট স্ট্যাটাস</small><b>${due ? `আংশিক পরিশোধ — বকেয়া ${money(due)}` : "পরিশোধিত (Paid)"}</b></div>
+          <div class="c amt"><small>এই রসিদে মোট জমা</small><b>${money(p.amount)}</b></div>
+          <div class="c ${due ? "unpaid" : "paid"}"><small>বর্তমান মোট বকেয়া</small><b>${due ? money(due) : "বকেয়া নেই"}</b></div>
+          ${receiptCoverage(cov)}
         </div>
         <div class="sg"><span><img class="receipt-signature" src="${location.origin}/images/signature.png" alt="শাহিন স্যারের স্বাক্ষর">গ্রহণকারীর স্বাক্ষর</span><span>প্রদানকারীর স্বাক্ষর</span></div></section>`;
   }
@@ -490,8 +499,13 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
       .g{display:grid;grid-template-columns:1fr 1fr;border:1px solid #cfd8d4;border-top:0}
       .c{padding:1.6mm 4mm;border-top:1px solid #cfd8d4;min-height:10.5mm}.c:nth-child(odd){border-right:1px solid #cfd8d4}
       .c small{display:block;color:#6a7a76;font-size:11.5px}.c b{display:block;font-size:14px;font-weight:600;line-height:1.35}.c i{display:block;font-style:normal;font-size:11.5px;color:#55625f}
-      .cov{grid-column:1/-1;border-right:0!important;background:#f3fbf6}.cov b{font-size:13.5px;color:#0b5c3c}@media print{.cov{min-height:0!important;padding:.6mm 4mm!important}.cov b{font-size:12px;line-height:1.3}.r:has(.cov) .sg{padding-top:8mm!important}.r:has(.cov) .hd{padding-bottom:1.2mm!important}.r:has(.cov) .bar{margin-top:2mm!important}.r:has(.cov) .c{min-height:8mm!important;padding:.8mm 4mm!important}}.amt b{font-size:18px;color:#0b3b36}.paid b{color:#0b7a4b}.unpaid b{color:#b4233c}
-      .sg{margin-top:auto;padding-top:9mm;display:flex;justify-content:space-between}.sg span{position:relative;width:36mm;border-top:1.4px solid #1d2b28;padding-top:1.5mm;text-align:center;font-size:12.5px;font-weight:600}
+      .cov{grid-column:1/-1;border-right:0!important;background:#f3fbf6} .cov table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
+      .cov caption{text-align:left;font-size:13px;font-weight:700;color:#0b3b36;margin-bottom:1mm}
+      .cov th,.cov td{padding:.7mm 0;text-align:right;border-bottom:1px solid #d6e6dc;line-height:1.3}
+      .cov th:first-child,.cov td:first-child{text-align:left}
+      .cov td.paid{color:#0b7a4b}.cov td.unpaid{color:#b4233c}
+      .cov-advance{display:flex;justify-content:space-between;gap:8px;margin:1mm 0 0;font-size:12px}@media print{.cov{min-height:0!important;padding:.6mm 4mm!important}.cov th,.cov td{padding:.45mm 0}.r:has(.cov) .sg{padding-top:8mm!important}.r:has(.cov) .hd{padding-bottom:1.2mm!important}.r:has(.cov) .bar{margin-top:2mm!important}.r:has(.cov) .c{min-height:8mm!important;padding:.8mm 4mm!important}}.amt b{font-size:18px;color:#0b3b36}.paid b{color:#0b7a4b}.unpaid b{color:#b4233c}
+      .sg{margin-top:auto;padding-top:9mm;display:flex;justify-content:space-between}.sg span{position:relative;width:36mm;border-top:1.4px solid #1d2b28;padding-top:1.5mm;text-align:center;font-size:11px;font-weight:600}
       .receipt-signature{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:29mm;height:7mm;object-fit:contain}
       .pb{position:sticky;top:0;background:#0b3b36;color:#fff;text-align:center;padding:8px}.pb button{font:inherit;font-weight:700;padding:6px 18px;border:0;border-radius:999px;background:#f3c55d;cursor:pointer}
       @media print{body{background:#fff}.pb{display:none}.r{break-inside:avoid}.r+.r{break-before:page}.r{margin:0 auto;min-height:0;padding:5mm 8mm 5mm}.hd{padding-bottom:2mm}.bar{margin-top:3mm}.c{padding:1.1mm 4mm;min-height:9mm}.sg{padding-top:8mm}}</style></head><body>
