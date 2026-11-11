@@ -1509,16 +1509,16 @@ ${list.map(receiptHtml).join("")}
     };
     openModal({
       title: "ফি বদলান",
-      body: `<p><b>${esc(student.name)}</b> · ${esc(courseById(e.courseId)?.name || "")}</p>
-        <section class="dsc-fixed"><h4>এই শিক্ষার্থীর ${monthly ? "মাসিক " : ""}ফি <small>(শুধু এর জন্য — ভর্তির তারিখ থেকে এই টাকাই ধরা হবে, মডিউলের ফি যাই হোক)</small></h4>
+      body: `<div class="fee-edit-form"><p class="fee-edit-student"><b>${esc(student.name)}</b> · ${esc(courseById(e.courseId)?.name || "")}</p>
+        <section class="dsc-fixed"><h4>এই শিক্ষার্থীর ${monthly ? "মাসিক " : ""}ফি</h4>
           <label>${monthly ? "মাসিক ফি" : "ফি"} (৳)<input id="feeVal" type="number" min="0" step="1" value="${fee}" placeholder="যেমন: 700"></label>
           <small class="dsc-note">এখন: <b>${money(fee)}${monthly ? "/মাস" : ""}</b>${locked ? " — এই শিক্ষার্থীর নির্ধারিত ফি" : " — মডিউলের ফি"}। অন্য কোনো শিক্ষার্থীর ফি বদলাবে না।</small>
           ${locked ? `<label class="check"><input type="checkbox" id="feeReset"> মডিউলের আগের ফি-তে ফিরুন (${money(e.feeBefore)}${monthly ? "/মাস" : ""})</label>` : ""}</section>
-        <details class="dsc-more"${cur ? " open" : ""}><summary>ছাড়ও দিতে চান? (ঐচ্ছিক)</summary>
+        <details class="dsc-more"${cur ? " open" : ""}><summary>ছাড় (ঐচ্ছিক)</summary>
           <p style="margin:6px 0">এখনকার ছাড়: ${e.discountPct ? `<b>প্রতি মাসের ফি-র ${bn(e.discountPct)}%</b>` : `<b>${money(cur)}</b>${cur ? ` (${bn(curPct)}%)` : ""}`}</p>
           <div class="fgrid"><label>ছাড়ের ধরন<select id="dscMode"><option value="percent">শতাংশ (%) — যেমন ৫০%</option><option value="taka">টাকা (৳)</option></select></label>
-          <label>ছাড় <small style="font-weight:400;color:var(--muted)">(ফাঁকা = আগের ছাড় যেমন আছে)</small><input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div></details>
-        <div class="toolbar"><button type="button" class="btn gold" id="dscPrev">নতুন হিসাব দেখুন</button></div><div id="dscRes" aria-live="polite"></div>`,
+          <label>ছাড়<input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div><small class="dsc-note">ঘর ফাঁকা রাখলে আগের ছাড় থাকবে।</small></details>
+        <div class="fee-edit-preview"><button type="button" class="btn line" id="dscPrev">নতুন হিসাব দেখুন</button></div><div id="dscRes" aria-live="polite"></div></div>`,
       saveText: "সংরক্ষণ",
       onSave: async () => {
         if (!preview) throw new Error("আগে নতুন হিসাব দেখুন");

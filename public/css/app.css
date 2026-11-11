@@ -1257,3 +1257,17 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-save { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-inline-start: auto; }
 .ab-save [data-call-save] { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; }
 .ab-save-status { color: #735317; }
+
+/* Student fee editing */
+.fee-edit-form { display: grid; gap: 14px; }
+.fee-edit-student { margin: 0; padding: 10px 13px; border-radius: 10px; background: #edf6f2; color: #244f44; }
+.fee-edit-form .dsc-fixed, .fee-edit-form .dsc-more { margin: 0; padding: 14px; border: 1px solid #d7e4de; border-radius: 12px; background: #f8fbf9; }
+.fee-edit-form .dsc-fixed h4 { margin: 0 0 10px; color: #18483b; }
+.fee-edit-form label:not(.check) { display: grid; gap: 6px; align-content: start; font-size: 13px; font-weight: 700; }
+.fee-edit-form :is(input[type=number],select) { box-sizing: border-box; width: 100%; max-width: none; min-height: 42px; padding: 8px 11px; border: 1px solid #bdcfc8; border-radius: 9px; background: #fff; color: #183d35; font: inherit; }
+.fee-edit-form :is(input,select,button):focus-visible { outline: 2px solid #227965; outline-offset: 2px; }
+.fee-edit-form .dsc-more summary { padding: 0; color: #18483b; }
+.fee-edit-form .dsc-note { display: block; margin-top: 7px; }
+.fee-edit-preview { display: flex; justify-content: flex-end; }
+.fee-edit-form #dscRes:empty { display: none; }
+@media (max-width: 430px) { .fee-edit-form .fgrid { grid-template-columns: minmax(0, 1fr); } }
