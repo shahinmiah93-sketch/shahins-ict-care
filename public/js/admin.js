@@ -2043,22 +2043,24 @@ ${list.map(receiptHtml).join("")}
   }
   function attendance(c) {
     const se = (liveSessions()[0] || {}).name || "";
-    c.innerHTML = `<div class="at-head"><div><span class="at-eye">দৈনিক হাজিরা</span><h2>উপস্থিতি ব্যবস্থাপনা</h2><p>সেশন ও ব্যাচ বেছে হাজিরা, বাড়ির কাজ আর পড়া একসাথে দিন।</p></div><button class="btn gold" id="saveAtt">✓ হাজিরা সংরক্ষণ</button></div>
+    c.innerHTML = `<div class="at-head"><div><span class="at-eye">দৈনিক হাজিরা</span><h2>উপস্থিতি ব্যবস্থাপনা</h2><p>সেশন ও ব্যাচ বেছে হাজিরা, বাড়ির কাজ আর পড়া একসাথে দিন।</p></div></div>
       <div class="card at-ctl">
         <label>তারিখ<input type="date" id="ad" value="${U.today()}" max="${U.today()}"></label>
         <label>সেশন<select id="ase">${opt(sessionOptions(), se)}</select></label>
         <label>ব্যাচ<span id="abWrap"></span></label>
-        <button type="button" class="btn line" id="attClean" title="এই পাতার সব চিহ্ন মুছে দিন (সেভ না করা পর্যন্ত কিছু বদলাবে না)">Clean</button>
+        <button type="button" class="btn line" id="attClean" hidden title="এই পাতার সব চিহ্ন মুছে দিন (সেভ না করা পর্যন্ত কিছু বদলাবে না)">Clean</button>
       </div>
       <div class="at-closed" id="attClosed" hidden><span>❚❚</span><div><b>এই দিনে ব্যাচটি বন্ধ</b><small id="attClosedTx"></small></div></div>
-      <div class="at-sum" id="attSum"></div>
-      <div class="card at-reg">
+      <div class="at-sum" id="attSum" hidden></div>
+      <div class="card at-reg" id="attBatchEmpty"><p class="at-empty">হাজিরা নিতে আগে ব্যাচ বেছে নিন।</p></div>
+      <div class="card at-reg" id="attBatchRegister" hidden>
         <div class="at-reg-head"><div><h3>শিক্ষার্থীর হাজিরা</h3><small id="attMeta"></small></div>
           <div class="at-tools"><label class="at-search">⌕ <input id="attQ" placeholder="নাম বা আইডি দিয়ে খুঁজুন"></label>
             <button type="button" class="at-all p" data-all="P">✓ উপস্থিত</button><button type="button" class="at-all a" data-all="A">× অনুপস্থিত</button><button type="button" class="at-all l" data-all="L">○ ছুটি</button></div></div>
         <div class="at-cols"><span>শিক্ষার্থী</span><span class="at-nbh">নতুন ব্যাচ <button type="button" class="at-lock" id="attLock"></button></span><span>হাজিরা</span><span>বাড়ির কাজ</span><span>পড়া পারা</span><span>পয়েন্ট</span><span>অবস্থা</span></div>
         <div id="arows"></div>
         <p class="at-note">পয়েন্ট: উপস্থিত ১ + বাড়ির কাজ ১ + পড়া পারা ১ = দিনে সর্বোচ্চ ৩ · ছুটি উপস্থিতির হিসাবে ধরা হয় না · একই বোতামে আবার চাপলে চিহ্ন উঠে যায়</p>
+        <div class="at-save-foot"><button type="button" class="btn gold" id="saveAtt">✓ হাজিরা সংরক্ষণ</button></div>
       </div>`;
     // ট্যাব: হাজিরা দিন | 📞 অনুপস্থিতি কল তালিকা (অনুপস্থিতদের অভিভাবককে কল — admin-absence.js)
     const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save, openForm });
@@ -2250,8 +2252,7 @@ ${list.map(receiptHtml).join("")}
         ${box("hw", "বাড়ির কাজ / পড়া", `${bn(n((i) => marks[i] === "P" && ticks[i]?.hw))} / ${bn(n((i) => marks[i] === "P" && ticks[i]?.lesson))}`, `পয়েন্ট ${bn(ids.reduce((t, i) => t + pts(i), 0))}/${bn(p * 3)}`)}`;
     };
     const bsel = () => {
-      const first = DB.batches.find((b) => b.session === $("#ase").value);
-      $("#abWrap").innerHTML = batchSelectHtml("ab", first ? first.id : "", "", $("#ase").value);
+      $("#abWrap").innerHTML = batchSelectHtml("ab", "", "ব্যাচ বেছে নিন", $("#ase").value);
       $("#abSel").onchange = fresh;
     };
     const fresh = () => { moveLock = true; draw(); };
@@ -2264,6 +2265,18 @@ ${list.map(receiptHtml).join("")}
     };
     const draw = () => {
       const date = $("#ad").value, b = $("#abSel").value;
+      $("#attBatchEmpty").hidden = !!b;
+      $("#attBatchRegister").hidden = !b;
+      $("#attSum").hidden = !b;
+      $("#attClean").hidden = !b;
+      if (!b) {
+        marks = {};
+        ticks = {};
+        $("#arows").innerHTML = "";
+        $("#attClosed").hidden = true;
+        $("#attOffDay").hidden = true;
+        return;
+      }
       marks = { ...(DB.attendance[`${date}|${b}`] || {}) };
       const rh = hwRec("homework", date, b), rl = hwRec("lesson", date, b);
       ticks = {};
@@ -2340,8 +2353,27 @@ ${list.map(receiptHtml).join("")}
         left.forEach((sid) => { marks[sid] = clean[sid] = "P"; paintRow(sid); }); summary();
       }
       const tks = Object.fromEntries(Object.entries(ticks).filter(([sid]) => clean[sid] === "P"));
-      try { await api("/api/admin/attendance", { body: { date: $("#ad").value, batchId: $("#abSel").value, marks: clean, ticks: tks } }); await load(); toast("হাজিরা, বাড়ির কাজ ও পড়া সেভ হয়েছে"); draw(); callBadge(); }
+      const batchSelect = $("#abSel"), saveButton = $("#saveAtt");
+      const fields = [batchSelect, saveButton, $("#ad"), $("#ase")];
+      const body = { date: $("#ad").value, batchId: batchSelect.value, marks: clean, ticks: tks };
+      fields.forEach((field) => { field.disabled = true; });
+      try {
+        await api("/api/admin/attendance", { body });
+        await load();
+        toast("হাজিরা, বাড়ির কাজ ও পড়া সেভ হয়েছে");
+        if (c.contains(batchSelect)) {
+          batchSelect.value = "";
+          fresh();
+          callBadge();
+          if (!c.classList.contains("at-show-calls")) {
+            batchSelect.disabled = false;
+            batchSelect.focus();
+            batchSelect.scrollIntoView({ block: "center" });
+          }
+        }
+      }
       catch (e) { toast(e.message, true); }
+      finally { fields.forEach((field) => { field.disabled = false; }); }
     };
   }
 

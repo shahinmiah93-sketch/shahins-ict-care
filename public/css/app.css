@@ -1251,3 +1251,5 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .at-one-suggestions { display: grid; gap: 6px; }
 .at-one-suggestions button { text-align: left; white-space: normal; }
 .at-one-suggestions small { display: block; color: #47675e; }
+
+.at-save-foot { display: flex; justify-content: flex-end; padding: 12px 16px 16px; }
