@@ -11,7 +11,7 @@ window.SICAbsence = function (X) {
   const addDays = (d, n) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("en-CA"); };
 
   const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"]];
-  const REASONS = ["অসুস্থ", "বাইরে গেছে", "পারিবারিক কাজ", "স্কুল / কলেজের কাজ", "আগ্রহ কমে গেছে", "জানতেন না", "অন্য ব্যাচে পড়ে", "আর পড়বে না", "অন্যান্য"];
+  const REASONS = window.SICAbsence.reasons;
   const S = { date: today(), session: "", batch: "", hideDone: false };
 
   const calls = () => (DB().absenceCalls ||= {});
@@ -294,3 +294,5 @@ window.SICAbsence = function (X) {
   render.pending = () => { const keep = [S.session, S.batch]; S.session = ""; S.batch = ""; const n = pendingCount(today()); [S.session, S.batch] = keep; return n; };
   return render;
 };
+
+window.SICAbsence.reasons = ["অসুস্থ", "বাইরে গেছে", "পারিবারিক কাজ", "স্কুল / কলেজের কাজ", "আগ্রহ কমে গেছে", "জানতেন না", "অন্য ব্যাচে পড়ে", "আর পড়বে না", "অন্যান্য"];

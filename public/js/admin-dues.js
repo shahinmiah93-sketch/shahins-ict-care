@@ -144,26 +144,31 @@ window.SICDues = function (X) {
       const dates = absenceDates(student);
       if (!dates.length) return toast("এই শিক্ষার্থীর সেভ করা অনুপস্থিতির তারিখ নেই", true);
       const saved = DB().absenceCalls || {};
+      const reasons = [...new Set([...window.SICAbsence.reasons, ...dates.map((date) => saved[`${date}|${sid}`]?.reason)].filter(Boolean))];
       const preferred = dates.find((date) => saved[`${date}|${sid}`]?.status !== "talked") || dates[0];
       X.openForm({
         title: `অনুপস্থিতির আপডেট — ${student.name}`,
         fields: [
           { name: "date", label: "কোন দিনের অনুপস্থিতি?", type: "select", options: dates.map((date) => [date, U.date(date)]), required: true },
-          { name: "note", label: "অনুপস্থিতি নিয়ে কী কথা হলো?", type: "textarea", wide: true },
+          { name: "reason", label: "অনুপস্থিতির কারণ", type: "select", wide: true, options: [["", "কারণ বাছুন (ঐচ্ছিক)"], ...reasons.map((reason) => [reason, reason])] },
+          { name: "note", label: "অতিরিক্ত নোট (ঐচ্ছিক)", type: "textarea", rows: 2, wide: true },
         ],
-        values: { date: preferred },
+        values: { date: preferred, reason: saved[`${preferred}|${sid}`]?.reason || "" },
         saveText: "কথা হয়েছে হিসেবে সেভ করুন",
-        onSave: async ({ date, note }) => {
+        onSave: async ({ date, reason, note }) => {
           if (!absenceDates(student).includes(date)) throw new Error("সেভ করা অনুপস্থিতির তারিখ বেছে নিন");
           const key = `${date}|${sid}`;
           const previous = DB().absenceCalls?.[key];
           const result = await api("/api/admin/absence-call", {
-            body: { studentId: sid, date, status: "talked", reason: previous?.reason || "", note: note || previous?.note || "" },
+            body: { studentId: sid, date, status: "talked", reason, note: note || previous?.note || "" },
           });
           (DB().absenceCalls ||= {})[key] = result.item;
           toast("অনুপস্থিতি কল তালিকায় কথা হয়েছে হিসেবে সেভ হয়েছে");
         },
       });
+      const dateInput = $('#modalBody [name="date"]');
+      const reasonInput = $('#modalBody [name="reason"]');
+      dateInput.onchange = () => { reasonInput.value = saved[`${dateInput.value}|${sid}`]?.reason || ""; };
     };
     host.onclick = (e) => {
       const absence = e.target.closest("[data-dc-absence]");
