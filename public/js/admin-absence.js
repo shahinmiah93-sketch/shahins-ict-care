@@ -64,6 +64,7 @@ window.SICAbsence = function (X) {
       if (!due) continue;
       const s = DB().students.find((x) => x.id === sid);
       if (!s || s.status === "inactive" || !inScope(s)) continue;
+      if (history(sid).some(([day, status]) => day > d && day <= date && status === "P")) continue;
       rows.push({ s, key, date: d, follow: true });
     }
     return rows;
