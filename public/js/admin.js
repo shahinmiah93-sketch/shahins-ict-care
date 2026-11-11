@@ -2072,10 +2072,81 @@ ${list.map(receiptHtml).join("")}
     const callBadge = () => { const b = $("#attCallN"); if (b) b.textContent = absCalls.pending() || ""; };
     c.classList.remove("at-show-calls");
     $("#attClosed").insertAdjacentHTML("afterend", '<div class="at-closed at-offday" id="attOffDay" hidden><span>⚠</span><div><b>এই দিনে এই ব্যাচের ক্লাস নেই</b><small id="attOffDayTx"></small></div></div>');
-    c.querySelector(".at-head").insertAdjacentHTML("afterend", '<div class="at-tabs" id="attTabs"><button type="button" class="on" data-at-tab="reg">✓ হাজিরা দিন</button><button type="button" data-at-tab="calls">📞 অনুপস্থিতি কল তালিকা <span class="at-tabn" id="attCallN"></span></button></div>');
-    c.insertAdjacentHTML("beforeend", '<div id="attCalls"></div>');
+    c.querySelector(".at-head").insertAdjacentHTML("afterend", `<div class="at-tabs" id="attTabs">
+      <button type="button" class="on" data-at-tab="reg">ব্যাচভিত্তিক হাজিরা</button>
+      <button type="button" data-at-tab="one">একক হাজিরা</button>
+      <button type="button" data-at-tab="calls">📞 অনুপস্থিতি কল তালিকা <span class="at-tabn" id="attCallN"></span></button>
+    </div>`);
+    c.insertAdjacentHTML("beforeend", `<div id="attCalls" hidden></div>
+      <section class="card" id="attOne" hidden>
+        <h3>একক হাজিরা</h3>
+        <p>আজকের হাজিরা দিতে শিক্ষার্থীর পুরো আইডি লিখুন।</p>
+        <form class="fgrid" id="attOneFind">
+          <label>শিক্ষার্থীর আইডি<input name="studentId" inputmode="numeric" autocomplete="off" required placeholder="যেমন ২৮০০৪৩"></label>
+          <div><button class="btn line" type="submit">খুঁজুন</button></div>
+        </form>
+        <div id="attOneResult" aria-live="polite"></div>
+      </section>`);
+    const oneForm = $("#attOneFind"), oneResult = $("#attOneResult");
+    const idInput = oneForm.elements.studentId;
+    let oneStudent = null, oneSaving = false;
+    const renderOne = () => {
+      const day = U.today(), student = oneStudent;
+      const status = DB.attendance[`${day}|${student.batchId}`]?.[student.id];
+      const closed = U.closureOn(DB.closures, student.batchId, day);
+      oneResult.innerHTML = `<div class="at-stu"><div><b>${esc(student.name)}</b>
+        <small>${esc(student.id)} · ${esc(batchName(student.batchId))} · ${esc(U.date(day))}</small></div></div>
+        ${closed ? '<p>আজ এই ব্যাচ বন্ধ।</p>' : `<div class="att-row">
+          <button type="button" data-one-status="P" class="${status === "P" ? "on" : ""}">✓ উপস্থিত</button>
+          <button type="button" data-one-status="A" class="${status === "A" ? "on" : ""}">× অনুপস্থিত</button>
+        </div>`}
+        ${status === "L" ? '<p>সেভ করা হাজিরা: ছুটি</p>' : ""}`;
+    };
+    idInput.oninput = () => { oneStudent = null; oneResult.textContent = ""; };
+    oneForm.onsubmit = (event) => {
+      event.preventDefault();
+      const id = idInput.value.trim().replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d));
+      oneStudent = DB.students.find((student) => student.id === id && student.status !== "inactive" && DB.batches.some((batch) => batch.id === student.batchId));
+      if (oneStudent) renderOne();
+      else oneResult.textContent = "এই আইডিতে ব্যাচসহ কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি।";
+    };
+    oneResult.onclick = async (event) => {
+      const button = event.target.closest("[data-one-status]");
+      if (!button || !oneStudent || oneSaving) return;
+      const student = oneStudent, status = button.dataset.oneStatus;
+      oneSaving = true;
+      $$(".att-row button", oneResult).forEach((item) => { item.disabled = true; });
+      try {
+        const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status } });
+        const key = `${saved.date}|${student.batchId}`;
+        (DB.attendance[key] ||= {})[student.id] = saved.status;
+        if ($("#ad")?.value === saved.date && $("#abSel")?.value === student.batchId) {
+          marks[student.id] = saved.status;
+          if (saved.status !== "P") ticks[student.id] = { hw: false, lesson: false };
+          paintRow(student.id);
+          summary();
+        }
+        if (c.contains(oneResult)) callBadge();
+        toast("একক হাজিরা সেভ হয়েছে");
+      } catch (err) { toast(err.message, true); }
+      finally {
+        oneSaving = false;
+        if (oneStudent) renderOne();
+      }
+    };
     callBadge();
-    $("#attTabs").onclick = (e) => { const b = e.target.closest("[data-at-tab]"); if (!b) return; $$("#attTabs button").forEach((x) => x.classList.toggle("on", x === b)); const calls = b.dataset.atTab === "calls"; c.classList.toggle("at-show-calls", calls); if (calls) absCalls($("#attCalls")); else callBadge(); };
+    $("#attTabs").onclick = (event) => {
+      const button = event.target.closest("[data-at-tab]");
+      if (!button) return;
+      const tab = button.dataset.atTab;
+      $$("#attTabs button").forEach((item) => item.classList.toggle("on", item === button));
+      c.classList.toggle("at-show-calls", tab !== "reg");
+      $("#attCalls").hidden = tab !== "calls";
+      $("#attOne").hidden = tab !== "one";
+      if (tab === "calls") absCalls($("#attCalls"));
+      else if (tab === "one") idInput.focus();
+      else callBadge();
+    };
     let marks = {}, ticks = {}, moveLock = true; // নতুন ব্যাচের ঘর শুরুতে সবসময় লক; ব্যাচ / তারিখ বদলালে আবার লক
     const paintLock = () => { const b = $("#attLock"); b.textContent = moveLock ? "🔒 লক" : "🔓 খোলা"; b.classList.toggle("open", !moveLock); b.title = moveLock ? "চাপ দিয়ে খুলুন — তারপর ব্যাচ বদলানো যাবে" : "চাপ দিয়ে আবার লক করুন"; $$("#arows select[data-move]").forEach((x) => (x.disabled = moveLock)); };
     // ওই দিনে ওই ব্যাচের বাড়ির কাজ / পড়ার রেকর্ড (সার্ভারও একই নিয়মে খোঁজে)
