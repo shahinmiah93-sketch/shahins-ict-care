@@ -56,6 +56,7 @@ window.SICDues = function (X) {
       if (marks[student.id] === "P") present.add(date);
       if (batchId === student.batchId && marks[student.id] === "A") absent.add(date);
     }
+    if (present.has(now)) return [];
     return [...absent].filter((date) => !present.has(date)).sort().reverse();
   }
 
