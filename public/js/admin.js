@@ -1447,7 +1447,7 @@ ${list.map(receiptHtml).join("")}
         <div class="mny"><small>জমা</small><b>${money(pay ? pay.amount : 0)}</b></div>
         <div class="mny ${s.fees.balance > 0 ? "due" : ""}"><small>মোট বকেয়া</small><b>${money(Math.max(0, s.fees.balance))}</b></div>
       </div>
-      ${enrolled || !DB.attendance[`${U.today()}|${s.batchId}`] || U.closureOn(DB.closures, s.batchId, U.today()) ? "" : `<div class="adm-att" style="margin:12px auto;padding:10px 14px;border:1px dashed #c9a24a;border-radius:12px;max-width:460px;background:#fffaf0"><b>আজ (${esc(U.date(U.today()))}) এই ব্যাচের হাজিরা আগেই নেওয়া হয়ে গেছে।</b><br><small>${esc(s.name)} কি আজ ক্লাসে এসেছিল?</small><div class="toolbar" style="justify-content:center;margin:8px 0 0"><button type="button" class="btn line" id="dnAttP" data-st="P">✓ হ্যাঁ, এসেছিল</button><button type="button" class="btn line" id="dnAttA" data-st="A">✗ না, আসেনি</button></div><small id="dnAttNote" class="muted"></small><br><small class="muted">"না" দিলে অন্য অনুপস্থিতদের মতো সন্ধ্যায় অভিভাবকের কাছে অনুপস্থিতির SMS যেতে পারে।</small></div>`}
+      ${enrolled || !DB.attendance[`${U.today()}|${s.batchId}`] || U.closureOn(DB.closures, s.batchId, U.today()) ? "" : `<div class="adm-att" style="margin:12px auto;padding:10px 14px;border:1px dashed #c9a24a;border-radius:12px;max-width:460px;background:#fffaf0"><b>আজ (${esc(U.date(U.today()))}) এই ব্যাচের হাজিরা আগেই নেওয়া হয়ে গেছে।</b><br><small>${esc(s.name)} কি আজ ক্লাসে এসেছিল?</small><div class="toolbar" style="justify-content:center;margin:8px 0 0"><button type="button" class="btn line" id="dnAttP" data-st="P">✓ হ্যাঁ, এসেছিল</button><button type="button" class="btn line" id="dnAttA" data-st="A">✗ না, আসেনি</button></div><strong id="dnAttNote" class="chip ok" role="status" style="display:inline-block;margin:8px 0;padding:5px 12px;font-size:13px" hidden></strong><br><small class="muted">"না" দিলে অন্য অনুপস্থিতদের মতো সন্ধ্যায় অভিভাবকের কাছে অনুপস্থিতির SMS যেতে পারে।</small></div>`}
       ${(() => { const it = (s.fees?.items || []).find((x) => x.enrollmentId === enr?.id); if (!(it && m && m.feeType === "monthly" && it.due > 0 && it.due < enr.fee - enr.discount)) return ""; const d = new Date((enr.startDate || U.today()) + "T00:00:00"); d.setDate(1); d.setMonth(d.getMonth() + 1); const next = U.monthlyFeeFor(m, enr, d.toLocaleDateString("en-CA").slice(0, 7)); return `<p class="muted" style="margin:6px 0"><small>বকেয়া ${money(it.due)} — ভর্তির মাসে ক্লাস কম পাওয়ায় (বা মাসভিত্তিক ফি-তালিকা অনুযায়ী) এ মাসের ফি কম ধরা হয়েছে। পরের মাস থেকে ${money(next)} করে।</small></p>`; })()}
       ${enrolled ? "" : `<p class="muted"><span id="dnSmsNote">${esc(loginSmsNote(s))}</span> — এটা দিয়ে শিক্ষার্থী প্যানেলে লগইন করবে।</p>`}
       <div class="toolbar" style="justify-content:center">
@@ -1458,16 +1458,30 @@ ${list.map(receiptHtml).join("")}
         <button type="button" class="btn line" id="dnView">প্রোফাইল</button>
         <a class="btn line" href="${esc(newAdmissionHref({ session: s.session, batch: s.batchId }))}" id="dnNew">+ আরেকজন ভর্তি</a>
       </div></div>`;
-    $$("#dnAttP,#dnAttA").forEach((btn) => btn.onclick = async () => {
-      const st = btn.dataset.st, note = $("#dnAttNote");
-      $$("#dnAttP,#dnAttA").forEach((x) => x.disabled = true);
+    const attendanceButtons = $$("#dnAttP,#dnAttA");
+    const attendanceNote = $("#dnAttNote");
+    const showAttendanceSaved = (status) => {
+      attendanceButtons.forEach((button) => {
+        const selected = button.dataset.st === status;
+        button.classList.toggle("gold", selected);
+        button.classList.toggle("line", !selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+      if (attendanceNote) {
+        attendanceNote.hidden = status !== "P" && status !== "A";
+        attendanceNote.textContent = status === "P" ? "✓ হাজিরা সেভ হয়েছে — উপস্থিত" : status === "A" ? "✓ হাজিরা সেভ হয়েছে — অনুপস্থিত" : "";
+      }
+    };
+    showAttendanceSaved(DB.attendance[`${U.today()}|${s.batchId}`]?.[s.id]);
+    attendanceButtons.forEach((button) => button.onclick = async () => {
+      attendanceButtons.forEach((item) => { item.disabled = true; });
       try {
-        await api("/api/admin/attendance-one", { body: { studentId: s.id, status: st } });
-        const key = `${U.today()}|${s.batchId}`; DB.attendance[key] = { ...(DB.attendance[key] || {}), [s.id]: st };
-        note.textContent = st === "P" ? "✓ আজ উপস্থিত লেখা হয়েছে" : "✗ আজ অনুপস্থিত লেখা হয়েছে";
-        $("#dnAttP").classList.toggle("gold", st === "P"); $("#dnAttA").classList.toggle("gold", st === "A");
-      } catch (e) { toast(e.message, true); }
-      $$("#dnAttP,#dnAttA").forEach((x) => x.disabled = false);
+        const saved = await api("/api/admin/attendance-one", { body: { studentId: s.id, status: button.dataset.st } });
+        const key = `${saved.date}|${s.batchId}`;
+        (DB.attendance[key] ||= {})[s.id] = saved.status;
+        showAttendanceSaved(saved.status);
+      } catch (error) { toast(error.message, true); }
+      finally { attendanceButtons.forEach((item) => { item.disabled = false; }); }
     });
     const rec = $("#dnRec"); if (rec) rec.onclick = () => printReceipt(pay);
     const dp = $("#dnPay"); if (dp) dp.onclick = () => paymentForm(s.id);
