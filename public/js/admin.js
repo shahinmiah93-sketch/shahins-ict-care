@@ -2042,11 +2042,10 @@ ${list.map(receiptHtml).join("")}
     };
   }
   function attendance(c) {
-    const se = (liveSessions()[0] || {}).name || "";
     c.innerHTML = `<div class="at-head"><div><span class="at-eye">দৈনিক হাজিরা</span><h2>উপস্থিতি ব্যবস্থাপনা</h2><p>সেশন ও ব্যাচ বেছে হাজিরা, বাড়ির কাজ আর পড়া একসাথে দিন।</p></div></div>
       <div class="card at-ctl">
         <label>তারিখ<input type="date" id="ad" value="${U.today()}" max="${U.today()}"></label>
-        <label>সেশন<select id="ase">${opt(sessionOptions(), se)}</select></label>
+        <label>সেশন<select id="ase">${opt(sessionOptions("সেশন বেছে নিন"), "")}</select></label>
         <label>ব্যাচ<span id="abWrap"></span></label>
         <button type="button" class="btn line" id="attClean" hidden title="এই পাতার সব চিহ্ন মুছে দিন (সেভ না করা পর্যন্ত কিছু বদলাবে না)">Clean</button>
       </div>
@@ -2252,7 +2251,10 @@ ${list.map(receiptHtml).join("")}
         ${box("hw", "বাড়ির কাজ / পড়া", `${bn(n((i) => marks[i] === "P" && ticks[i]?.hw))} / ${bn(n((i) => marks[i] === "P" && ticks[i]?.lesson))}`, `পয়েন্ট ${bn(ids.reduce((t, i) => t + pts(i), 0))}/${bn(p * 3)}`)}`;
     };
     const bsel = () => {
-      $("#abWrap").innerHTML = batchSelectHtml("ab", "", "ব্যাচ বেছে নিন", $("#ase").value);
+      const session = $("#ase").value;
+      $("#abWrap").innerHTML = session
+        ? batchSelectHtml("ab", "", "ব্যাচ বেছে নিন", session)
+        : '<select id="abSel" disabled><option value="">আগে সেশন বেছে নিন</option></select>';
       $("#abSel").onchange = fresh;
     };
     const fresh = () => { moveLock = true; draw(); };
@@ -2362,13 +2364,15 @@ ${list.map(receiptHtml).join("")}
         await load();
         toast("হাজিরা, বাড়ির কাজ ও পড়া সেভ হয়েছে");
         if (c.contains(batchSelect)) {
-          batchSelect.value = "";
+          $("#ase").value = "";
+          bsel();
           fresh();
           callBadge();
           if (!c.classList.contains("at-show-calls")) {
-            batchSelect.disabled = false;
-            batchSelect.focus();
-            batchSelect.scrollIntoView({ block: "center" });
+            const sessionSelect = $("#ase");
+            sessionSelect.disabled = false;
+            sessionSelect.focus();
+            sessionSelect.scrollIntoView({ block: "center" });
           }
         }
       }
