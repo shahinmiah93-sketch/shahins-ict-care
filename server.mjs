@@ -3058,15 +3058,20 @@ async function api(req, res, url) {
     const b = await readBody(req);
     const s = db.students.find((x) => x.id === str(b.studentId, 40));
     if (!s) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
+    const date = b.date === undefined ? today() : str(b.date, 40);
+    const parsedDate = new Date(date + "T00:00:00Z");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+      return send(res, 400, { error: "হাজিরার সঠিক তারিখ দিন" });
+    }
     const st = b.status === "P" || b.status === "A" ? b.status : "";
-    const cl = (db.closures || []).find((c) => (c.batchIds || []).includes(s.batchId) && c.from <= today() && (c.to || c.from) >= today());
-    if (cl && st) return send(res, 400, { error: `আজ এই ব্যাচ বন্ধ${cl.reason ? " (" + cl.reason + ")" : ""} — হাজিরা লেখা যাবে না` });
-    const key = `${today()}|${s.batchId}`;
+    const cl = (db.closures || []).find((c) => (c.batchIds || []).includes(s.batchId) && c.from <= date && (c.to || c.from) >= date);
+    if (cl && st) return send(res, 400, { error: `বাছা তারিখে এই ব্যাচ বন্ধ${cl.reason ? " (" + cl.reason + ")" : ""} — হাজিরা লেখা যাবে না` });
+    const key = `${date}|${s.batchId}`;
     const marks = { ...(db.attendance[key] || {}) };
     if (st) marks[s.id] = st; else delete marks[s.id];
     if (Object.keys(marks).length) db.attendance[key] = marks; else delete db.attendance[key];
     saveDb();
-    return send(res, 200, { ok: true, date: today(), status: st });
+    return send(res, 200, { ok: true, date, status: st });
   }
   // আইডি / মোবাইল আর PIN আবার SMS-এ
   if (p === "/api/admin/login-sms" && m === "POST") {

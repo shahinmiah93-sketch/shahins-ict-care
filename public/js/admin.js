@@ -2079,7 +2079,8 @@ ${list.map(receiptHtml).join("")}
     </div>`);
     c.insertAdjacentHTML("beforeend", `<div id="attCalls" hidden></div>
       <section class="card at-one" id="attOne" hidden>
-        <h3>একক হাজিরা</h3>
+        <div class="at-one-head"><h3>একক হাজিরা</h3>
+          <label>হাজিরার তারিখ<input type="date" id="attOneDate" value="${esc(U.today())}" required></label></div>
         <form class="at-one-find" id="attOneFind">
           <label>শিক্ষার্থীর আইডি<input name="studentId" inputmode="numeric" autocomplete="off" required placeholder="যেমন ২৮০০৪৩"></label>
           <button class="btn at-one-search" type="submit">শিক্ষার্থী খুঁজুন</button>
@@ -2088,19 +2089,22 @@ ${list.map(receiptHtml).join("")}
       </section>`);
     const oneForm = $("#attOneFind"), oneResult = $("#attOneResult");
     const idInput = oneForm.elements.studentId;
+    const oneDate = $("#attOneDate");
     let oneStudent = null, oneSaving = false;
     const renderOne = () => {
-      const day = U.today(), student = oneStudent;
+      const day = oneDate.value, student = oneStudent;
+      if (!day) { oneResult.textContent = "হাজিরার তারিখ বেছে নিন।"; return; }
       const status = DB.attendance[`${day}|${student.batchId}`]?.[student.id];
       const closed = U.closureOn(DB.closures, student.batchId, day);
       oneResult.innerHTML = `<div class="at-one-match"><div class="at-stu"><div><b>${esc(student.name)}</b>
         <small>${esc(student.id)} · ${esc(batchName(student.batchId))} · ${esc(U.date(day))}</small></div></div>
-        ${closed ? '<p>আজ এই ব্যাচ বন্ধ।</p>' : `<div class="att-row">
+        ${closed ? '<p>বাছা তারিখে এই ব্যাচ বন্ধ।</p>' : `<div class="att-row">
           <button type="button" data-one-status="P" class="${status === "P" ? "on" : ""}" aria-pressed="${status === "P"}">✓ উপস্থিত</button>
           <button type="button" data-one-status="A" class="${status === "A" ? "on" : ""}" aria-pressed="${status === "A"}">× অনুপস্থিত</button>
         </div>`}
         ${status === "L" ? '<p>সেভ করা হাজিরা: ছুটি</p>' : ""}</div>`;
     };
+    oneDate.onchange = () => { if (oneStudent) renderOne(); };
     idInput.oninput = () => { oneStudent = null; oneResult.textContent = ""; };
     oneForm.onsubmit = (event) => {
       event.preventDefault();
@@ -2111,12 +2115,12 @@ ${list.map(receiptHtml).join("")}
     };
     oneResult.onclick = async (event) => {
       const button = event.target.closest("[data-one-status]");
-      if (!button || !oneStudent || oneSaving) return;
-      const student = oneStudent, status = button.dataset.oneStatus;
+      if (!button || !oneStudent || oneSaving || !oneDate.value) return;
+      const student = oneStudent, status = button.dataset.oneStatus, date = oneDate.value;
       oneSaving = true;
       $$(".att-row button", oneResult).forEach((item) => { item.disabled = true; });
       try {
-        const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status } });
+        const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status, date } });
         const key = `${saved.date}|${student.batchId}`;
         (DB.attendance[key] ||= {})[student.id] = saved.status;
         if ($("#ad")?.value === saved.date && $("#abSel")?.value === student.batchId) {
