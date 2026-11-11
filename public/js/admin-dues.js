@@ -60,7 +60,7 @@ window.SICDues = function (X) {
 
   const rowHtml = (s) => {
     const c = calls()[s.id] || {}, f = s.fees, pr = priority(s.id), t = today();
-    const lp = lastPay(s.id), contact = SICContacts.html(s, s.id, msgFor(s), `<button type="button" class="ab-btn pay" data-dpay>💵 পেমেন্ট নিন</button>${absenceDates(s).length ? '<button type="button" class="ab-btn" data-dc-absence>অনুপস্থিতির আপডেট</button>' : ""}`);
+    const lp = lastPay(s.id), contact = SICContacts.html(s, s.id, msgFor(s), `<button type="button" class="ab-btn pay" data-dpay>💵 পেমেন্ট নিন</button>${absenceDates(s).length ? '<button type="button" class="ab-btn ab-cross-update" data-dc-absence>অনুপস্থিতির আপডেট</button>' : ""}`);
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     const promise = c.status === "promised" && c.promiseDate ? (c.promiseDate < t ? `<span class="chip bad">⚠ ${esc(U.date(c.promiseDate))}-এর মধ্যে দেওয়ার কথা ছিল, পেরিয়ে গেছে</span>` : `<span class="chip ok">💰 ${esc(U.date(c.promiseDate))}-এর মধ্যে দেবেন</span>`) : "";
     const follow = c.status === "later" && c.followUp ? (c.followUp <= t ? `<span class="chip warn">📌 আজ আবার ফোন করার কথা</span>` : `<span class="chip">🔁 ${esc(U.date(c.followUp))} আবার ফোন</span>`) : "";
@@ -78,8 +78,8 @@ window.SICDues = function (X) {
         ${contact}
       </div>
       <div class="ab-note-row">
-        <select class="ab-reason" aria-label="কারণ"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>
-        <input class="ab-note" placeholder="নোট (ঐচ্ছিক) — কী কথা হলো" maxlength="300" value="${esc(c.note || "")}">
+        <label class="ab-field ab-field-reason"><span>কারণ</span><select class="ab-reason"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+        <label class="ab-field ab-field-note"><span>কথার নোট</span><input class="ab-note" placeholder="কী কথা হলো?" maxlength="300" value="${esc(c.note || "")}"></label>
         <label class="ab-fu-wrap"${c.status === "later" ? "" : " hidden"}><small>আবার ফোন করার তারিখ</small><input type="date" class="ab-fu" min="${t}" value="${esc(c.followUp || addDays(t, 1))}"></label>
         <label class="ab-fu-wrap ab-pd-wrap"${c.status === "promised" ? "" : " hidden"}><small>কোন তারিখের মধ্যে দেবেন</small><input type="date" class="ab-pd" min="${t}" value="${esc(c.promiseDate || addDays(t, 3))}"></label>
       </div>

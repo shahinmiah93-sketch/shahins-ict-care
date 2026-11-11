@@ -122,7 +122,7 @@ window.SICAbsence = function (X) {
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
     const stBtns = `<div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>`;
-    const dueUpdate = s.fees?.balance > 0 ? '<button type="button" class="ab-btn pay" data-ab-due>বকেয়ার আপডেট</button>' : "";
+    const dueUpdate = s.fees?.balance > 0 ? '<button type="button" class="ab-btn ab-cross-update" data-ab-due>বকেয়ার আপডেট</button>' : "";
     const contact = SICContacts.html(s, key, msgFor(s, date), dueUpdate); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
     return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
@@ -132,8 +132,8 @@ window.SICAbsence = function (X) {
       </div>
       ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
       <div class="ab-note-row">
-        <select class="ab-reason" aria-label="অনুপস্থিতির কারণ"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>
-        <input class="ab-note" placeholder="নোট (ঐচ্ছিক) — কী কথা হলো" maxlength="300" value="${esc(c.note || "")}">
+        <label class="ab-field ab-field-reason"><span>কারণ</span><select class="ab-reason"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
+        <label class="ab-field ab-field-note"><span>কথার নোট</span><input class="ab-note" placeholder="কী কথা হলো?" maxlength="300" value="${esc(c.note || "")}"></label>
         <label class="ab-fu-wrap"${c.status === "later" ? "" : " hidden"}><small>আবার ফোন করার তারিখ</small><input type="date" class="ab-fu" min="${today()}" value="${esc(c.followUp || addDays(today(), 1))}"></label>
       </div>
     </div>`;

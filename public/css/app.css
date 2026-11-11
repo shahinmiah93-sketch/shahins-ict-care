@@ -1167,3 +1167,38 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .rx-doc-card .rx-doc-info small{font-size:11px;font-weight:700;color:#446679}
 .rx-doc-info strong{font-size:14px;line-height:1.5}
 .rx-doc-action{padding:4px 8px;border-radius:7px;background:#e3f1fc;color:#1d577e;font-weight:700;font-size:12px;white-space:nowrap}
+
+/* Call notes and actions shared by absence and dues lists */
+.ab-note-row {
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dae7e2;
+  border-radius: 12px;
+  background: #f6faf8;
+}
+.ab-note-row .ab-field, .ab-note-row .ab-fu-wrap { display: grid; gap: 5px; min-width: 0; }
+.ab-note-row .ab-field-reason { flex: 1 1 155px; }
+.ab-note-row .ab-field-note { flex: 2 1 220px; }
+.ab-note-row .ab-fu-wrap { flex: 1 1 185px; }
+.ab-note-row .ab-field > span, .ab-note-row .ab-fu-wrap > small { font-size: 13px; font-weight: 700; color: #34594f; }
+.ab-note-row .ab-reason, .ab-note-row .ab-note, .ab-note-row input[type="date"] {
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid #c7d8d2;
+  border-radius: 9px;
+  background: #fff;
+  color: #183d35;
+  font: inherit;
+}
+.ab-note-row :is(.ab-reason, .ab-note, input[type="date"]):focus-visible { outline: 2px solid #227965; outline-offset: 1px; }
+.ab-row .ab-st button, .ab-row .ab-actions .ab-btn { min-height: 38px; }
+.ab-row .ab-btn.ab-cross-update {
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 10px;
+  border-color: #a7cbbf;
+  background: #e9f5f0;
+  color: #175747;
+}
+.ab-row .ab-btn.ab-cross-update:hover { background: #dcefe7; }
+.ab-row .ab-btn.ab-cross-update:focus-visible { outline: 2px solid #227965; outline-offset: 2px; }
