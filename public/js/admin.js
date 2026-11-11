@@ -2908,10 +2908,27 @@ ${list.map(receiptHtml).join("")}
           ${modOff.length ? `<details class="fr-empty"><summary>ভর্তি নেই এমন মডিউল: ${bn(modOff.length)}টি</summary><p>${modOff.map((x) => `<span>${esc(x.m.name)}</span>`).join("")}</p></details>` : ""}</section>`;
       return;
     }
-    body.innerHTML = `<div class="toolbar"><input type="month" id="pm" value="" data-dp-empty="সব মাস"><input class="grow" id="pq" placeholder="নাম বা আইডি"><button class="btn line" id="pcsv">↓ Excel</button></div>
+    body.innerHTML = `<div class="toolbar"><input type="month" id="pm" value="" data-dp-empty="সব মাস"><input class="grow" id="pq" type="search" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="পেমেন্ট খুঁজুন — নাম, আইডি বা মোবাইল নম্বর"><button class="btn line" id="pcsv">↓ Excel</button></div>
       <div class="tbl-wrap"><table><thead><tr><th>রসিদ</th><th>তারিখ</th><th>শিক্ষার্থী</th><th>মডিউল</th><th>মাস</th><th>মাধ্যম</th><th class="num">টাকা</th><th></th></tr></thead><tbody id="prows"></tbody></table></div>`;
     const modOf = (p) => { const e = DB.enrollments.find((x) => x.id === p.enrollmentId); return e ? (courseById(e.courseId) || {}).name || "" : "সাধারণ"; };
-    const list = () => { const mo = $("#pm").value, qv = $("#pq").value.trim().toLowerCase(); return DB.payments.filter((p) => (!mo || (p.date || "").startsWith(mo)) && (!qv || (p.studentId + " " + studentName(p.studentId)).toLowerCase().includes(qv))).sort((a, b) => (b.date + String(b.receiptNo)).localeCompare(a.date + String(a.receiptNo))); };
+    const list = () => {
+      const normalize = (value) => String(value || "").trim().toLowerCase()
+        .replace(/[০-৯]/g, (digit) => "০১২৩৪৫৬৭৮৯".indexOf(digit));
+      const month = $("#pm").value, query = normalize($("#pq").value);
+      const phone = /^[+\d\s().-]+$/.test(query) ? query.replace(/\D/g, "").replace(/^88(?=01)/, "") : "";
+      const matches = new Set();
+      if (query) {
+        for (const student of DB.students) {
+          const name = [student.name, student.nameEn].some((value) => normalize(value).includes(query));
+          const number = phone && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone]
+            .some((value) => normalize(value).replace(/\D/g, "").replace(/^88(?=01)/, "").includes(phone));
+          if (name || number) matches.add(student.id);
+        }
+      }
+      return DB.payments.filter((payment) => (!month || (payment.date || "").startsWith(month)) &&
+        (!query || normalize(payment.studentId).includes(query) || matches.has(payment.studentId)))
+        .sort((a, b) => (b.date + String(b.receiptNo)).localeCompare(a.date + String(a.receiptNo)));
+    };
     const draw = () => {
       $("#prows").innerHTML = list().map((p) => `<tr><td>#${bn(p.receiptNo)}${p.edited ? `<small class="pay-edited" title="${esc((p.editHistory || []).slice(-1).map((h) => h.reason).join(""))}">সংশোধিত</small>` : ""}</td><td>${U.date(p.date)}</td><td><b>${esc(studentName(p.studentId))}</b><small>${esc(p.studentId)}</small></td><td>${esc(modOf(p))}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td>
         <td class="num"><button class="icon-btn" title="রসিদ প্রিন্ট" data-print="${p.id}">প্রিন্ট</button><button class="icon-btn" title="অঙ্ক বা তথ্য সংশোধন (রসিদ নম্বর একই থাকবে)" data-pedit="${p.id}">✎ সম্পাদনা</button><button class="icon-btn" title="মুছুন" data-del="${p.id}">✕</button></td></tr>`).join("") || `<tr><td colspan="8" class="empty">কোনো পেমেন্ট নেই</td></tr>`;
