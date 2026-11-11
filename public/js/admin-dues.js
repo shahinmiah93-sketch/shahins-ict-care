@@ -69,8 +69,8 @@ window.SICDues = function (X) {
     const last = c.at ? `<span class="chip" title="${esc(c.note || "")}">শেষ কল ${esc(U.date(c.at.slice(0, 10)))} — ${esc(ST_TX[c.status] || "")}</span>` : "";
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
     const stBtns = `<div class="ab-st">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div>`;
-    // কয়েকদিন টানা অনুপস্থিত থাকলে বকেয়ার পাশেই চিহ্ন (শেষ ১৪ দিনের হাজিরা ধরে) — কলের সময় অভিভাবককে এটাও বলা যায়
-    const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 1 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${bn(stk.n)} দিন টানা অনুপস্থিত</span> ` : "";
+    // কয়েকদিন ${stk.n > 1 ? "টানা " : ""}অনুপস্থিত থাকলে বকেয়ার পাশেই চিহ্ন (শেষ ১৪ দিনের হাজিরা ধরে) — কলের সময় অভিভাবককে এটাও বলা যায়
+    const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 0 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${bn(stk.n)} দিন ${stk.n > 1 ? "টানা " : ""}অনুপস্থিত</span> ` : "";
     const log = (c.log || []).slice().reverse();
     return `<div class="ab-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}">
       <div class="ab-top">
