@@ -54,5 +54,53 @@ window.SICContacts = (function () {
       <div class="ab-ident"><i class="ab-av">${icon}</i><div><small>${esc(now.label)}${now.name ? ` · ${esc(now.name)}` : ""}</small><a class="ab-num" href="tel:${now.p}">${bn(now.p)}</a></div></div>
     </div>`;
   }
-  return { slots, pick, html, streak };
+  function callDrafts(keyOf, statusSelector, statusKey) {
+    const drafts = new Map(), pending = new Set();
+    const fields = [".ab-reason", ".ab-note", ".ab-fu", ".ab-pd"];
+    const paint = (row, draft) => {
+      if (draft) {
+        for (const [selector, value] of Object.entries(draft.fields)) {
+          const input = row.querySelector(selector);
+          if (input) input.value = value;
+        }
+        row.querySelectorAll(statusSelector).forEach((button) => {
+          const selected = button.dataset[statusKey] === draft.status;
+          button.classList.toggle("on", selected);
+          button.setAttribute("aria-pressed", String(selected));
+        });
+        const followUp = row.querySelector(".ab-fu-wrap:not(.ab-pd-wrap)");
+        const promise = row.querySelector(".ab-pd-wrap");
+        if (followUp) followUp.hidden = draft.status !== "later";
+        if (promise) promise.hidden = draft.status !== "promised";
+      }
+      row.querySelector("[data-call-save]").disabled = pending.has(keyOf(row));
+      row.querySelector(".ab-save-status").textContent = draft ? "পরিবর্তন সেভ হয়নি" : "";
+    };
+    const remember = (row, status) => {
+      const draft = { status, fields: {} };
+      for (const selector of fields) {
+        const input = row.querySelector(selector);
+        if (input) draft.fields[selector] = input.value;
+      }
+      drafts.set(keyOf(row), draft);
+      paint(row, draft);
+    };
+    const get = (row) => drafts.get(keyOf(row));
+    const restore = (host) => host.querySelectorAll(".ab-row").forEach((row) => paint(row, get(row)));
+    const save = async (row, persist, toast) => {
+      const key = keyOf(row), draft = get(row);
+      if (!draft || pending.has(key)) return;
+      if (!draft.status && !row.dataset.savedStatus) return toast("আগে কলের অবস্থা বেছে নিন", true);
+      pending.add(key);
+      paint(row, draft);
+      try {
+        await persist(row, draft.status);
+        if (get(row) === draft) drafts.delete(key);
+        return true;
+      } catch (error) { toast(error.message, true); }
+      finally { pending.delete(key); paint(row, get(row)); }
+    };
+    return { get, remember, restore, save };
+  }
+  return { slots, pick, html, streak, callDrafts };
 })();

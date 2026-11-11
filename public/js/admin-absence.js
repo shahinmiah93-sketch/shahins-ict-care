@@ -15,6 +15,7 @@ window.SICAbsence = function (X) {
   const S = { date: today(), session: "", batch: "", hideDone: false };
 
   const calls = () => (DB().absenceCalls ||= {});
+  const drafts = SICContacts.callDrafts((row) => row.dataset.key, "[data-abst]", "abst");
   const batchOf = (id) => DB().batches.find((b) => b.id === id);
 
   // কাকে কল করবেন (অভিভাবক · বাবা · মা · শিক্ষার্থী) — admin-contacts.js (SICContacts)
@@ -124,7 +125,7 @@ window.SICAbsence = function (X) {
     const stBtns = `<div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>`;
     const dueUpdate = s.fees?.balance > 0 ? '<button type="button" class="ab-btn ab-cross-update" data-ab-due>বকেয়ার আপডেট</button>' : "";
     const contact = SICContacts.html(s, key, msgFor(s, date), dueUpdate); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
-    return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
+    return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${r.follow ? ` · <span class="chip warn">ফলো-আপ — ${esc(U.date(date))}-এর অনুপস্থিতি</span>` : ""}${r.last ? ` · <span class="chip warn">সর্বশেষ হাজিরা (${esc(U.date(date))})-এর অনুপস্থিতি</span>` : ""}</small>
           <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small>${stBtns}</div>
@@ -135,6 +136,7 @@ window.SICAbsence = function (X) {
         <label class="ab-field ab-field-reason"><span>কারণ</span><select class="ab-reason"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
         <label class="ab-field ab-field-note"><span>কথার নোট</span><input class="ab-note" placeholder="কী কথা হলো?" maxlength="300" value="${esc(c.note || "")}"></label>
         <label class="ab-fu-wrap"${c.status === "later" ? "" : " hidden"}><small>আবার ফোন করার তারিখ</small><input type="date" class="ab-fu" min="${today()}" value="${esc(c.followUp || addDays(today(), 1))}"></label>
+        <div class="ab-save"><small class="ab-save-status" aria-live="polite"></small><button type="button" class="btn gold sm" data-call-save>সেভ করুন</button></div>
       </div>
     </div>`;
   };
@@ -174,6 +176,7 @@ window.SICAbsence = function (X) {
       html += batchOrder.map((k) => `<h3 class="ab-batchhead">${esc(X.batchName(k))} — ${bn(byBatch.get(k).length)} জন অনুপস্থিত${byBatch.get(k)[0].last ? ` <small class="ab-lastd">· সর্বশেষ হাজিরা: ${esc(U.date(byBatch.get(k)[0].date))}</small>` : ""}</h3>${byBatch.get(k).map(rowHtml).join("")}`).join("");
       $("#abList").innerHTML = html || `<div class="card empty">${abs.length ? "সবার সাথে কথা হয়ে গেছে 🎉" : `${esc(U.date(S.date))} তারিখে কোনো অনুপস্থিত শিক্ষার্থী নেই (বা হাজিরা এখনো সেভ হয়নি)।`}</div>`;
       const badge = $("#attCallN"); if (badge) badge.textContent = pendingCount(today()) || "";
+      drafts.restore(host);
     };
     fillBatches(); draw();
     $("#abD").onchange = (e) => { S.date = e.target.value || today(); draw(); };
@@ -182,15 +185,12 @@ window.SICAbsence = function (X) {
     $("#abHide").onchange = (e) => { S.hideDone = e.target.checked; draw(); };
 
     const persist = async (row, status) => {
-      const key = row.dataset.key, prev = calls()[key] || {};
+      const key = row.dataset.key;
       const body = { date: row.dataset.date, studentId: row.dataset.sid, status,
         reason: $(".ab-reason", row).value, note: $(".ab-note", row).value.trim(),
         followUp: status === "later" ? $(".ab-fu", row).value || addDays(today(), 1) : "" };
-      try {
-        const r = await api("/api/admin/absence-call", { body });
-        if (r.removed) delete calls()[key]; else calls()[key] = r.item;
-        draw();
-      } catch (e) { toast(e.message, true); if (prev.status === undefined) delete calls()[key]; }
+      const r = await api("/api/admin/absence-call", { body });
+      if (r.removed) delete calls()[key]; else calls()[key] = r.item;
     };
     // "আর পড়বে না" → পড়া বন্ধ (আজ / আগামী মাসের ১ তারিখ / অন্য তারিখ থেকে) আর কলের হিসাবে "কথা হয়েছে" লিখে রাখা
     const stopStudent = async (row) => {
@@ -279,16 +279,25 @@ window.SICAbsence = function (X) {
       if (stopBtn) { const row = stopBtn.closest(".ab-row"), p = $(".ab-stop", row); $(".ab-move", row).hidden = true; p.hidden = !p.hidden; return; }
       if (e.target.closest("[data-abstop-cancel]")) { $(".ab-stop", e.target.closest(".ab-row")).hidden = true; return; }
       if (e.target.closest("[data-abstop-ok]")) return stopStudent(e.target.closest(".ab-row"));
-      const b = e.target.closest("[data-abst]"); if (!b) return;
-      const row = b.closest(".ab-row"), cur = (calls()[row.dataset.key] || {}).status;
-      persist(row, cur === b.dataset.abst ? "" : b.dataset.abst);
+      const saveButton = e.target.closest("[data-call-save]");
+      if (saveButton) {
+        const row = saveButton.closest(".ab-row");
+        return drafts.save(row, persist, toast).then((saved) => {
+          if (saved) { draw(); toast("কলের আপডেট সেভ হয়েছে"); }
+        });
+      }
+      const button = e.target.closest("[data-abst]");
+      if (!button) return;
+      const row = button.closest(".ab-row");
+      const current = drafts.get(row)?.status ?? row.dataset.savedStatus;
+      drafts.remember(row, current === button.dataset.abst ? "" : button.dataset.abst);
     };
-    host.onchange = (e) => {
-      if (!e.target.matches(".ab-reason, .ab-note, .ab-fu")) return;
-      const row = e.target.closest(".ab-row"), cur = (calls()[row.dataset.key] || {}).status;
-      if (!cur) return toast("আগে কলের অবস্থা বাছুন, তারপর কারণ বা নোট সেভ হবে", true);
-      persist(row, cur);
+    host.oninput = (e) => {
+      if (!e.target.matches(".ab-reason, .ab-note, .ab-fu, .ab-pd")) return;
+      const row = e.target.closest(".ab-row");
+      drafts.remember(row, drafts.get(row)?.status ?? row.dataset.savedStatus);
     };
+    host.onchange = host.oninput;
   }
   // ট্যাবের লাল সংখ্যা: আজ কতজনকে এখনো কল করা হয়নি (ফিল্টার ছাড়া, সব সেশনে)
   render.pending = () => { const keep = [S.session, S.batch]; S.session = ""; S.batch = ""; const n = pendingCount(today()); [S.session, S.batch] = keep; return n; };

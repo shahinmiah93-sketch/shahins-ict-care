@@ -19,6 +19,7 @@ window.SICDues = function (X) {
   const S = (window.__sicDuesState ||= { session: "", batch: "", q: "", need: false });
 
   const calls = () => (DB().dueCalls ||= {});
+  const drafts = SICContacts.callDrafts((row) => row.dataset.sid, "[data-dst]", "dst");
   const batchOf = (id) => DB().batches.find((b) => b.id === id);
 
   // কাকে কল করবেন (অভিভাবক · বাবা · মা · শিক্ষার্থী) — admin-contacts.js (SICContacts)
@@ -70,7 +71,7 @@ window.SICDues = function (X) {
     // কয়েকদিন টানা অনুপস্থিত থাকলে বকেয়ার পাশেই চিহ্ন (শেষ ১৪ দিনের হাজিরা ধরে) — কলের সময় অভিভাবককে এটাও বলা যায়
     const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 1 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${bn(stk.n)} দিন টানা অনুপস্থিত</span> ` : "";
     const log = (c.log || []).slice().reverse();
-    return `<div class="ab-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-sid="${esc(s.id)}">
+    return `<div class="ab-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small>
           <small>${absChip}<span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${f.discounts > 0 ? ` <span class="chip">ছাড় ${money(f.discounts)}</span>` : ""}${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
@@ -82,6 +83,7 @@ window.SICDues = function (X) {
         <label class="ab-field ab-field-note"><span>কথার নোট</span><input class="ab-note" placeholder="কী কথা হলো?" maxlength="300" value="${esc(c.note || "")}"></label>
         <label class="ab-fu-wrap"${c.status === "later" ? "" : " hidden"}><small>আবার ফোন করার তারিখ</small><input type="date" class="ab-fu" min="${t}" value="${esc(c.followUp || addDays(t, 1))}"></label>
         <label class="ab-fu-wrap ab-pd-wrap"${c.status === "promised" ? "" : " hidden"}><small>কোন তারিখের মধ্যে দেবেন</small><input type="date" class="ab-pd" min="${t}" value="${esc(c.promiseDate || addDays(t, 3))}"></label>
+        <div class="ab-save"><small class="ab-save-status" aria-live="polite"></small><button type="button" class="btn gold sm" data-call-save>সেভ করুন</button></div>
       </div>
       ${log.length > 1 ? `<details class="ab-hist"><summary>কলের ইতিহাস (${bn(log.length)}টি)</summary><ul>${log.slice(0, 8).map((l) => `<li>${esc(U.date(String(l.at).slice(0, 10)))} — ${esc(ST_TX[l.status] || "")}${l.note ? ` · ${esc(l.note)}` : ""}</li>`).join("")}</ul></details>` : ""}
     </div>`;
@@ -110,6 +112,7 @@ window.SICDues = function (X) {
       // ওপরের ট্যাবের লাল সংখ্যা (ফি পাতার টুলবারে) — কল করার সাথে সাথে কমে
       const tab = document.querySelector('.toolbar a[href="#fees/calls"]');
       if (tab) { const n = render.pending(); let bd = tab.querySelector(".at-tabn"); if (!bd && n) { bd = document.createElement("span"); bd.className = "at-tabn"; tab.append(" ", bd); } if (bd) bd.textContent = n ? bn(n) : ""; }
+      drafts.restore(host);
     };
     fillBatches(); draw();
     $("#dcSe").onchange = (e) => { S.session = e.target.value; S.batch = ""; fillBatches(); draw(); };
@@ -120,11 +123,8 @@ window.SICDues = function (X) {
     const persist = async (row, status) => {
       const sid = row.dataset.sid, body = { studentId: sid, status, reason: $(".ab-reason", row).value, note: $(".ab-note", row).value.trim(),
         followUp: status === "later" ? $(".ab-fu", row).value || addDays(today(), 1) : "", promiseDate: status === "promised" ? $(".ab-pd", row).value || addDays(today(), 3) : "" };
-      try {
-        const r = await api("/api/admin/due-call", { body });
-        if (r.removed) delete calls()[sid]; else calls()[sid] = r.item;
-        draw();
-      } catch (e) { toast(e.message, true); }
+      const r = await api("/api/admin/due-call", { body });
+      if (r.removed) delete calls()[sid]; else calls()[sid] = r.item;
     };
     // "✉ SMS পাঠান" → সরাসরি BulkSMSBD দিয়ে অভিভাবকের মোবাইলে (বকেয়ার বার্তা); আগে নম্বর আর বার্তা দেখিয়ে জিজ্ঞেস করে
     const smsGuardian = async (row, phone) => {
@@ -179,16 +179,25 @@ window.SICDues = function (X) {
       if (smsBtn) return smsGuardian(smsBtn.closest(".ab-row"), smsBtn.dataset.phone);
       const pay = e.target.closest("[data-dpay]");
       if (pay) return X.paymentForm(pay.closest(".ab-row").dataset.sid);
-      const b = e.target.closest("[data-dst]"); if (!b) return;
-      const row = b.closest(".ab-row"), cur = (calls()[row.dataset.sid] || {}).status;
-      persist(row, cur === b.dataset.dst ? "" : b.dataset.dst);
+      const saveButton = e.target.closest("[data-call-save]");
+      if (saveButton) {
+        const row = saveButton.closest(".ab-row");
+        return drafts.save(row, persist, toast).then((saved) => {
+          if (saved) { draw(); toast("কলের আপডেট সেভ হয়েছে"); }
+        });
+      }
+      const button = e.target.closest("[data-dst]");
+      if (!button) return;
+      const row = button.closest(".ab-row");
+      const current = drafts.get(row)?.status ?? row.dataset.savedStatus;
+      drafts.remember(row, current === button.dataset.dst ? "" : button.dataset.dst);
     };
-    host.onchange = (e) => {
+    host.oninput = (e) => {
       if (!e.target.matches(".ab-reason, .ab-note, .ab-fu, .ab-pd")) return;
-      const row = e.target.closest(".ab-row"), cur = (calls()[row.dataset.sid] || {}).status;
-      if (!cur) return toast("আগে কলের অবস্থা বাছুন, তারপর কারণ বা নোট সেভ হবে", true);
-      persist(row, cur);
+      const row = e.target.closest(".ab-row");
+      drafts.remember(row, drafts.get(row)?.status ?? row.dataset.savedStatus);
     };
+    host.onchange = host.oninput;
   }
   // ট্যাবের লাল সংখ্যা: যাদের এখন কল করা দরকার (কল হয়নি, ফোন করার তারিখ এসেছে, বা টাকা দেওয়ার তারিখ পেরিয়েছে)
   render.pending = () => dueStudents().filter((s) => priority(s.id) <= 2).length;
