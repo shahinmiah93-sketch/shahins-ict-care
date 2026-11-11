@@ -2078,14 +2078,13 @@ ${list.map(receiptHtml).join("")}
       <button type="button" data-at-tab="calls">📞 অনুপস্থিতি কল তালিকা <span class="at-tabn" id="attCallN"></span></button>
     </div>`);
     c.insertAdjacentHTML("beforeend", `<div id="attCalls" hidden></div>
-      <section class="card" id="attOne" hidden>
+      <section class="card at-one" id="attOne" hidden>
         <h3>একক হাজিরা</h3>
-        <p>আজকের হাজিরা দিতে শিক্ষার্থীর পুরো আইডি লিখুন।</p>
-        <form class="fgrid" id="attOneFind">
+        <form class="at-one-find" id="attOneFind">
           <label>শিক্ষার্থীর আইডি<input name="studentId" inputmode="numeric" autocomplete="off" required placeholder="যেমন ২৮০০৪৩"></label>
-          <div><button class="btn line" type="submit">খুঁজুন</button></div>
+          <button class="btn at-one-search" type="submit">শিক্ষার্থী খুঁজুন</button>
         </form>
-        <div id="attOneResult" aria-live="polite"></div>
+        <div class="at-one-result" id="attOneResult" aria-live="polite"></div>
       </section>`);
     const oneForm = $("#attOneFind"), oneResult = $("#attOneResult");
     const idInput = oneForm.elements.studentId;
@@ -2094,13 +2093,13 @@ ${list.map(receiptHtml).join("")}
       const day = U.today(), student = oneStudent;
       const status = DB.attendance[`${day}|${student.batchId}`]?.[student.id];
       const closed = U.closureOn(DB.closures, student.batchId, day);
-      oneResult.innerHTML = `<div class="at-stu"><div><b>${esc(student.name)}</b>
+      oneResult.innerHTML = `<div class="at-one-match"><div class="at-stu"><div><b>${esc(student.name)}</b>
         <small>${esc(student.id)} · ${esc(batchName(student.batchId))} · ${esc(U.date(day))}</small></div></div>
         ${closed ? '<p>আজ এই ব্যাচ বন্ধ।</p>' : `<div class="att-row">
-          <button type="button" data-one-status="P" class="${status === "P" ? "on" : ""}">✓ উপস্থিত</button>
-          <button type="button" data-one-status="A" class="${status === "A" ? "on" : ""}">× অনুপস্থিত</button>
+          <button type="button" data-one-status="P" class="${status === "P" ? "on" : ""}" aria-pressed="${status === "P"}">✓ উপস্থিত</button>
+          <button type="button" data-one-status="A" class="${status === "A" ? "on" : ""}" aria-pressed="${status === "A"}">× অনুপস্থিত</button>
         </div>`}
-        ${status === "L" ? '<p>সেভ করা হাজিরা: ছুটি</p>' : ""}`;
+        ${status === "L" ? '<p>সেভ করা হাজিরা: ছুটি</p>' : ""}</div>`;
     };
     idInput.oninput = () => { oneStudent = null; oneResult.textContent = ""; };
     oneForm.onsubmit = (event) => {
