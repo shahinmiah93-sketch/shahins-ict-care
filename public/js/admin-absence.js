@@ -122,7 +122,8 @@ window.SICAbsence = function (X) {
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
     const stBtns = `<div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>`;
-    const contact = SICContacts.html(s, key, msgFor(s, date)); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
+    const dueUpdate = s.fees?.balance > 0 ? '<button type="button" class="ab-btn pay" data-ab-due>বকেয়ার আপডেট</button>' : "";
+    const contact = SICContacts.html(s, key, msgFor(s, date), dueUpdate); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
     return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${r.follow ? ` · <span class="chip warn">ফলো-আপ — ${esc(U.date(date))}-এর অনুপস্থিতি</span>` : ""}${r.last ? ` · <span class="chip warn">সর্বশেষ হাজিরা (${esc(U.date(date))})-এর অনুপস্থিতি</span>` : ""}</small>
@@ -241,7 +242,27 @@ window.SICAbsence = function (X) {
         await X.load(); render(host);
       } catch (er) { toast(er.message, true); }
     };
+    const updateDueCall = (sid) => {
+      const student = DB().students.find((s) => s.id === sid);
+      if (!student || !(student.fees?.balance > 0)) return;
+      const previous = DB().dueCalls?.[sid];
+      X.openForm({
+        title: `বকেয়ার আপডেট — ${student.name}`,
+        fields: [{ name: "note", label: "বকেয়া নিয়ে কী কথা হলো?", type: "textarea", wide: true }],
+        values: { note: previous?.note || "" },
+        saveText: "কথা হয়েছে হিসেবে সেভ করুন",
+        onSave: async ({ note }) => {
+          const result = await api("/api/admin/due-call", {
+            body: { studentId: sid, status: "talked", reason: previous?.reason || "", note },
+          });
+          (DB().dueCalls ||= {})[sid] = result.item;
+          toast("বকেয়া কল তালিকায় কথা হয়েছে হিসেবে সেভ হয়েছে");
+        },
+      });
+    };
     host.onclick = (e) => {
+      const due = e.target.closest("[data-ab-due]");
+      if (due) return updateDueCall(due.closest(".ab-row").dataset.sid);
       const who = e.target.closest("[data-who]");
       if (who) { SICContacts.pick(who.closest(".ab-row").dataset.key, Number(who.dataset.who)); draw(); return; }
       const smsBtn = e.target.closest("[data-sms]");

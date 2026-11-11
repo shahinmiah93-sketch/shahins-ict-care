@@ -2061,7 +2061,7 @@ ${list.map(receiptHtml).join("")}
         <p class="at-note">পয়েন্ট: উপস্থিত ১ + বাড়ির কাজ ১ + পড়া পারা ১ = দিনে সর্বোচ্চ ৩ · ছুটি উপস্থিতির হিসাবে ধরা হয় না · একই বোতামে আবার চাপলে চিহ্ন উঠে যায়</p>
       </div>`;
     // ট্যাব: হাজিরা দিন | 📞 অনুপস্থিতি কল তালিকা (অনুপস্থিতদের অভিভাবককে কল — admin-absence.js)
-    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save });
+    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save, openForm });
     // ক্লাসের দিন নয় এমন তারিখে হাজিরা দিতে গেলে সতর্কবার্তা (ব্যাচের দিনের সাথে তারিখের বারের মিল দেখে); বন্ধের দিন হলে আলাদা বার্তা আছে, তাই সেটা বাদ
     const dayWords = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
     const offDayInfo = () => {
@@ -2656,7 +2656,7 @@ ${list.map(receiptHtml).join("")}
   }
   function fees(c, tab) {
     const act = activeStudents();
-    const dues = act.filter((s) => s.fees.balance > 0).sort((a, b) => b.fees.balance - a.fees.balance); const dueCalls = window.SICDues({ get DB() { return DB; }, batchName, load, paymentForm }), dcPending = dueCalls.pending();
+    const dues = act.filter((s) => s.fees.balance > 0).sort((a, b) => b.fees.balance - a.fees.balance); const dueCalls = window.SICDues({ get DB() { return DB; }, batchName, load, paymentForm, openForm }), dcPending = dueCalls.pending();
     c.innerHTML = `
       <div class="tiles">
         <div class="tile dark"><small>এই মাসের আদায়</small><b>${money(DB.payments.filter((p) => (p.date || "").startsWith(thisMonth())).reduce((t, p) => t + p.amount, 0))}</b></div>

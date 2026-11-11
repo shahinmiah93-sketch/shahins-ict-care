@@ -45,9 +45,22 @@ window.SICDues = function (X) {
   // আজ এই শিক্ষার্থীর অভিভাবককে বকেয়ার SMS গেছে কি না — SMS খাতা (smsLog) থেকে
   const smsChip = (s) => ((DB().smsLog || []).some((l) => l.ok && l.date === today() && String(l.text || "").includes(`— ${s.id}`) && l.filter === "CallDue") ? ` <span class="chip ok">✉ আজ SMS গেছে</span>` : "");
 
+  function absenceDates(student) {
+    const now = today();
+    const cutoff = addDays(now, -120);
+    const absent = new Set(), present = new Set();
+    for (const [key, marks] of Object.entries(DB().attendance || {})) {
+      const [date, batchId] = key.split("|");
+      if (date < cutoff || date > now) continue;
+      if (marks[student.id] === "P") present.add(date);
+      if (batchId === student.batchId && marks[student.id] === "A") absent.add(date);
+    }
+    return [...absent].filter((date) => !present.has(date)).sort().reverse();
+  }
+
   const rowHtml = (s) => {
     const c = calls()[s.id] || {}, f = s.fees, pr = priority(s.id), t = today();
-    const lp = lastPay(s.id), contact = SICContacts.html(s, s.id, msgFor(s), `<button type="button" class="ab-btn pay" data-dpay>💵 পেমেন্ট নিন</button>`);
+    const lp = lastPay(s.id), contact = SICContacts.html(s, s.id, msgFor(s), `<button type="button" class="ab-btn pay" data-dpay>💵 পেমেন্ট নিন</button>${absenceDates(s).length ? '<button type="button" class="ab-btn" data-dc-absence>অনুপস্থিতির আপডেট</button>' : ""}`);
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     const promise = c.status === "promised" && c.promiseDate ? (c.promiseDate < t ? `<span class="chip bad">⚠ ${esc(U.date(c.promiseDate))}-এর মধ্যে দেওয়ার কথা ছিল, পেরিয়ে গেছে</span>` : `<span class="chip ok">💰 ${esc(U.date(c.promiseDate))}-এর মধ্যে দেবেন</span>`) : "";
     const follow = c.status === "later" && c.followUp ? (c.followUp <= t ? `<span class="chip warn">📌 আজ আবার ফোন করার কথা</span>` : `<span class="chip">🔁 ${esc(U.date(c.followUp))} আবার ফোন</span>`) : "";
@@ -125,7 +138,36 @@ window.SICDues = function (X) {
         await X.load(); render(host);
       } catch (er) { toast(er.message, true); }
     };
+    const updateAbsenceCall = (sid) => {
+      const student = DB().students.find((s) => s.id === sid);
+      if (!student) return;
+      const dates = absenceDates(student);
+      if (!dates.length) return toast("এই শিক্ষার্থীর সেভ করা অনুপস্থিতির তারিখ নেই", true);
+      const saved = DB().absenceCalls || {};
+      const preferred = dates.find((date) => saved[`${date}|${sid}`]?.status !== "talked") || dates[0];
+      X.openForm({
+        title: `অনুপস্থিতির আপডেট — ${student.name}`,
+        fields: [
+          { name: "date", label: "কোন দিনের অনুপস্থিতি?", type: "select", options: dates.map((date) => [date, U.date(date)]), required: true },
+          { name: "note", label: "অনুপস্থিতি নিয়ে কী কথা হলো?", type: "textarea", wide: true },
+        ],
+        values: { date: preferred },
+        saveText: "কথা হয়েছে হিসেবে সেভ করুন",
+        onSave: async ({ date, note }) => {
+          if (!absenceDates(student).includes(date)) throw new Error("সেভ করা অনুপস্থিতির তারিখ বেছে নিন");
+          const key = `${date}|${sid}`;
+          const previous = DB().absenceCalls?.[key];
+          const result = await api("/api/admin/absence-call", {
+            body: { studentId: sid, date, status: "talked", reason: previous?.reason || "", note: note || previous?.note || "" },
+          });
+          (DB().absenceCalls ||= {})[key] = result.item;
+          toast("অনুপস্থিতি কল তালিকায় কথা হয়েছে হিসেবে সেভ হয়েছে");
+        },
+      });
+    };
     host.onclick = (e) => {
+      const absence = e.target.closest("[data-dc-absence]");
+      if (absence) return updateAbsenceCall(absence.closest(".ab-row").dataset.sid);
       const who = e.target.closest("[data-who]");
       if (who) { SICContacts.pick(who.closest(".ab-row").dataset.sid, Number(who.dataset.who)); draw(); return; }
       const smsBtn = e.target.closest("[data-sms]");
