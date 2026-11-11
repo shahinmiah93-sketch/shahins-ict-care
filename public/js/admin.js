@@ -3355,7 +3355,7 @@ ${list.map(receiptHtml).join("")}
   }
 
   // ---------- প্রতিদিন শিখি (/daily) — ৬ ক্যাটাগরি, প্রতিদিনের পোস্ট, খসড়া, প্রকাশের তারিখ, MCQ কুইজ ----------
-  const DAILY_CATS = [["bangla", "Daily Bangla"], ["ict", "Daily ICT"], ["gk", "Daily GK"], ["english", "Daily English"], ["fact", "Daily Fact"], ["brain", "Brain Booster"]];
+  const DAILY_CATS = [["bangla", "Daily Bangla"], ["ict", "Daily ICT"], ["gk", "Daily GK"], ["english", "Daily English"], ["fact", "Today's Insights"], ["brain", "Brain Booster"]];
   const dailyCat = (k) => (DAILY_CATS.find((c) => c[0] === k) || [k, k])[1];
   let dailyFilter = { cat: "", status: "" };
   const dqRow = (q = {}, i = 0) => `<div class="dq-row" data-dq>
