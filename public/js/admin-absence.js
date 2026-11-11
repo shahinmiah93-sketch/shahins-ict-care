@@ -246,14 +246,18 @@ window.SICAbsence = function (X) {
       const student = DB().students.find((s) => s.id === sid);
       if (!student || !(student.fees?.balance > 0)) return;
       const previous = DB().dueCalls?.[sid];
+      const reasons = [...new Set([...window.SICDues.reasons, previous?.reason].filter(Boolean))];
       X.openForm({
         title: `বকেয়ার আপডেট — ${student.name}`,
-        fields: [{ name: "note", label: "বকেয়া নিয়ে কী কথা হলো?", type: "textarea", wide: true }],
-        values: { note: previous?.note || "" },
+        fields: [
+          { name: "reason", label: "বকেয়ার কারণ", type: "select", wide: true, options: [["", "কারণ বাছুন (ঐচ্ছিক)"], ...reasons.map((reason) => [reason, reason])] },
+          { name: "note", label: "অতিরিক্ত নোট (ঐচ্ছিক)", type: "textarea", rows: 2, wide: true },
+        ],
+        values: { reason: previous?.reason || "", note: previous?.note || "" },
         saveText: "কথা হয়েছে হিসেবে সেভ করুন",
-        onSave: async ({ note }) => {
+        onSave: async ({ reason, note }) => {
           const result = await api("/api/admin/due-call", {
-            body: { studentId: sid, status: "talked", reason: previous?.reason || "", note },
+            body: { studentId: sid, status: "talked", reason, note },
           });
           (DB().dueCalls ||= {})[sid] = result.item;
           toast("বকেয়া কল তালিকায় কথা হয়েছে হিসেবে সেভ হয়েছে");

@@ -14,7 +14,7 @@ window.SICDues = function (X) {
 
   const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"], ["promised", "💰 টাকা দেওয়ার কথা দিয়েছেন", "ok"]];
   const ST_TX = Object.fromEntries(STATUS.map(([k, t]) => [k, t.replace(/^\S+\s/, "")]));
-  const REASONS = ["টাকার সমস্যা", "পরে দেবেন", "ভুলে গিয়েছিলেন", "ফি নিয়ে আপত্তি", "ছেড়ে দিতে পারে", "জানতেন না", "অন্যান্য"];
+  const REASONS = window.SICDues.reasons;
   // ফি পাতা আবার আঁকা হলেও (যেমন পেমেন্টের পর) বাছাই করা ফিল্টার থেকে যায়
   const S = (window.__sicDuesState ||= { session: "", batch: "", q: "", need: false });
 
@@ -189,3 +189,5 @@ window.SICDues = function (X) {
   render.pending = () => dueStudents().filter((s) => priority(s.id) <= 2).length;
   return render;
 };
+
+window.SICDues.reasons = ["টাকার সমস্যা", "পরে দেবেন", "ভুলে গিয়েছিলেন", "ফি নিয়ে আপত্তি", "ছেড়ে দিতে পারে", "জানতেন না", "অন্যান্য"];
