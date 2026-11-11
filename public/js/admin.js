@@ -2082,80 +2082,138 @@ ${list.map(receiptHtml).join("")}
         <div class="at-one-head"><h3>একক হাজিরা</h3>
           <label>হাজিরার তারিখ<input type="date" id="attOneDate" value="${esc(U.today())}" required></label></div>
         <form class="at-one-find" id="attOneFind">
-          <label>শিক্ষার্থীর আইডি<input name="studentId" inputmode="numeric" autocomplete="off" required placeholder="যেমন ২৮০০৪৩"></label>
+          <label>আইডি, নাম বা মোবাইল নম্বর<input name="studentId" autocomplete="off" required placeholder="আইডি, নাম বা মোবাইল নম্বর লিখুন"></label>
           <button class="btn at-one-search" type="submit">শিক্ষার্থী খুঁজুন</button>
         </form>
         <div class="at-one-result" id="attOneResult" aria-live="polite"></div>
       </section>`);
     const oneForm = $("#attOneFind"), oneResult = $("#attOneResult");
-    const idInput = oneForm.elements.studentId;
-    const oneDate = $("#attOneDate");
-    let oneStudent = null, oneSaving = false;
+    const idInput = oneForm.elements.studentId, oneDate = $("#attOneDate");
+    const searchButton = $("button[type=submit]", oneForm);
+    let oneStudent = null, oneSaving = false, draft = null, original = null;
+    const taskFields = [["hw", "homework", "বাড়ির কাজ"], ["lesson", "lesson", "পড়া"]];
     const renderOne = () => {
-      const day = oneDate.value, student = oneStudent;
+      const student = oneStudent, day = oneDate.value;
       if (!day) { oneResult.textContent = "হাজিরার তারিখ বেছে নিন।"; return; }
-      const status = DB.attendance[`${day}|${student.batchId}`]?.[student.id];
       const closed = U.closureOn(DB.closures, student.batchId, day);
+      const dirty = draft.status !== original.status || taskFields.some(([key]) => draft[key] !== original[key]);
       oneResult.innerHTML = `<div class="at-one-match"><div class="at-stu"><div><b>${esc(student.name)}</b>
         <small>${esc(student.id)} · ${esc(batchName(student.batchId))} · ${esc(U.date(day))}</small></div></div>
-        ${closed ? '<p>বাছা তারিখে এই ব্যাচ বন্ধ।</p>' : `<div class="att-row">
-          <button type="button" data-one-status="P" class="${status === "P" ? "on" : ""}" aria-pressed="${status === "P"}">✓ উপস্থিত</button>
-          <button type="button" data-one-status="A" class="${status === "A" ? "on" : ""}" aria-pressed="${status === "A"}">× অনুপস্থিত</button>
-          <button type="button" data-one-status="L" class="${status === "L" ? "on" : ""}" aria-pressed="${status === "L"}">○ ছুটি</button>
-        </div>`}
-        ${closed ? "" : `<div class="at-one-tasks">
-          ${[["hw", "homework", "বাড়ির কাজ"], ["lesson", "lesson", "পড়া"]].map(([key, kind, label]) => {
-            const checked = status === "P" && hwRec(kind, day, student.batchId)?.checks?.[student.id] === "done";
-            return `<label class="at-tk${checked ? " on" : ""}${status === "P" ? "" : " off"}"><input type="checkbox" data-one-tick="${key}"${checked ? " checked" : ""}${status === "P" ? "" : " disabled"}><span>${label}</span></label>`;
-          }).join("")}
+        ${closed ? '<p>বাছা তারিখে এই ব্যাচ বন্ধ।</p>' : `<div class="at-one-options">
+          <div class="att-row" role="group" aria-label="হাজিরার অবস্থা">
+            ${[["P", "✓ উপস্থিত"], ["A", "× অনুপস্থিত"], ["L", "○ ছুটি"]].map(([status, label]) =>
+              `<button type="button" data-one-status="${status}" class="${draft.status === status ? "on" : ""}" aria-pressed="${draft.status === status}">${label}</button>`).join("")}
+          </div>
+          <div class="at-one-tasks" role="group" aria-label="বাড়ির কাজ ও পড়া">
+            ${taskFields.map(([key, , label]) => `<label class="at-tk${draft[key] ? " on" : ""}${draft.status === "P" ? "" : " off"}">
+              <input type="checkbox" data-one-tick="${key}"${draft[key] ? " checked" : ""}${draft.status === "P" ? "" : " disabled"}><span>${label}</span>
+            </label>`).join("")}
+          </div>
+        </div><div class="at-one-footer">
+          <small>${dirty ? "পরিবর্তন এখনো সেভ হয়নি" : draft.status ? "সেভ করা হাজিরা" : "এই দিনের হাজিরা এখনো দেওয়া হয়নি"}</small>
+          <button type="button" class="btn line" data-one-clear${draft.status ? "" : " disabled"}>চিহ্ন মুছুন</button>
+          <button type="button" class="btn at-one-search" data-one-save${dirty ? "" : " disabled"}>সেভ করুন</button>
         </div>`}</div>`;
     };
-    oneDate.onchange = () => { if (oneStudent) renderOne(); };
-    idInput.oninput = () => { oneStudent = null; oneResult.textContent = ""; };
-    oneForm.onsubmit = (event) => {
-      event.preventDefault();
-      const id = idInput.value.trim().replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d));
-      oneStudent = DB.students.find((student) => student.id === id && student.status !== "inactive" && DB.batches.some((batch) => batch.id === student.batchId));
-      if (oneStudent) renderOne();
-      else oneResult.textContent = "এই আইডিতে ব্যাচসহ কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি।";
+    const readOne = () => {
+      const day = oneDate.value, student = oneStudent;
+      const status = DB.attendance[`${day}|${student.batchId}`]?.[student.id] || "";
+      original = { status };
+      for (const [key, kind] of taskFields) {
+        original[key] = status === "P" && hwRec(kind, day, student.batchId)?.checks?.[student.id] === "done";
+      }
+      draft = { ...original };
+      renderOne();
     };
-    const saveOne = async (status) => {
+    const normalize = (value) => String(value || "").trim().replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)).toLowerCase();
+    const selectOne = (student) => { oneStudent = student; idInput.value = student.id; readOne(); };
+    const findOne = (showEmpty = false) => {
+      const query = normalize(idInput.value);
+      oneStudent = null;
+      if (!query) { oneResult.textContent = ""; return; }
+      const batchIds = new Set(DB.batches.map((batch) => batch.id));
+      const students = DB.students.filter((student) => student.status !== "inactive" && batchIds.has(student.batchId));
+      const exact = students.find((student) => student.id === query);
+      if (exact) return selectOne(exact);
+      const phone = /^[+\d\s().-]+$/.test(query) ? query.replace(/\D/g, "") : "";
+      const matches = students.filter((student) =>
+        normalize(student.name).includes(query) || normalize(student.nameEn).includes(query) ||
+        (phone.length >= 3 && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone]
+          .some((value) => normalize(value).replace(/\D/g, "").includes(phone))));
+      if (matches.length === 1 && showEmpty) return selectOne(matches[0]);
+      oneResult.innerHTML = matches.length ? `<div class="at-one-suggestions">${matches.slice(0, 8).map((student) =>
+        `<button type="button" class="btn line" data-one-pick="${esc(student.id)}"><b>${esc(student.name)}</b><small>${esc(student.id)} · ${esc(batchName(student.batchId))}</small></button>`).join("")}</div>`
+        : showEmpty ? "কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি।" : "";
+    };
+    oneDate.onchange = () => { if (oneStudent) readOne(); };
+    idInput.oninput = () => findOne();
+    oneForm.onsubmit = (event) => { event.preventDefault(); if (!oneSaving) findOne(true); };
+
+    const saveOne = async () => {
       if (!oneStudent || oneSaving || !oneDate.value) return;
       const student = oneStudent, date = oneDate.value;
-      const selectedTicks = Object.fromEntries($$("[data-one-tick]", oneResult).map((input) =>
-        [input.dataset.oneTick, status === "P" && input.checked]));
+      const { status, hw, lesson } = draft;
+      const selectedTicks = { hw, lesson };
       oneSaving = true;
-      $$(".att-row button, [data-one-tick]", oneResult).forEach((item) => { item.disabled = true; });
+      const controls = [idInput, oneDate, searchButton, ...$$("button, input", oneResult)].filter((item) => !item.disabled);
+      controls.forEach((item) => { item.disabled = true; });
       try {
         const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status, date, ticks: selectedTicks } });
         const key = `${saved.date}|${student.batchId}`;
-        (DB.attendance[key] ||= {})[student.id] = saved.status;
+        if (saved.status) (DB.attendance[key] ||= {})[student.id] = saved.status;
+        else if (DB.attendance[key]) {
+          delete DB.attendance[key][student.id];
+          if (!Object.keys(DB.attendance[key]).length) delete DB.attendance[key];
+        }
         for (const record of saved.homework || []) {
           const records = (DB.homework ||= []);
           const index = records.findIndex((item) => item.id === record.id);
           if (index < 0) records.push(record);
           else records[index] = record;
         }
-        if ($("#ad")?.value === saved.date && $("#abSel")?.value === student.batchId) {
-          marks[student.id] = saved.status;
-          ticks[student.id] = selectedTicks;
-          paintRow(student.id);
-          summary();
+        if (c.contains(oneResult)) {
+          if ($("#ad")?.value === saved.date && $("#abSel")?.value === student.batchId) {
+            if (saved.status) marks[student.id] = saved.status;
+            else delete marks[student.id];
+            ticks[student.id] = selectedTicks;
+            paintRow(student.id);
+            summary();
+          }
+          callBadge();
+          readOne();
         }
-        if (c.contains(oneResult)) callBadge();
-        toast("একক হাজিরা সেভ হয়েছে");
+        toast(saved.status ? "একক হাজিরা সেভ হয়েছে" : "হাজিরার চিহ্ন মুছে গেছে");
       } catch (err) { toast(err.message, true); }
       finally {
         oneSaving = false;
-        if (oneStudent) renderOne();
+        controls.forEach((item) => { item.disabled = false; });
       }
     };
     oneResult.onclick = (event) => {
-      const button = event.target.closest("[data-one-status]");
-      if (button) return saveOne(button.dataset.oneStatus);
+      if (oneSaving) return;
+      const pick = event.target.closest("[data-one-pick]");
+      if (pick) {
+        const student = DB.students.find((item) => item.id === pick.dataset.onePick);
+        if (student) selectOne(student);
+        return;
+      }
+      if (!draft || !oneStudent) return;
+      if (event.target.closest("[data-one-save]")) return saveOne();
+      const status = event.target.closest("[data-one-status]")?.dataset.oneStatus;
+      const clear = event.target.closest("[data-one-clear]");
+      if (!status && !clear) return;
+      draft.status = clear ? "" : status;
+      if (draft.status !== "P") draft.hw = draft.lesson = false;
+      renderOne();
+      $(clear ? "[data-one-save]:not([disabled])" : `[data-one-status="${status}"]`, oneResult)?.focus();
     };
     oneResult.onchange = (event) => {
-      if (event.target.matches("[data-one-tick]")) return saveOne("P");
+      const key = event.target.dataset.oneTick;
+      if (!oneSaving && draft?.status === "P" && taskFields.some(([field]) => field === key)) {
+        draft[key] = event.target.checked;
+        renderOne();
+        $(`[data-one-tick="${key}"]`, oneResult)?.focus();
+      }
     };
     callBadge();
     $("#attTabs").onclick = (event) => {

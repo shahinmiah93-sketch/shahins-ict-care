@@ -1239,3 +1239,15 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .at-one-match button.on[data-one-status="L"] { background: #fff0ce; border-color: #e0b95f; color: #805d0b; }
 .at-one-tasks { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
 .at-one-tasks .at-tk { display: inline-flex; align-items: center; gap: 6px; }
+
+.at-one-match { display: grid; grid-template-columns: minmax(0, 1fr); }
+.at-one-options { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+.at-one-options .at-one-tasks { width: auto; }
+.at-one-options .at-tk { min-height: 40px; padding: 0 10px; border-radius: 10px; }
+.at-one-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; border-top: 1px solid #d6e6df; padding-top: 10px; }
+.at-one-footer small { flex: 1 1 130px; color: #47675e; }
+.at-one-footer .at-one-search { background: #0f5c4f; color: #fff; }
+.at-one-footer button:disabled { opacity: .55; cursor: default; }
+.at-one-suggestions { display: grid; gap: 6px; }
+.at-one-suggestions button { text-align: left; white-space: normal; }
+.at-one-suggestions small { display: block; color: #47675e; }
