@@ -165,15 +165,18 @@ window.SICAbsence = function (X) {
       const un = unsavedBatches(S.date), withLast = [], without = [];
       for (const b of un) { const ld = lastSaved(b.id, S.date); (ld ? withLast : without).push({ b, ld }); }
       $("#abNote").innerHTML = (withLast.length ? `<p class="ab-info">ℹ ${U.date(S.date)} তারিখের হাজিরা এখনো সেভ হয়নি, তাই এই ব্যাচগুলোর <b>সর্বশেষ সেভ করা হাজিরার</b> অনুপস্থিতি দেখানো হচ্ছে: ${withLast.map(({ b, ld }) => `<b>${esc(b.name)}</b> (${esc(U.date(ld))})`).join(", ")}। আজকের হাজিরা সেভ করলে এখানে আজকের অনুপস্থিতিই আসবে।</p>` : "") + (without.length ? `<p class="ab-warn">⚠ এই ব্যাচগুলোর হাজিরা এখনো সেভ হয়নি (আগের কোনো হাজিরাও নেই), তাই এদের অনুপস্থিতি এখানে আসেনি: ${without.map(({ b }) => esc(b.name)).join(", ")}</p>` : "");
-      const visible = (r) => !(S.hideDone && st(r) === "talked");
+      const completed = S.hideDone ? [] : abs.filter((row) => st(row) === "talked");
       const order = { "": 0, noanswer: 1, later: 2, talked: 3 };
-      const sorted = (list) => list.filter(visible).sort((a, b) => order[st(a)] - order[st(b)] || streakOf(b.s.id, S.date) - streakOf(a.s.id, S.date) || String(a.s.id).localeCompare(String(b.s.id)));
+      const sorted = (list) => list.filter((row) => st(row) !== "talked").sort((a, b) => order[st(a)] - order[st(b)] || streakOf(b.s.id, S.date) - streakOf(a.s.id, S.date) || String(a.s.id).localeCompare(String(b.s.id)));
       const byBatch = new Map();
       for (const r of sorted(abs)) { const k = r.s.batchId; if (!byBatch.has(k)) byBatch.set(k, []); byBatch.get(k).push(r); }
       const batchOrder = [...byBatch.keys()].sort((a, b) => (DB().batches.findIndex((x) => x.id === a)) - (DB().batches.findIndex((x) => x.id === b)));
       let html = "";
       if (fol.length) html += `<h3 class="ab-batchhead">📌 আগের ফলো-আপ — আজ আবার ফোন করার কথা (${bn(fol.length)})</h3>` + sorted(fol).map(rowHtml).join("");
       html += batchOrder.map((k) => `<h3 class="ab-batchhead">${esc(X.batchName(k))} — ${bn(byBatch.get(k).length)} জন অনুপস্থিত${byBatch.get(k)[0].last ? ` <small class="ab-lastd">· সর্বশেষ হাজিরা: ${esc(U.date(byBatch.get(k)[0].date))}</small>` : ""}</h3>${byBatch.get(k).map(rowHtml).join("")}`).join("");
+      if (completed.length) {
+        html += `<h3 class="ab-batchhead">✓ কথা হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
+      }
       $("#abList").innerHTML = html || `<div class="card empty">${abs.length ? "সবার সাথে কথা হয়ে গেছে 🎉" : `${esc(U.date(S.date))} তারিখে কোনো অনুপস্থিত শিক্ষার্থী নেই (বা হাজিরা এখনো সেভ হয়নি)।`}</div>`;
       const badge = $("#attCallN"); if (badge) badge.textContent = pendingCount(today()) || "";
       drafts.restore(host);
