@@ -1505,7 +1505,7 @@ ${list.map(receiptHtml).join("")}
     let preview = null;
     const payload = (extra = {}) => {
       const raw = $("#dscVal").value, f = $("#feeVal").value;
-      return { id: e.id, fee: f === "" ? null : Number(f), feeReset: !!($("#feeReset") && $("#feeReset").checked), mode: $("#dscMode").value, value: raw === "" ? null : Number(raw), oneTimeDiscount: $("#dscOnce").value || null, ...extra };
+      return { id: e.id, fee: f === "" ? null : Number(f), feeReset: !!($("#feeReset") && $("#feeReset").checked), mode: $("#dscMode").value, value: raw === "" ? null : Number(raw), ...extra };
     };
     openModal({
       title: "ফি বদলান",
@@ -1517,11 +1517,7 @@ ${list.map(receiptHtml).join("")}
         <details class="dsc-more"${cur ? " open" : ""}><summary>ছাড়ও দিতে চান? (ঐচ্ছিক)</summary>
           <p style="margin:6px 0">এখনকার ছাড়: ${e.discountPct ? `<b>প্রতি মাসের ফি-র ${bn(e.discountPct)}%</b>` : `<b>${money(cur)}</b>${cur ? ` (${bn(curPct)}%)` : ""}`}</p>
           <div class="fgrid"><label>ছাড়ের ধরন<select id="dscMode"><option value="percent">শতাংশ (%) — যেমন ৫০%</option><option value="taka">টাকা (৳)</option></select></label>
-          <label>ছাড় <small style="font-weight:400;color:var(--muted)">(ফাঁকা = আগের ছাড় যেমন আছে)</small><input id="dscVal" type="number" min="0" step="any" placeholder="যেমন: 50"></label></div></details>
-        <section class="dsc-fixed">
-          <label>এককালীন ছাড় (৳)<input id="dscOnce" type="number" min="0" step="1" placeholder="যেমন ৫০০"></label>
-          <small class="dsc-note">এইবার মোট বকেয়া থেকে যত টাকা কমাবেন।</small>
-        </section>
+          <label>ছাড় <small style="font-weight:400;color:var(--muted)">(ফাঁকা = আগের ছাড় যেমন আছে)</small><input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div></details>
         <div class="toolbar"><button type="button" class="btn gold" id="dscPrev">নতুন হিসাব দেখুন</button></div><div id="dscRes" aria-live="polite"></div>`,
       saveText: "সংরক্ষণ",
       onSave: async () => {
@@ -1532,7 +1528,7 @@ ${list.map(receiptHtml).join("")}
     });
     $("#modalSave").disabled = true;
     const reset = () => { preview = null; $("#modalSave").disabled = true; $("#dscRes").textContent = ""; };
-    $("#dscMode").onchange = () => { $("#dscVal").value = ""; reset(); };
+    $("#dscMode").onchange = () => { $("#dscVal").value = $("#dscMode").value === "percent" ? (curPct || "") : (cur || ""); reset(); };
     $$("#modalBody input").forEach((x) => { x.oninput = reset; x.onchange = reset; });
     $("#dscPrev").onclick = async () => {
       const btn = $("#dscPrev"); btn.disabled = true; $("#modalErr").textContent = ""; reset();
@@ -1542,10 +1538,9 @@ ${list.map(receiptHtml).join("")}
         $("#dscRes").innerHTML = `<div class="fee-sum"><p>${monthly ? "মাসিক ফি" : "ফি"}: <b>${money(r.current.fee)}${per}</b> → <b>${money(p.fee)}${per}</b>${p.feeChanged ? (p.locked ? " <small>(এই শিক্ষার্থীর নির্ধারিত ফি, ভর্তির তারিখ থেকে)</small>" : " <small>(মডিউলের ফি-তে ফিরছে)</small>") : ""}</p>
           ${p.discount || r.current.discount ? (p.pct > 0 && monthly ? `<p>ছাড়: প্রতি মাসের ফি-র <b>${bn(p.pct)}%</b> <small>(প্রতি মাসের আসল ফি থেকে ঐ শতাংশ বাদ)</small></p>` : `<p>ছাড়: <b>${money(p.discount)}</b> (${bn(p.percent)}%) → ${monthly ? "দেয়" : "ফি"}: <b>${money(p.net)}${per}</b></p>`) : ""}
           <p>এখন পর্যন্ত মোট দেনা: <b>${money(r.current.due)}</b> → <b>${money(p.due)}</b></p>
-          ${p.oneTimeDiscount ? `<p>এককালীন ছাড়: <b>${money(p.oneTimeDiscount)}</b></p>` : ""}
           <p>নতুন বকেয়া: <b>${p.balance > 0 ? money(p.balance) : p.balance < 0 ? "অগ্রিম " + money(-p.balance) : "নেই"}</b></p>
           ${monthly && (p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct) ? "<small>আগের মাসগুলোতেও নতুন হারে ফি ধরা হবে; আগের পেমেন্ট যেমন ছিল তেমনই থাকবে।</small>" : ""}</div>`;
-        $("#modalSave").disabled = !(p.oneTimeDiscount || p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct);
+        $("#modalSave").disabled = !(p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct);
         if ($("#modalSave").disabled) $("#dscRes").insertAdjacentHTML("beforeend", '<p class="muted" style="margin:6px 0 0">কিছু বদলায়নি — ফি বা ছাড় বদলে আবার দেখুন।</p>');
       } catch (er) { $("#modalErr").textContent = er.message; }
       finally { btn.disabled = false; }
