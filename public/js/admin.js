@@ -2055,7 +2055,8 @@ ${list.map(receiptHtml).join("")}
       await refresh();
     };
   }
-  function attendance(c) {
+  function attendance(c, arg) {
+    const callDate = /^calls\/(\d{4}-\d{2}-\d{2})$/.exec(arg || "")?.[1];
     c.innerHTML = `<div class="at-head"><div><span class="at-eye">দৈনিক হাজিরা</span><h2>উপস্থিতি ব্যবস্থাপনা</h2><p>সেশন ও ব্যাচ বেছে হাজিরা, বাড়ির কাজ আর পড়া একসাথে দিন।</p></div></div>
       <div class="card at-ctl">
         <label>তারিখ<input type="date" id="ad" value="${U.today()}" max="${U.today()}"></label>
@@ -2076,7 +2077,7 @@ ${list.map(receiptHtml).join("")}
         <div class="at-save-foot"><button type="button" class="btn gold" id="saveAtt">✓ হাজিরা সংরক্ষণ</button></div>
       </div>`;
     // ট্যাব: হাজিরা দিন | 📞 অনুপস্থিতি কল তালিকা (অনুপস্থিতদের অভিভাবককে কল — admin-absence.js)
-    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save, openForm });
+    const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save, openForm, callDate });
     // ক্লাসের দিন নয় এমন তারিখে হাজিরা দিতে গেলে সতর্কবার্তা (ব্যাচের দিনের সাথে তারিখের বারের মিল দেখে); বন্ধের দিন হলে আলাদা বার্তা আছে, তাই সেটা বাদ
     const dayWords = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
     const offDayInfo = () => {
@@ -2358,6 +2359,7 @@ ${list.map(receiptHtml).join("")}
     $("#attQ").oninput = (e) => { const q = e.target.value.trim().toLowerCase().replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)); rows().forEach((r) => (r.hidden = !!q && !r.dataset.q.includes(q))); };
     $$("[data-all]", c).forEach((b) => (b.onclick = () => { rows().filter((r) => !r.hidden).forEach((r) => { const sid = r.dataset.sid; marks[sid] = b.dataset.all; if (b.dataset.all !== "P") ticks[sid] = { hw: false, lesson: false }; paintRow(sid); }); summary(); }));
     $("#attClean").onclick = () => { rows().forEach((r) => { marks[r.dataset.sid] = undefined; ticks[r.dataset.sid] = { hw: false, lesson: false }; paintRow(r.dataset.sid); }); summary(); toast("চিহ্ন মুছে গেছে — সেভ করলে তবেই বদলাবে"); };
+    if (callDate) $('[data-at-tab="calls"]', c).click();
     $("#saveAtt").onclick = async () => {
       if (!$("#abSel").value) return toast("ব্যাচ বেছে নিন", true);
       const offNote = offDayInfo(); if (offNote && Object.values(marks).some(Boolean) && !confirm(`⚠ ${offNote}\n\nতবুও এই দিনের হাজিরা সেভ করবেন?`)) return;

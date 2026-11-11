@@ -164,6 +164,7 @@ window.SICDues = function (X) {
           });
           (DB().absenceCalls ||= {})[key] = result.item;
           toast("অনুপস্থিতি কল তালিকায় কথা হয়েছে হিসেবে সেভ হয়েছে");
+          location.hash = `attendance/calls/${date}`;
         },
       });
       const dateInput = $('#modalBody [name="date"]');

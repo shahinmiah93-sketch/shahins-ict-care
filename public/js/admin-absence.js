@@ -12,7 +12,7 @@ window.SICAbsence = function (X) {
 
   const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"]];
   const REASONS = window.SICAbsence.reasons;
-  const S = { date: today(), session: "", batch: "", hideDone: false };
+  const S = { date: X.callDate || today(), session: "", batch: "", hideDone: false };
 
   const calls = () => (DB().absenceCalls ||= {});
   const drafts = SICContacts.callDrafts((row) => row.dataset.key, "[data-abst]", "abst");
@@ -143,7 +143,7 @@ window.SICAbsence = function (X) {
 
   function render(host) {
     const sessions = DB().sessions.filter((x) => x.active !== false);
-    if (!S.session && !host.dataset.once) { S.session = (sessions[0] || {}).name || ""; host.dataset.once = "1"; }
+    if (!X.callDate && !S.session && !host.dataset.once) { S.session = (sessions[0] || {}).name || ""; host.dataset.once = "1"; }
     const batchOpts = () => DB().batches.filter((b) => b.active !== false && (!S.session || b.session === S.session));
     host.innerHTML = `<div class="card ab-ctl">
         <label>তারিখ<input type="date" id="abD" value="${esc(S.date)}" max="${today()}"></label>
