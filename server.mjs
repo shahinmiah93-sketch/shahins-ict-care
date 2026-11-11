@@ -3063,15 +3063,36 @@ async function api(req, res, url) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
       return send(res, 400, { error: "হাজিরার সঠিক তারিখ দিন" });
     }
-    const st = b.status === "P" || b.status === "A" ? b.status : "";
+    const st = ["P", "A", "L"].includes(b.status) ? b.status : "";
     const cl = (db.closures || []).find((c) => (c.batchIds || []).includes(s.batchId) && c.from <= date && (c.to || c.from) >= date);
     if (cl && st) return send(res, 400, { error: `বাছা তারিখে এই ব্যাচ বন্ধ${cl.reason ? " (" + cl.reason + ")" : ""} — হাজিরা লেখা যাবে না` });
     const key = `${date}|${s.batchId}`;
     const marks = { ...(db.attendance[key] || {}) };
     if (st) marks[s.id] = st; else delete marks[s.id];
     if (Object.keys(marks).length) db.attendance[key] = marks; else delete db.attendance[key];
+    const homework = [];
+    const batch = db.batches.find((item) => item.id === s.batchId);
+    if (batch && b.ticks && typeof b.ticks === "object") {
+      for (const [kind, field, title] of [["homework", "hw", "দৈনিক বাড়ির কাজ"], ["lesson", "lesson", "দৈনিক পড়া"]]) {
+        const checked = st === "P" && b.ticks[field] === true;
+        let record = db.homework.find((item) => item.kind === kind && item.session === batch.session &&
+          item.dueDate === date && (!item.batchIds?.length || item.batchIds.includes(batch.id)));
+        if (!record && !checked) continue;
+        if (!record) {
+          record = { id: uid("hom"), kind, title, details: "", subject: "", chapter: "", session: batch.session,
+            batchIds: [batch.id], givenDate: date, dueDate: date, auto: true, checks: {}, createdAt: new Date().toISOString() };
+          db.homework.push(record);
+        }
+        record.checks ||= {};
+        if (st === "P") record.checks[s.id] = checked ? "done" : "not";
+        else if (st) record.checks[s.id] = "absent";
+        else delete record.checks[s.id];
+        record.checkedAt = new Date().toISOString();
+        homework.push(record);
+      }
+    }
     saveDb();
-    return send(res, 200, { ok: true, date, status: st });
+    return send(res, 200, { ok: true, date, status: st, homework });
   }
   // আইডি / মোবাইল আর PIN আবার SMS-এ
   if (p === "/api/admin/login-sms" && m === "POST") {

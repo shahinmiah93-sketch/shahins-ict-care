@@ -1235,3 +1235,7 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
   .at-one-find { grid-template-columns: minmax(0, 1fr); }
   .at-one-find .at-one-search { width: 100%; }
 }
+
+.at-one-match button.on[data-one-status="L"] { background: #fff0ce; border-color: #e0b95f; color: #805d0b; }
+.at-one-tasks { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+.at-one-tasks .at-tk { display: inline-flex; align-items: center; gap: 6px; }

@@ -2101,8 +2101,14 @@ ${list.map(receiptHtml).join("")}
         ${closed ? '<p>বাছা তারিখে এই ব্যাচ বন্ধ।</p>' : `<div class="att-row">
           <button type="button" data-one-status="P" class="${status === "P" ? "on" : ""}" aria-pressed="${status === "P"}">✓ উপস্থিত</button>
           <button type="button" data-one-status="A" class="${status === "A" ? "on" : ""}" aria-pressed="${status === "A"}">× অনুপস্থিত</button>
+          <button type="button" data-one-status="L" class="${status === "L" ? "on" : ""}" aria-pressed="${status === "L"}">○ ছুটি</button>
         </div>`}
-        ${status === "L" ? '<p>সেভ করা হাজিরা: ছুটি</p>' : ""}</div>`;
+        ${closed ? "" : `<div class="at-one-tasks">
+          ${[["hw", "homework", "বাড়ির কাজ"], ["lesson", "lesson", "পড়া"]].map(([key, kind, label]) => {
+            const checked = status === "P" && hwRec(kind, day, student.batchId)?.checks?.[student.id] === "done";
+            return `<label class="at-tk${checked ? " on" : ""}${status === "P" ? "" : " off"}"><input type="checkbox" data-one-tick="${key}"${checked ? " checked" : ""}${status === "P" ? "" : " disabled"}><span>${label}</span></label>`;
+          }).join("")}
+        </div>`}</div>`;
     };
     oneDate.onchange = () => { if (oneStudent) renderOne(); };
     idInput.oninput = () => { oneStudent = null; oneResult.textContent = ""; };
@@ -2113,19 +2119,26 @@ ${list.map(receiptHtml).join("")}
       if (oneStudent) renderOne();
       else oneResult.textContent = "এই আইডিতে ব্যাচসহ কোনো সক্রিয় শিক্ষার্থী পাওয়া যায়নি।";
     };
-    oneResult.onclick = async (event) => {
-      const button = event.target.closest("[data-one-status]");
-      if (!button || !oneStudent || oneSaving || !oneDate.value) return;
-      const student = oneStudent, status = button.dataset.oneStatus, date = oneDate.value;
+    const saveOne = async (status) => {
+      if (!oneStudent || oneSaving || !oneDate.value) return;
+      const student = oneStudent, date = oneDate.value;
+      const selectedTicks = Object.fromEntries($("[data-one-tick]", oneResult).map((input) =>
+        [input.dataset.oneTick, status === "P" && input.checked]));
       oneSaving = true;
-      $$(".att-row button", oneResult).forEach((item) => { item.disabled = true; });
+      $(".att-row button, [data-one-tick]", oneResult).forEach((item) => { item.disabled = true; });
       try {
-        const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status, date } });
+        const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status, date, ticks: selectedTicks } });
         const key = `${saved.date}|${student.batchId}`;
         (DB.attendance[key] ||= {})[student.id] = saved.status;
+        for (const record of saved.homework || []) {
+          const records = (DB.homework ||= []);
+          const index = records.findIndex((item) => item.id === record.id);
+          if (index < 0) records.push(record);
+          else records[index] = record;
+        }
         if ($("#ad")?.value === saved.date && $("#abSel")?.value === student.batchId) {
           marks[student.id] = saved.status;
-          if (saved.status !== "P") ticks[student.id] = { hw: false, lesson: false };
+          ticks[student.id] = selectedTicks;
           paintRow(student.id);
           summary();
         }
@@ -2136,6 +2149,13 @@ ${list.map(receiptHtml).join("")}
         oneSaving = false;
         if (oneStudent) renderOne();
       }
+    };
+    oneResult.onclick = (event) => {
+      const button = event.target.closest("[data-one-status]");
+      if (button) return saveOne(button.dataset.oneStatus);
+    };
+    oneResult.onchange = (event) => {
+      if (event.target.matches("[data-one-tick]")) return saveOne("P");
     };
     callBadge();
     $("#attTabs").onclick = (event) => {
