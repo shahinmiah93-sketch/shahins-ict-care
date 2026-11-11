@@ -1505,7 +1505,7 @@ ${list.map(receiptHtml).join("")}
     let preview = null;
     const payload = (extra = {}) => {
       const raw = $("#dscVal").value, f = $("#feeVal").value;
-      return { id: e.id, fee: f === "" ? null : Number(f), feeReset: !!($("#feeReset") && $("#feeReset").checked), mode: $("#dscMode").value, value: raw === "" ? null : Number(raw), ...extra };
+      return { id: e.id, fee: f === "" ? null : Number(f), feeReset: !!($("#feeReset") && $("#feeReset").checked), mode: $("#dscMode").value, value: raw === "" ? null : Number(raw), oneTimeDiscount: $("#dscOnce").value || null, ...extra };
     };
     openModal({
       title: "ফি বদলান",
@@ -1517,7 +1517,11 @@ ${list.map(receiptHtml).join("")}
         <details class="dsc-more"${cur ? " open" : ""}><summary>ছাড়ও দিতে চান? (ঐচ্ছিক)</summary>
           <p style="margin:6px 0">এখনকার ছাড়: ${e.discountPct ? `<b>প্রতি মাসের ফি-র ${bn(e.discountPct)}%</b>` : `<b>${money(cur)}</b>${cur ? ` (${bn(curPct)}%)` : ""}`}</p>
           <div class="fgrid"><label>ছাড়ের ধরন<select id="dscMode"><option value="percent">শতাংশ (%) — যেমন ৫০%</option><option value="taka">টাকা (৳)</option></select></label>
-          <label>ছাড় <small style="font-weight:400;color:var(--muted)">(ফাঁকা = আগের ছাড় যেমন আছে)</small><input id="dscVal" type="number" min="0" step="any" value="${curPct || ""}" placeholder="যেমন: 50"></label></div></details>
+          <label>ছাড় <small style="font-weight:400;color:var(--muted)">(ফাঁকা = আগের ছাড় যেমন আছে)</small><input id="dscVal" type="number" min="0" step="any" placeholder="যেমন: 50"></label></div></details>
+        <section class="dsc-fixed">
+          <label>এককালীন ছাড় (৳)<input id="dscOnce" type="number" min="0" step="1" placeholder="যেমন ৫০০"></label>
+          <small class="dsc-note">এইবার মোট বকেয়া থেকে যত টাকা কমাবেন।</small>
+        </section>
         <div class="toolbar"><button type="button" class="btn gold" id="dscPrev">নতুন হিসাব দেখুন</button></div><div id="dscRes" aria-live="polite"></div>`,
       saveText: "সংরক্ষণ",
       onSave: async () => {
@@ -1528,7 +1532,7 @@ ${list.map(receiptHtml).join("")}
     });
     $("#modalSave").disabled = true;
     const reset = () => { preview = null; $("#modalSave").disabled = true; $("#dscRes").textContent = ""; };
-    $("#dscMode").onchange = () => { $("#dscVal").value = $("#dscMode").value === "percent" ? (curPct || "") : (cur || ""); reset(); };
+    $("#dscMode").onchange = () => { $("#dscVal").value = ""; reset(); };
     $$("#modalBody input").forEach((x) => { x.oninput = reset; x.onchange = reset; });
     $("#dscPrev").onclick = async () => {
       const btn = $("#dscPrev"); btn.disabled = true; $("#modalErr").textContent = ""; reset();
@@ -1538,9 +1542,10 @@ ${list.map(receiptHtml).join("")}
         $("#dscRes").innerHTML = `<div class="fee-sum"><p>${monthly ? "মাসিক ফি" : "ফি"}: <b>${money(r.current.fee)}${per}</b> → <b>${money(p.fee)}${per}</b>${p.feeChanged ? (p.locked ? " <small>(এই শিক্ষার্থীর নির্ধারিত ফি, ভর্তির তারিখ থেকে)</small>" : " <small>(মডিউলের ফি-তে ফিরছে)</small>") : ""}</p>
           ${p.discount || r.current.discount ? (p.pct > 0 && monthly ? `<p>ছাড়: প্রতি মাসের ফি-র <b>${bn(p.pct)}%</b> <small>(প্রতি মাসের আসল ফি থেকে ঐ শতাংশ বাদ)</small></p>` : `<p>ছাড়: <b>${money(p.discount)}</b> (${bn(p.percent)}%) → ${monthly ? "দেয়" : "ফি"}: <b>${money(p.net)}${per}</b></p>`) : ""}
           <p>এখন পর্যন্ত মোট দেনা: <b>${money(r.current.due)}</b> → <b>${money(p.due)}</b></p>
+          ${p.oneTimeDiscount ? `<p>এককালীন ছাড়: <b>${money(p.oneTimeDiscount)}</b></p>` : ""}
           <p>নতুন বকেয়া: <b>${p.balance > 0 ? money(p.balance) : p.balance < 0 ? "অগ্রিম " + money(-p.balance) : "নেই"}</b></p>
           ${monthly && (p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct) ? "<small>আগের মাসগুলোতেও নতুন হারে ফি ধরা হবে; আগের পেমেন্ট যেমন ছিল তেমনই থাকবে।</small>" : ""}</div>`;
-        $("#modalSave").disabled = !(p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct);
+        $("#modalSave").disabled = !(p.oneTimeDiscount || p.feeChanged || p.discount !== r.current.discount || p.pct !== r.current.pct);
         if ($("#modalSave").disabled) $("#dscRes").insertAdjacentHTML("beforeend", '<p class="muted" style="margin:6px 0 0">কিছু বদলায়নি — ফি বা ছাড় বদলে আবার দেখুন।</p>');
       } catch (er) { $("#modalErr").textContent = er.message; }
       finally { btn.disabled = false; }
@@ -2574,19 +2579,6 @@ ${list.map(receiptHtml).join("")}
     const last3 = () => { const [Y, M] = ($("#bpM").value || thisMonth()).split("-").map(Number); return [2, 1, 0].map((k) => { const d = new Date(Y, M - 1 - k, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }); };
     // মাসের বকেয়া: ভর্তির মাস থেকে প্রতি মাসের ফি (বন্ধ / ছুটিতে কম ধরা হলে সেটা); এই মডিউলে যত টাকা দেওয়া হয়েছে
     // তা পুরনো মাস থেকে শোধ ধরা হয় — তাই মাসের ঘরগুলো সবসময় মোট বকেয়ার সাথে মেলে। ভর্তির আগের বা সামনের মাস = "—"
-    const monthDues = (s, it) => {
-      const out = {}, from = (it.startDate || "").slice(0, 7), to = thisMonth();
-      if (!from) return out;
-      const solo = s.fees.items.length === 1; // একটাই মডিউল হলে "সাধারণ" পেমেন্টও এই মডিউলের
-      let pool = DB.payments.filter((p) => p.studentId === s.id && (p.enrollmentId === it.enrollmentId || (solo && !p.enrollmentId))).reduce((t, p) => t + p.amount + (p.discount || 0), 0);
-      let [Y, M] = from.split("-").map(Number);
-      for (let mk = from; mk <= to; ) {
-        const adj = (it.adjust || []).find((x) => x.month === mk), fee = adj ? adj.fee : it.net, got = Math.min(pool, fee);
-        pool -= got; out[mk] = fee - got;
-        M++; if (M > 12) { M = 1; Y++; } mk = `${Y}-${String(M).padStart(2, "0")}`;
-      }
-      return out;
-    };
     const monthDue = (s, it, mk) => { if (!it || !it.monthly) return null; const d = monthDues(s, it); return mk in d ? d[mk] : null; };
     const dueCell = (v, i) => v === null ? `<td class="c muted bp-m${i}">—</td>` : `<td class="c bp-m${i}">${v > 0 ? `<span class="chip bad">${money(v)}</span>` : '<span class="chip ok">পরিশোধ</span>'}</td>`;
     // মাসের ঘর: মাসিক মডিউলে মাসের বকেয়া, কোর্সে (মাসিক নয়) মাসিক ফির মতো "—"
@@ -2858,6 +2850,20 @@ ${list.map(receiptHtml).join("")}
     body.addEventListener("click", (e) => { const t = e.target.closest("[data-rc]"); if (t) printReceipt(DB.payments.find((p) => p.id === t.dataset.rc)); });
     draw();
   }
+  function monthDues(s, it) {
+    const out = {}, from = (it.startDate || "").slice(0, 7), to = thisMonth();
+    if (!from) return out;
+    const solo = s.fees.items.length === 1; // একটাই মডিউল হলে "সাধারণ" পেমেন্টও এই মডিউলের
+    let pool = DB.payments.filter((p) => p.studentId === s.id && (p.enrollmentId === it.enrollmentId || (solo && !p.enrollmentId))).reduce((t, p) => t + p.amount + (p.discount || 0), 0);
+    let [Y, M] = from.split("-").map(Number);
+    for (let mk = from; mk <= to; ) {
+      const adj = (it.adjust || []).find((x) => x.month === mk), fee = adj ? adj.fee : it.net, got = Math.min(pool, fee);
+      pool -= got; out[mk] = fee - got;
+      M++; if (M > 12) { M = 1; Y++; } mk = `${Y}-${String(M).padStart(2, "0")}`;
+    }
+    return out;
+  }
+
   function fees(c, tab) {
     const act = activeStudents();
     const dues = act.filter((s) => s.fees.balance > 0).sort((a, b) => b.fees.balance - a.fees.balance); const dueCalls = window.SICDues({ get DB() { return DB; }, batchName, load, paymentForm, openForm }), dcPending = dueCalls.pending();
@@ -2888,8 +2894,8 @@ ${list.map(receiptHtml).join("")}
     if (tab === "calls") return dueCalls(body);
     if (tab === "sms") return window.SICDueSms({ get DB() { return DB; }, batchName, load })(body);
     if (tab === "dues") {
-      body.innerHTML = `<div class="toolbar"><input class="grow" id="dueSearch" type="search" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="বকেয়া খুঁজুন — নাম, আইডি বা মোবাইল নম্বর"></div><div class="tbl-wrap"><table><thead><tr><th>শিক্ষার্থী</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th class="num">মোট দেনা</th><th class="num">পরিশোধ</th><th class="num">বকেয়া</th><th></th></tr></thead><tbody id="dueRows"></tbody></table></div>`;
-      const search = $("#dueSearch", body), rows = $("#dueRows", body);
+      body.innerHTML = `<div class="toolbar"><input type="month" id="dueMonth" data-dp-empty="সব মাস" aria-label="বকেয়ার মাস"><input class="grow" id="dueSearch" type="search" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="বকেয়া খুঁজুন — নাম, আইডি বা মোবাইল নম্বর"></div><div class="tbl-wrap"><table><thead><tr><th>শিক্ষার্থী</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th class="num">মোট দেনা</th><th class="num" id="duePaidHeading">পরিশোধ</th><th class="num">বকেয়া</th><th></th></tr></thead><tbody id="dueRows"></tbody></table></div>`;
+      const search = $("#dueSearch", body), rows = $("#dueRows", body), monthField = $("#dueMonth", body);
       const normalize = (value) => String(value || "").trim().toLowerCase().replace(/[০-৯]/g, (digit) => "০১২৩৪৫৬৭৮৯".indexOf(digit));
       const digits = (value) => normalize(value).replace(/\D/g, "").replace(/^88(?=01)/, "");
       const drawDues = () => {
@@ -2898,11 +2904,26 @@ ${list.map(receiptHtml).join("")}
         const filtered = !query ? dues : dues.filter((student) =>
           [student.name, student.nameEn, student.id].some((value) => normalize(value).includes(query)) ||
           (phone && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone].some((value) => digits(value).includes(phone))));
-        rows.innerHTML = filtered.map((s) => `<tr><td><b>${esc(s.name)}</b><small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(s.fees.totalDue)}</td><td class="num">${money(s.fees.paid)}</td><td class="num"><span class="chip bad">${money(s.fees.balance)}</span></td>
+        const month = monthField.value;
+        $("#duePaidHeading", body).textContent = month ? "জমা ও ছাড়" : "পরিশোধ";
+        const entries = filtered.map((student) => {
+          if (!month) return { s: student, ...student.fees };
+          let totalDue = 0, balance = 0;
+          for (const item of student.fees.items.filter((item) => item.monthly)) {
+            const due = monthDues(student, item)[month];
+            if (due === undefined) continue;
+            totalDue += item.adjust?.find((row) => row.month === month)?.fee ?? item.net;
+            balance += due;
+          }
+          return { s: student, totalDue, balance, paid: totalDue - balance };
+        }).filter((row) => row.balance > 0);
+        rows.innerHTML = entries.map(({ s, totalDue, paid, balance }) => `<tr><td><b>${esc(s.name)}</b><small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(totalDue)}</td><td class="num">${money(paid)}</td><td class="num"><span class="chip bad">${money(balance)}</span></td>
         <td class="num" style="white-space:nowrap"><button class="btn sm gold" data-pay="${s.id}">পেমেন্ট</button> ${s.guardianPhone ? `<a class="btn sm wa" target="_blank" rel="noopener" href="${waLink(s.guardianPhone, `আসসালামু আলাইকুম। ${s.name}-এর ফি বাবদ ${money(s.fees.balance).replace("৳", "")} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। — ${DB.settings.name}`)}">মনে করিয়ে দিন</a>` : ""}</td></tr>`).join("")
         || `<tr><td colspan="7" class="empty">${query ? "এই খোঁজে কাউকে পাওয়া যায়নি।" : "কোনো বকেয়া নেই।"}</td></tr>`;
       };
       search.oninput = drawDues;
+      monthField.oninput = drawDues;
+      monthField.onchange = drawDues;
       drawDues();
       body.onclick = (e) => { const t = e.target.closest("[data-pay]"); if (t) paymentForm(t.dataset.pay); };
       return;
