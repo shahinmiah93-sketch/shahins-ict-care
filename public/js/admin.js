@@ -2122,10 +2122,10 @@ ${list.map(receiptHtml).join("")}
     const saveOne = async (status) => {
       if (!oneStudent || oneSaving || !oneDate.value) return;
       const student = oneStudent, date = oneDate.value;
-      const selectedTicks = Object.fromEntries($("[data-one-tick]", oneResult).map((input) =>
+      const selectedTicks = Object.fromEntries($$("[data-one-tick]", oneResult).map((input) =>
         [input.dataset.oneTick, status === "P" && input.checked]));
       oneSaving = true;
-      $(".att-row button, [data-one-tick]", oneResult).forEach((item) => { item.disabled = true; });
+      $$(".att-row button, [data-one-tick]", oneResult).forEach((item) => { item.disabled = true; });
       try {
         const saved = await api("/api/admin/attendance-one", { body: { studentId: student.id, status, date, ticks: selectedTicks } });
         const key = `${saved.date}|${student.batchId}`;
