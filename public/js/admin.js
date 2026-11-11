@@ -2888,10 +2888,22 @@ ${list.map(receiptHtml).join("")}
     if (tab === "calls") return dueCalls(body);
     if (tab === "sms") return window.SICDueSms({ get DB() { return DB; }, batchName, load })(body);
     if (tab === "dues") {
-      body.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>শিক্ষার্থী</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th class="num">মোট দেনা</th><th class="num">পরিশোধ</th><th class="num">বকেয়া</th><th></th></tr></thead><tbody>
-        ${dues.map((s) => `<tr><td><b>${esc(s.name)}</b><small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(s.fees.totalDue)}</td><td class="num">${money(s.fees.paid)}</td><td class="num"><span class="chip bad">${money(s.fees.balance)}</span></td>
+      body.innerHTML = `<div class="toolbar"><input class="grow" id="dueSearch" type="search" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="বকেয়া খুঁজুন — নাম, আইডি বা মোবাইল নম্বর"></div><div class="tbl-wrap"><table><thead><tr><th>শিক্ষার্থী</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th class="num">মোট দেনা</th><th class="num">পরিশোধ</th><th class="num">বকেয়া</th><th></th></tr></thead><tbody id="dueRows"></tbody></table></div>`;
+      const search = $("#dueSearch", body), rows = $("#dueRows", body);
+      const normalize = (value) => String(value || "").trim().toLowerCase().replace(/[০-৯]/g, (digit) => "০১২৩৪৫৬৭৮৯".indexOf(digit));
+      const digits = (value) => normalize(value).replace(/\D/g, "").replace(/^88(?=01)/, "");
+      const drawDues = () => {
+        const query = normalize(search.value);
+        const phone = /^[+\d\s().-]+$/.test(query) ? digits(query) : "";
+        const filtered = !query ? dues : dues.filter((student) =>
+          [student.name, student.nameEn, student.id].some((value) => normalize(value).includes(query)) ||
+          (phone && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone].some((value) => digits(value).includes(phone))));
+        rows.innerHTML = filtered.map((s) => `<tr><td><b>${esc(s.name)}</b><small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(s.fees.totalDue)}</td><td class="num">${money(s.fees.paid)}</td><td class="num"><span class="chip bad">${money(s.fees.balance)}</span></td>
         <td class="num" style="white-space:nowrap"><button class="btn sm gold" data-pay="${s.id}">পেমেন্ট</button> ${s.guardianPhone ? `<a class="btn sm wa" target="_blank" rel="noopener" href="${waLink(s.guardianPhone, `আসসালামু আলাইকুম। ${s.name}-এর ফি বাবদ ${money(s.fees.balance).replace("৳", "")} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। — ${DB.settings.name}`)}">মনে করিয়ে দিন</a>` : ""}</td></tr>`).join("")
-        || `<tr><td colspan="7" class="empty">কোনো বকেয়া নেই </td></tr>`}</tbody></table></div>`;
+        || `<tr><td colspan="7" class="empty">${query ? "এই খোঁজে কাউকে পাওয়া যায়নি।" : "কোনো বকেয়া নেই।"}</td></tr>`;
+      };
+      search.oninput = drawDues;
+      drawDues();
       body.onclick = (e) => { const t = e.target.closest("[data-pay]"); if (t) paymentForm(t.dataset.pay); };
       return;
     }
