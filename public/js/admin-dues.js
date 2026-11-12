@@ -56,7 +56,8 @@ window.SICDues = function (X) {
       if (marks[student.id] === "P") present.add(date);
       if (batchId === student.batchId && marks[student.id] === "A") absent.add(date);
     }
-    if (present.has(now)) return [];
+    const latest = [...absent, ...present].sort().at(-1);
+    if (present.has(latest)) return [];
     return [...absent].filter((date) => !present.has(date)).sort().reverse();
   }
 
