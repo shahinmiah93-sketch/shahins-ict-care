@@ -3012,15 +3012,25 @@ async function api(req, res, url) {
     if (!["talked", "noanswer", "later"].includes(status)) { delete db.absenceCalls[key]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
     const followUp = /^\d{4}-\d{2}-\d{2}$/.test(b.followUp || "") ? b.followUp : "";
     const item = { status, reason: str(b.reason, 60), note: str(b.note, 300), followUp: status === "later" ? followUp : "", at: new Date().toISOString() };
+    const previous = db.absenceCalls[key];
+    const stoppedByCall = (student.pauses || []).find((pause) => !pause.to && !pause.startPending &&
+      (pause.absenceCallKey === key || (!pause.absenceCallKey && pause.reason === "আর পড়বে না" && previous?.at === student.updatedAt)));
+    if (b.correctStopStudying === true && student.status === "inactive" && previous?.reason === "আর পড়বে না" &&
+        item.reason !== previous.reason && stoppedByCall) {
+      student.pauses = student.pauses.filter((pause) => pause !== stoppedByCall);
+      student.status = "active";
+      student.updatedAt = item.at;
+    }
     if (b.stopStudying === true && item.reason === "আর পড়বে না" && status === "talked" && student.status !== "inactive") {
       student.pauses ||= [];
       const pendingPause = student.pauses.find((pause) => !pause.to);
       if (pendingPause) {
         pendingPause.from = today();
         pendingPause.reason = item.reason;
+        pendingPause.absenceCallKey = key;
         delete pendingPause.startPending;
       } else {
-        student.pauses.push({ from: today(), to: "", reason: item.reason });
+        student.pauses.push({ from: today(), to: "", reason: item.reason, absenceCallKey: key });
       }
       student.status = "inactive";
       student.updatedAt = item.at;

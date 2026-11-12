@@ -178,6 +178,16 @@ window.SICAbsence = function (X) {
       if (completed.length) {
         html += `<h3 class="ab-batchhead">✓ কথা হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
       }
+      const stopped = Object.entries(calls()).flatMap(([key, call]) => {
+        const [date, sid] = key.split("|");
+        if (date > S.date || call.reason !== "আর পড়বে না") return [];
+        const s = DB().students.find((student) => student.id === sid);
+        if (s?.status !== "inactive" || !inScope(s)) return [];
+        const linked = (s.pauses || []).some((pause) => !pause.to && !pause.startPending &&
+          (pause.absenceCallKey === key || (!pause.absenceCallKey && pause.reason === call.reason && call.at === s.updatedAt)));
+        return linked ? [{ s, key, date }] : [];
+      });
+      if (stopped.length) html += '<h3 class="ab-batchhead">পড়া বন্ধ — কারণ বদলে সক্রিয় করতে পারবেন</h3>' + stopped.map(rowHtml).join("");
       $("#abList").innerHTML = html || `<div class="card empty">${abs.length ? "সবার সাথে কথা হয়ে গেছে 🎉" : `${esc(U.date(S.date))} তারিখে কোনো অনুপস্থিত শিক্ষার্থী নেই (বা হাজিরা এখনো সেভ হয়নি)।`}</div>`;
       const badge = $("#attCallN"); if (badge) badge.textContent = pendingCount(today()) || "";
       drafts.restore(host);
@@ -191,7 +201,7 @@ window.SICAbsence = function (X) {
     const persist = async (row, status) => {
       const key = row.dataset.key;
       const body = { date: row.dataset.date, studentId: row.dataset.sid, status,
-        reason: $(".ab-reason", row).value, note: $(".ab-note", row).value.trim(),
+        correctStopStudying: true, reason: $(".ab-reason", row).value, note: $(".ab-note", row).value.trim(),
         followUp: status === "later" ? $(".ab-fu", row).value || addDays(today(), 1) : "" };
       if (status && body.reason === "আর পড়বে না") {
         body.stopStudying = true;
@@ -200,10 +210,15 @@ window.SICAbsence = function (X) {
       }
       const r = await api("/api/admin/absence-call", { body });
       if (r.removed) delete calls()[key]; else calls()[key] = r.item;
-      if (body.stopStudying && r.studentStatus === "inactive") {
+      if (r.studentStatus) {
         const student = DB().students.find((item) => item.id === body.studentId);
-        if (student) { student.status = r.studentStatus; student.pauses = r.pauses || []; }
-        toast("শিক্ষার্থীকে নিষ্ক্রিয় করা হয়েছে");
+        if (student) {
+          const reactivated = student.status === "inactive" && r.studentStatus === "active";
+          student.status = r.studentStatus;
+          student.pauses = r.pauses || [];
+          if (reactivated) toast("শিক্ষার্থী আবার সক্রিয় হয়েছে");
+          else if (body.stopStudying && r.studentStatus === "inactive") toast("শিক্ষার্থীকে নিষ্ক্রিয় করা হয়েছে");
+        }
       }
     };
     // "আর পড়বে না" → পড়া বন্ধ (আজ / আগামী মাসের ১ তারিখ / অন্য তারিখ থেকে) আর কলের হিসাবে "কথা হয়েছে" লিখে রাখা
