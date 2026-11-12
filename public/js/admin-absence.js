@@ -296,6 +296,7 @@ window.SICAbsence = function (X) {
       const saveButton = e.target.closest("[data-call-save]");
       if (saveButton) {
         const row = saveButton.closest(".ab-row");
+        if ($(".ab-reason", row).value === "আর পড়বে না") drafts.remember(row, "talked");
         return drafts.save(row, persist, toast).then((saved) => {
           if (saved) { draw(); toast("কলের আপডেট সেভ হয়েছে"); }
         });
