@@ -193,8 +193,18 @@ window.SICAbsence = function (X) {
       const body = { date: row.dataset.date, studentId: row.dataset.sid, status,
         reason: $(".ab-reason", row).value, note: $(".ab-note", row).value.trim(),
         followUp: status === "later" ? $(".ab-fu", row).value || addDays(today(), 1) : "" };
+      if (status && body.reason === "আর পড়বে না") {
+        body.stopStudying = true;
+        body.status = "talked";
+        body.followUp = "";
+      }
       const r = await api("/api/admin/absence-call", { body });
       if (r.removed) delete calls()[key]; else calls()[key] = r.item;
+      if (body.stopStudying && r.studentStatus === "inactive") {
+        const student = DB().students.find((item) => item.id === body.studentId);
+        if (student) { student.status = r.studentStatus; student.pauses = r.pauses || []; }
+        toast("শিক্ষার্থীকে নিষ্ক্রিয় করা হয়েছে");
+      }
     };
     // "আর পড়বে না" → পড়া বন্ধ (আজ / আগামী মাসের ১ তারিখ / অন্য তারিখ থেকে) আর কলের হিসাবে "কথা হয়েছে" লিখে রাখা
     const stopStudent = async (row) => {

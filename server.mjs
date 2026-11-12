@@ -3006,16 +3006,30 @@ async function api(req, res, url) {
   if (p === "/api/admin/absence-call" && m === "POST") {
     const b = await readBody(req);
     const date = str(b.date, 10), sid = str(b.studentId, 40), status = str(b.status, 12);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !db.students.some((s) => s.id === sid)) return send(res, 400, { error: "তারিখ ও শিক্ষার্থী দিন" });
+    const student = db.students.find((s) => s.id === sid);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !student) return send(res, 400, { error: "তারিখ ও শিক্ষার্থী দিন" });
     const key = `${date}|${sid}`;
     if (!["talked", "noanswer", "later"].includes(status)) { delete db.absenceCalls[key]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
     const followUp = /^\d{4}-\d{2}-\d{2}$/.test(b.followUp || "") ? b.followUp : "";
     const item = { status, reason: str(b.reason, 60), note: str(b.note, 300), followUp: status === "later" ? followUp : "", at: new Date().toISOString() };
+    if (b.stopStudying === true && item.reason === "আর পড়বে না" && status === "talked" && student.status !== "inactive") {
+      student.pauses ||= [];
+      const pendingPause = student.pauses.find((pause) => !pause.to);
+      if (pendingPause) {
+        pendingPause.from = today();
+        pendingPause.reason = item.reason;
+        delete pendingPause.startPending;
+      } else {
+        student.pauses.push({ from: today(), to: "", reason: item.reason });
+      }
+      student.status = "inactive";
+      student.updatedAt = item.at;
+    }
     db.absenceCalls[key] = item;
     const cutoff = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10); // ১২০ দিনের পুরোনো কলের হিসাব সরিয়ে ফেলা
     for (const k of Object.keys(db.absenceCalls)) if (k.split("|")[0] < cutoff) delete db.absenceCalls[k];
     saveDb();
-    return send(res, 200, { ok: true, item });
+    return send(res, 200, { ok: true, item, studentStatus: student.status, pauses: student.pauses });
   }
   if (p === "/api/admin/attendance" && m === "POST") {
     const b = await readBody(req);
