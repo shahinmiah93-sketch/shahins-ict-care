@@ -857,6 +857,49 @@ async function smsLogin(x, message, log, phones) {
   loginSmsInFlight.set(x, task);
   try { return await task; } finally { loginSmsInFlight.delete(x); }
 }
+const receiptToken = () => crypto.randomBytes(18).toString("base64url");
+const paymentCode = (p) => "SIC" + p.date.replace(/-/g, "").slice(2) + String(p.receiptNo).padStart(4, "0");
+
+async function notifyPaymentReceipts(items) {
+  if (!smsOn()) return;
+  const deliveries = [];
+  for (const p of items) {
+    if (!p.receiptToken) continue;
+    const student = db.students.find((s) => s.id === p.studentId);
+    if (!student) continue;
+    const name = str(student.nameEn, 100).replace(/[^ -~]/g, "").trim() || "student " + student.id;
+    const code = paymentCode(p);
+    const link = "https://shahinictcare.com/api/r/" + p.receiptToken;
+    const message = [smsBrand(), "We received Tk " + p.amount + " for " + name + "'s fees.", "Receipt No. " + code, "Download your receipt: " + link].join("\n");
+    for (const phone of resultPhones(student)) deliveries.push({ phone, message, code });
+  }
+  for (let i = 0; i < deliveries.length; i += 10) {
+    await Promise.allSettled(deliveries.slice(i, i + 10).map(({ phone, message, code }) =>
+      sendSms(phone, message, "Payment receipt " + code, "Payment")));
+  }
+  if (deliveries.length) saveDb();
+}
+
+function sendPaymentReceipt(res, payment, download) {
+  const student = db.students.find((s) => s.id === payment.studentId);
+  if (!student) return send(res, 404, { error: "Receipt not found" });
+  const escape = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const code = paymentCode(payment);
+  const rows = [
+    ["Receipt No.", code], ["Payment date", payment.date], ["Student", student.nameEn || student.name],
+    ["Student ID", student.id], ["Payment method", payment.method], ["Amount paid", "Tk " + payment.amount],
+  ].map(([label, value]) => "<dt>" + label + "</dt><dd>" + escape(value) + "</dd>").join("");
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "private, no-store",
+    "Referrer-Policy": "no-referrer",
+    "X-Robots-Tag": "noindex, nofollow",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
+    ...(download ? { "Content-Disposition": 'attachment; filename="receipt-' + code + '.html"' } : {}),
+  });
+  res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Money receipt</title><style>body{font:1rem system-ui;color:#123d36;max-width:30rem;margin:2rem auto;padding:0 1rem}main{border:1px solid #c6ded6;border-radius:1rem;padding:1.5rem}dt{font-weight:bold}dd{margin:0 0 .8rem}a{color:#135b4e}@media print{a{display:none}}</style><main><strong>' + escape(smsBrand()) + '</strong><h1>Money receipt</h1><dl>' + rows + '</dl>' + (download ? '' : '<a href="?download=1">Download receipt</a>') + '</main></html>');
+}
+
 const smsStudentLogin = (s) => smsLogin(s, `${smsBrand()}: Admission complete. Student ID: ${s.id}, PIN: ${s.pin}. Use these to log in to the Student Panel. Do not share.`, `ভর্তি — আইডি ${s.id}, PIN ••••`, [s.phone, s.guardianPhone]);
 const smsLearnerLogin = (l) => smsLogin(l, `${smsBrand()}: Online course login - Mobile: ${l.phone}, PIN: ${l.pin}. Do not share.`, `অনলাইন কোর্স — ${l.phone}, PIN ••••`, [l.phone]);
 // ফলাফলের SMS: নম্বর, পাস / ফেল, মেধাক্রম। key বদলালে (নম্বর সংশোধন) আবার পাঠানো যায়; নম্বর বাকি থাকলে null
@@ -1994,6 +2037,13 @@ async function api(req, res, url) {
     if (origin && origin !== `http://${req.headers.host}` && origin !== `https://${req.headers.host}`) return send(res, 403, { error: "অনুমতি নেই" });
   }
 
+  const receiptMatch = p.match(/^\/api\/r\/([A-Za-z0-9_-]{24})$/);
+  if (receiptMatch && m === "GET") {
+    const payment = db.payments.find((item) => item.receiptToken === receiptMatch[1]);
+    if (!payment) return send(res, 404, { error: "Receipt not found" });
+    return sendPaymentReceipt(res, payment, url.searchParams.get("download") === "1");
+  }
+
   if (p === "/api/health") return send(res, 200, { ok: true, app: "shahins-ict-care" });
   // মডিউলের ক্লাস রুটিন PDF (চালু মডিউল — সবাই দেখতে পারে)
   const crm = p.match(/^\/api\/module\/([\w-]+)\/routine$/);
@@ -2924,11 +2974,12 @@ async function api(req, res, url) {
     }
     const now = new Date().toISOString();
     const items = rows.map((r) => {
-      const item = { id: uid("pay"), ...r, createdAt: now, receiptNo: nextReceiptNo() };
+      const item = { id: uid("pay"), ...r, createdAt: now, receiptNo: nextReceiptNo(), receiptToken: receiptToken() };
       db.payments.push(item);
       return item;
     });
     saveDb();
+    await notifyPaymentReceipts(items);
     return send(res, 200, { ok: true, items });
   }
   // বকেয়া ফি-র জন্য অভিভাবককে কল — প্রতিজন শিক্ষার্থীর সর্বশেষ কলের অবস্থা, কারণ, নোট, ফোন করার / টাকা দেওয়ার তারিখ আর কলের ইতিহাস
@@ -3871,11 +3922,15 @@ async function api(req, res, url) {
         return send(res, 200, { ok: true, item });
       }
       const item = { id: col === "sessions" ? clean.name : uid(col.slice(0, 3)), ...(col === "students" ? { status: "active", note: "" } : {}), ...(col === "homework" ? { checks: {} } : {}), ...(col === "quizzes" ? { attempts: {} } : {}), ...(col === "books" ? { stock: 0 } : {}), ...clean, createdAt: new Date().toISOString() };
-      if (col === "payments") item.receiptNo = nextReceiptNo();
+      if (col === "payments") {
+        item.receiptNo = nextReceiptNo();
+        if (item.amount > 0) item.receiptToken = receiptToken();
+      }
       list.push(item);
       if (col === "quizzes") syncQuizNotice(item);
       if (col === "ebooks") ebookSyncBuyers(item);
       saveDb();
+      if (col === "payments") await notifyPaymentReceipts([item]);
       return send(res, 200, { ok: true, item });
     }
   }
