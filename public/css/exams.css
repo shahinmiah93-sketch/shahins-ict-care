@@ -447,6 +447,7 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .ek-sheet td.ek-id{color:#334155;font-family:'Hind Siliguri','Nirmala UI',Vrinda,system-ui,sans-serif;font-weight:400;white-space:nowrap}
 .ek-sheet td.ek-nm{min-width:190px;font-weight:600;color:#16302b;font-family:'Hind Siliguri','Nirmala UI',Vrinda,system-ui,sans-serif}
 .ek-sheet td.ek-bt{min-width:90px;color:#334155}
+.ek-batch-time{white-space:nowrap;font-size:.9em}
 .ek-sheet td.ek-m,.ek-sheet tbody tr:nth-child(even) td.ek-m{background:#fff5cf;padding:4px 5px;text-align:center}
 .ek-sheet td.ek-t,.ek-sheet tbody tr:nth-child(even) td.ek-t{background:#fff5cf;text-align:center;font-size:15px;font-weight:700;color:#16302b;font-family:'Hind Siliguri','Nirmala UI',Vrinda,system-ui,sans-serif}
 .ek-sheet td.ek-rs,.ek-sheet td.ek-rk,.ek-sheet tbody tr:nth-child(even) td.ek-rs,.ek-sheet tbody tr:nth-child(even) td.ek-rk{background:#edf7f6;text-align:center;font-weight:700}
