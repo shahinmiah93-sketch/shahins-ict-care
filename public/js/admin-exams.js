@@ -384,12 +384,12 @@ window.SICExams = function (X) {
     return `<section class="card"><h3>রুটিন PDF (${bn(list.length)})</h3>
       ${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>রুটিন</th><th>ধরন</th><th>কারা পাবে</th><th>যোগের তারিখ</th><th></th></tr></thead><tbody>${list.map((r) => `<tr><td><b>${esc(r.title)}</b><small>${esc(r.pdf ? r.pdf.name : "")}</small></td><td>${r.type ? esc(EC.typeName(r.type)) : "সব পরীক্ষা"}</td><td>${esc(who(r))}</td><td>${U.date(String(r.createdAt).slice(0, 10))}</td><td class="num" style="white-space:nowrap"><a class="btn sm line" href="/api/admin/exam-routines/${encodeURIComponent(r.id)}/pdf" target="_blank" rel="noopener">দেখুন</a> <button type="button" class="icon-btn" title="মুছুন" data-del-routine="${r.id}">✕</button></td></tr>`).join("")}</tbody></table></div>` : empty("এখনো কোনো রুটিন PDF দেওয়া হয়নি।")}</section>
       <section class="card" style="margin-top:14px"><h3>＋ নতুন রুটিন PDF</h3><p class="ex-sub">আপলোড করলেই বেছে নেওয়া সেশন / ব্যাচের সব শিক্ষার্থী নিজের প্যানেলের "পরীক্ষার রুটিন" ঘরে পাবে।</p>
-      <form data-routine-up novalidate><div class="ln-filter light"><label>সেশন<select data-rt-session name="session">${X.opt([["", "সব সেশন"], ...DB().sessions.map((s) => [s.name, s.name])], se)}</select></label>
+      <form data-routine-up novalidate><div class="ex-routine-fields"><label>সেশন<select data-rt-session name="session">${X.opt([["", "সব সেশন"], ...DB().sessions.map((s) => [s.name, s.name])], se)}</select></label>
         <label>ব্যাচ<select name="batch"${se ? "" : " disabled"}>${X.opt([["", se ? "সব ব্যাচ" : "আগে সেশন বাছুন"], ...bs.map((b) => [b.id, U.batchLabel(b)])], "")}</select></label>
         <label>পরীক্ষার ধরন<select name="type">${X.opt([...(S.only ? [] : [["", "সব পরীক্ষা"]]), ...TYPES_HERE()], S.only || "")}</select></label>
-        <label style="flex:1">রুটিনের নাম<input name="title" placeholder="যেমন: Model Test রুটিন" value="${esc(S.rtTitle || "")}"></label></div>
-        <p style="margin:12px 0"><input type="file" name="file" accept="application/pdf,.pdf"></p>
-        <button type="submit" class="btn gold">আপলোড করুন</button><div class="ln-prog" hidden><i></i><span></span></div></form></section>`;
+        <label>রুটিনের নাম<input name="title" placeholder="যেমন: Model Test রুটিন" value="${esc(S.rtTitle || "")}"></label></div>
+        <div class="ex-routine-actions"><label class="ex-routine-file"><input type="file" name="file" accept="application/pdf,.pdf" aria-label="PDF বাছুন"><span class="ex-routine-choose" aria-hidden="true">PDF বাছুন</span><span data-routine-filename>কোনো ফাইল বাছা হয়নি</span></label>
+        <button type="submit" class="btn gold">আপলোড করুন</button></div><div class="ln-prog" hidden><i></i><span></span></div></form></section>`;
   }
   async function uploadRoutine(form) {
     const file = form.file.files[0], prog = $(".ln-prog", form), btn = $("button[type=submit]", form);
@@ -744,6 +744,10 @@ window.SICExams = function (X) {
       if (!el.checked) { const f = $(".mk", scope); if (f) f.focus(); }
       refreshRow(el.closest("tr[data-sid]"));
       return markDirty();
+    }
+    if (el.matches("[data-routine-up] input[type=file]")) {
+      $("[data-routine-filename]", el.form).textContent = el.files[0]?.name || "কোনো ফাইল বাছা হয়নি";
+      return;
     }
     if (el.matches("[data-rt-session]")) { S.rtSession = el.value; S.rtTitle = el.form.title.value; return render(); }
     if (el.matches("[data-doc-type]")) { S.docType = el.value; S.docTarget = ""; return render(); }
