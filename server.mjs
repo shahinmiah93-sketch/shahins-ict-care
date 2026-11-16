@@ -880,61 +880,89 @@ async function notifyPaymentReceipts(items) {
   if (deliveries.length) saveDb();
 }
 
-function paymentReceiptPdf(rows) {
-  const latin = (value) => String(value).normalize("NFKD").replace(/[^ -~]/g, "").trim();
-  const literal = (value) => latin(value).replace(/[\\()]/g, "\\$&");
-  const stream = "BT /F1 16 Tf 50 785 Td (" + literal(smsBrand()) + ") Tj"
-    + " /F1 24 Tf 0 -38 Td (Money receipt) Tj /F1 12 Tf"
-    + rows.map(([label, value]) => " 0 -32 Td (" + literal(label + ": " + (latin(value) || "-")) + ") Tj").join("")
-    + " ET\n";
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Length " + stream.length + " >>\nstream\n" + stream + "endstream",
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = objects.map((object, i) => {
-    const offset = pdf.length;
-    pdf += (i + 1) + " 0 obj\n" + object + "\nendobj\n";
-    return offset;
-  });
-  const xref = pdf.length;
-  pdf += "xref\n0 6\n0000000000 65535 f \n" + offsets.map((offset) => String(offset).padStart(10, "0") + " 00000 n \n").join("")
-    + "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n";
-  return Buffer.from(pdf, "ascii");
+const receiptStudent = (id) => {
+  const student = db.students.find((s) => s.id === id);
+  return student && { ...student, fees: feeSummary(student) };
+};
+const receiptDate = (date) => new Intl.DateTimeFormat("bn-BD", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(date + "T00:00:00Z"));
+const receiptMonth = (month) => new Intl.DateTimeFormat("bn-BD", { year: "numeric", month: "long", timeZone: "UTC" }).format(new Date(month + "-01T00:00:00Z"));
+function feeCoverage(p) {
+  const s = receiptStudent(p.studentId);
+  if (!s || !s.fees) return null;
+  const solo = s.fees.items.length === 1;
+  const it = s.fees.items.find((i) => i.enrollmentId === p.enrollmentId) || (solo && !p.enrollmentId ? s.fees.items[0] : null);
+  if (!it || !it.monthly || !it.startDate) return null;
+  const pays = db.payments.filter((x) => x.studentId === s.id && (x.enrollmentId === it.enrollmentId || (solo && !x.enrollmentId)))
+    .sort((a, b) => (a.date + String(a.receiptNo).padStart(8, "0")).localeCompare(b.date + String(b.receiptNo).padStart(8, "0")));
+  const feeOf = (mk) => { const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
+  const next = (mk) => { let [Y, M] = mk.split("-").map(Number); M++; if (M > 12) { M = 1; Y++; } return `${Y}-${String(M).padStart(2, "0")}`; };
+  const last = today().slice(0, 7), left = {};
+  let mk = it.startDate.slice(0, 7), out = null, advance = 0;
+  for (const x of pays) {
+    let amt = (x.amount || 0) + (x.discount || 0); // ছাড়ও মাসের ফি শোধ করে
+    const mine = x.id === p.id ? [] : null;
+    while (amt > 0) {
+      if (!(mk in left)) left[mk] = feeOf(mk);
+      if (mk > last && left[mk] > 0) break; // সামনের মাসের ফি এখনো ধরা হয়নি — বাকিটা অগ্রিম
+      const take = Math.min(amt, left[mk]);
+      if (take > 0 && mine) mine.push({ mk, amt: take, fee: feeOf(mk), rest: left[mk] - take });
+      left[mk] -= take; amt -= take;
+      if (left[mk] <= 0) mk = next(mk);
+    }
+    if (mine) { out = mine; advance = amt; break; }
+  }
+  return out ? { list: out, advance } : null;
+}
+function receiptCoverage(cv) {
+  if (!cv || (!cv.list.length && !cv.advance)) return "";
+  const rows = cv.list.map(({ mk, amt, rest }) => `<tr>
+    <td>${receiptEscape(receiptMonth(mk))}</td><td>${receiptMoney(amt)}</td>
+    <td class="${rest > 0 ? "unpaid" : "paid"}">${rest > 0 ? receiptMoney(rest) : "পুরো শোধ"}</td>
+  </tr>`).join("");
+  return `<div class="c cov">
+    ${rows ? `<table><caption>মাসভিত্তিক হিসাব</caption><thead><tr><th scope="col">মাস</th><th scope="col">এই রসিদে জমা</th><th scope="col">ওই মাসে বাকি</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
+    ${cv.advance > 0 ? `<p class="cov-advance">অগ্রিম জমা <strong>${receiptMoney(cv.advance)}</strong></p>` : ""}
+  </div>`;
+}
+function receiptHtml(p) {
+  const s = receiptStudent(p.studentId) || { name: p.studentId };
+  const enr = db.enrollments.find((e) => e.id === p.enrollmentId);
+  const c = enr && db.courses.find((course) => course.id === enr.courseId);
+  const st = db.settings, org = st.nameBn || "শাহিন'স আইসিটি কেয়ার", logo = "/images/logo-receipt.png";
+  const cov = feeCoverage(p, s);
+  const kind = !c ? (cov ? "মাসিক ফি" : "সাধারণ ফি") : c.feeType === "monthly" ? (cov ? "মাসিক ফি" : `মাসিক ফি${p.month ? " — " + receiptMonth(p.month) : ""}`) : c.feeType === "chapter" ? "অধ্যায়ভিত্তিক ফি" : "কোর্স ফি";
+  const mod = c ? c.name + (enr.chapters && enr.chapters.length ? " — " + (c.chapters || []).filter((chapter) => enr.chapters.includes(chapter.id)).map((chapter) => chapter.name).join(", ") : "") : "";
+  const due = s.fees ? Math.max(0, s.fees.balance) : 0;
+  const code = paymentCode(p);
+  const cell = (k, v, sub) => `<div class="c"><small>${k}</small><b>${v}</b>${sub ? `<i>${sub}</i>` : ""}</div>`;
+  return `<section class="r"><img class="wm" src="${logo}" alt="">
+      <div class="hd"><div class="mr">Money<br>Receipt</div><div class="org"><b>${receiptEscape(org)}</b><small>${receiptEscape(st.address || "মাস্টার কলোনি, মাদারীপুর")}</small><small>${receiptEscape(st.phone || "")}</small></div><img class="lg" src="/images/logo-receipt.png" alt=""></div>
+      <div class="bar">লেনদেনের তথ্য<span><small>রশিদ নম্বর</small>${receiptEscape(code)}</span></div>
+      <div class="g">
+        ${cell("শিক্ষার্থীর নাম", receiptEscape(s.name))}${cell("তারিখ", receiptDate(p.date))}
+        ${cell("শিক্ষার্থী আইডি", receiptEscape(p.studentId))}${cell("ফি-এর ধরন", receiptEscape(kind), receiptEscape(mod))}
+        ${cell("সেশন / ব্যাচ", receiptEscape([s.session, batchLabel(db.batches.find((batch) => batch.id === s.batchId))].filter(Boolean).join(" · ") || "—"))}${cell("পেমেন্টের মাধ্যম", receiptEscape(p.method || "নগদ"), p.note ? receiptEscape(p.note) : "")}
+        <div class="c amt"><small>এই রসিদে মোট জমা</small><b>${receiptMoney(p.amount)}</b></div>
+        <div class="c ${due ? "unpaid" : "paid"}"><small>বর্তমান মোট বকেয়া</small><b>${due ? receiptMoney(due) : "বকেয়া নেই"}</b></div>
+        ${receiptCoverage(cov)}
+      </div>
+      <div class="sg"><span><img class="receipt-signature" src="/images/signature.png" alt="শাহিন স্যারের স্বাক্ষর">গ্রহণকারীর স্বাক্ষর</span><span>প্রদানকারীর স্বাক্ষর</span></div></section>`;
 }
 
+const receiptEscape = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const receiptMoney = (amount) => "৳" + Number(amount || 0).toLocaleString("bn-BD");
+
 function sendPaymentReceipt(res, payment, download) {
-  const student = db.students.find((s) => s.id === payment.studentId);
-  if (!student) return send(res, 404, { error: "Receipt not found" });
-  const escape = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const code = paymentCode(payment);
-  const fields = [
-    ["Receipt No.", code], ["Payment date", payment.date], ["Student", student.nameEn || student.name],
-    ["Student ID", student.id], ["Payment method", payment.method], ["Amount paid", "Tk " + payment.amount],
-  ];
-  if (download) {
-    const pdf = paymentReceiptPdf(fields);
-    res.writeHead(200, {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": 'attachment; filename="receipt-' + code.replace(/[^A-Za-z0-9-]/g, "") + '.pdf"',
-      "Content-Length": pdf.length,
-      "Cache-Control": "private, no-store",
-      "X-Robots-Tag": "noindex, nofollow",
-    });
-    return res.end(pdf);
-  }
-  const rows = fields.map(([label, value]) => "<dt>" + label + "</dt><dd>" + escape(value) + "</dd>").join("");
+  if (!db.students.some((s) => s.id === payment.studentId)) return send(res, 404, { error: "Receipt not found" });
   res.writeHead(200, {
     "Content-Type": "text/html; charset=utf-8",
     "Cache-Control": "private, no-store",
     "Referrer-Policy": "no-referrer",
     "X-Robots-Tag": "noindex, nofollow",
-    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
+    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; frame-src 'self'; base-uri 'none'; frame-ancestors 'none'",
   });
-  res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Money receipt</title><style>body{font:1rem system-ui;color:#123d36;max-width:30rem;margin:2rem auto;padding:0 1rem}main{border:1px solid #c6ded6;border-radius:1rem;padding:1.5rem}dt{font-weight:bold}dd{margin:0 0 .8rem}a{color:#135b4e}@media print{a{display:none}}</style><main><strong>' + escape(smsBrand()) + '</strong><h1>Money receipt</h1><dl>' + rows + '</dl>' + (download ? '' : '<a href="?download=1">Download PDF</a>') + '</main></html>');
+  const code = receiptEscape(paymentCode(payment));
+  res.end('<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Money Receipt ' + code + '</title><link rel="stylesheet" href="/css/payment-receipt.css"><script defer src="/vendor/html2canvas-1.4.1.min.js"></script><script defer src="/js/payment-receipt.js"></script><div class="pb"><button type="button" id="download-receipt" data-code="' + code + '"' + (download ? ' data-auto-download' : '') + '>PDF ডাউনলোড</button> <button type="button" id="print-receipt">প্রিন্ট</button> <span role="status"></span></div><main class="receipt-view">' + receiptHtml(payment) + '</main></html>');
 }
 
 const smsStudentLogin = (s) => smsLogin(s, `${smsBrand()}: Admission complete. Student ID: ${s.id}, PIN: ${s.pin}. Use these to log in to the Student Panel. Do not share.`, `ভর্তি — আইডি ${s.id}, PIN ••••`, [s.phone, s.guardianPhone]);
