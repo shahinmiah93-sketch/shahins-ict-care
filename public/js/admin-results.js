@@ -608,8 +608,8 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
         ${card("Monthly Progress Report", "এক মাসে প্রত্যেকের পরীক্ষার গড় আর হাজিরা", `<input type="month" data-rep-month value="${esc(S.month)}">`, "monthly")}
       </div></section>`;
   }
-  function printReport(title, sub, html) {
-    X.printDoc(title, `<style>${S.land ? "@page{size:A4 landscape}.pg{max-width:285mm}" : "@page{size:A4}"}.num{text-align:right}td small{display:block;color:#5d7570}h1{font-size:22px}.sub{color:#5d7570;margin:4px 0 12px}.chip{font-weight:700}</style><h1>${esc(title)}</h1><p class="sub">${esc(sub)}</p>${html}<div class="sign"><span>শ্রেণি শিক্ষক</span>${U.sig("কর্তৃপক্ষ")}</div>`);
+  function printReport(title, sub, html, centerHeading = false) {
+    X.printDoc(title, `<style>${S.land ? "@page{size:A4 landscape}.pg{max-width:285mm}" : "@page{size:A4}"}.num{text-align:right}td small{display:block;color:#5d7570}h1{font-size:22px}.sub{color:#5d7570;margin:4px 0 12px}.chip{font-weight:700}</style><header${centerHeading ? ' style="text-align:center"' : ""}><h1>${esc(title)}</h1><p class="sub">${esc(sub)}</p></header>${html}<div class="sign"><span>শ্রেণি শিক্ষক</span>${U.sig("কর্তৃপক্ষ")}</div>`);
   }
   // শিক্ষার্থী মূল্যায়ন প্রতিবেদন — সম্ভারুণের "Evaluation" রিপোর্টের ফরম্যাটে, এক পাতা A4:
   // হেডার (বামে "শিক্ষার্থী মূল্যায়ন প্রতিবেদন", মাঝে প্রতিষ্ঠান, ডানে লোগো) → পারফরম্যান্স কার্ড + অবস্থা → ৭টা সংখ্যা →
@@ -836,7 +836,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     if (t("[data-review-pdf]")) {
       const sh = examSheet(exById(S.examId), { reviewOnly: true });
       if (!sh.body.length) return toast("নম্বর বা অনুপস্থিতি এখনো দেওয়া হয়নি", true);
-      return printReport(sh.title, sh.sub, plainTable(sh.head, sh.body));
+      return printReport(sh.title, sh.sub, plainTable(sh.head, sh.body), true);
     }
     if ((el = t("[data-sms-all]"))) return smsBatch("", el);
     if ((el = t("[data-sms-batch]"))) return smsBatch(el.dataset.smsBatch, el);
