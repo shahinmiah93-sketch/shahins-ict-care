@@ -602,7 +602,7 @@ ${list.map(receiptHtml).join("")}
   // ফলাফল ব্যবস্থাপনা (admin-results.js)
   let resultsCtx = null;
   const ensureResults = () => (resultsCtx = resultsCtx || window.SICResults({
-    get DB() { return DB; }, load, printDoc, opt, studentById, batchName, liveSessions,
+    get DB() { return DB; }, load, printDoc, opt, studentById, batchById, batchName, liveSessions,
   }));
   const resultsPage = (c, arg) => ensureResults()(c, arg);
   const evalReport = (id) => { ensureResults(); window.SICEvalReport(id); };
