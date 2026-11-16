@@ -249,7 +249,7 @@ window.SICExams = function (X) {
     return '<strong>' + esc(match[1]) + '</strong><br><span class="ek-batch-time">' + esc(match[2]) + '</span>';
   }
   function idEntry(ex) {
-    return `<div class="ex-id"><label>শিক্ষার্থীর রোল / আইডি<input data-id-input inputmode="numeric" placeholder="যেমন: ${esc((ex.studentIds || [])[0] || "270001")}" value="${esc(idSid)}" autocomplete="off"></label><button type="button" class="btn" data-id-find>শিক্ষার্থী খুঁজুন</button></div><div data-id-result>${idEntryResult(ex)}</div>`;
+    return `<div class="ex-id"><label>রোল, নাম বা মোবাইল নম্বর<input data-id-input placeholder="রোল, নাম বা মোবাইল নম্বর" value="${esc(idSid)}" autocomplete="off"></label><button type="button" class="btn" data-id-find>শিক্ষার্থী খুঁজুন</button></div><div data-id-result>${idEntryResult(ex)}</div>`;
   }
   function idEntryResult(ex) {
     const ps = EC.parts(ex), s = idSid && X.studentById(idSid), inEx = s && (ex.studentIds || []).includes(s.id);
@@ -262,7 +262,7 @@ window.SICExams = function (X) {
         <div class="ex-idmarks">${ps.map((p, j) => `<label>${esc(p.subject)} ${p.part.toUpperCase()} <small>/ ${bn(p.full)}</small>${markInput(p, j, cell, lockedFor(ex, s.id))}</label>`).join("")}${absentBox(cell, lockedFor(ex, s.id))}</div>
         ${lockedFor(ex, s.id) ? '<p class="ex-msg" style="flex-basis:100%">এই শিক্ষার্থীর ফলাফল প্রকাশিত — বদলাতে উপরের "✎ সংশোধন চালু করুন" চাপুন।</p>' : ""}
         <button type="button" class="btn gold" data-save-id>✓ সেভ করুন (Enter)</button></div>`
-        : !idSid ? '<p class="ex-hint">পুরো রোল লিখলে নাম দেখা যাবে। নম্বর লিখে Enter চাপলে সেভ হবে।</p>' : ""}
+        : !idSid ? '<p class="ex-hint">রোল, নাম বা মোবাইল নম্বর দিয়ে খুঁজুন। নম্বর লিখে Enter চাপলে সেভ হবে।</p>' : ""}
       ${mine.length ? `<h4 class="ex-rh">এইমাত্র সেভ হলো (${bn(mine.length)})</h4><div class="ex-recent">${mine.slice(0, 12).map((r) => `<span><b>${esc(r.sid)}</b> ${esc(r.name)} — ${r.total} ${passChip(EC.studentResult(ex, r.sid))}</span>`).join("")}</div>` : ""}`;
   }
   function rankingTable(ex) {
@@ -337,12 +337,29 @@ window.SICExams = function (X) {
     const ex = exById(S.examId), result = $("[data-id-result]", C);
     if (!ex || !result) return;
     const typed = enNum(input.value).toUpperCase();
-    const sid = submitted || X.studentById(typed) ? typed : "";
-    if (sid !== idSid) {
-      if (!leaveOk()) { input.value = idSid; return; }
-      idSid = sid;
-      dirty = false;
-      result.innerHTML = idEntryResult(ex);
+    const exact = typed && X.studentById(typed);
+    const digits = (value) => enNum(value).replace(/\D/g, "");
+    const phoneQuery = /^[+\d\s()-]+$/.test(typed) ? digits(typed) : "";
+    const matches = !exact && typed.length >= 2 ? (ex.studentIds || []).map(X.studentById).filter((student) => {
+      if (!student) return false;
+      if (!phoneQuery) return [student.name, student.nameEn].some((name) => enNum(name).toUpperCase().includes(typed));
+      return [student.phone, student.phone2, student.guardianPhone, student.fatherPhone, student.motherPhone]
+        .some((phone) => phoneQuery.length >= 3 && digits(phone).replace(/^88(?=01\d{9}$)/, "").includes(phoneQuery.replace(/^88(?=01\d{9}$)/, "")));
+    }) : [];
+    const sid = exact ? exact.id : matches.length === 1 ? matches[0].id : "";
+    const selectionChanged = sid !== idSid;
+    if (selectionChanged && !leaveOk()) { input.value = idSid; return; }
+    if (selectionChanged) dirty = false;
+    idSid = sid;
+    if (selectionChanged || !sid) {
+      if (matches.length > 1) {
+        result.innerHTML = '<div class="ex-recent">' + matches.slice(0, 30).map((student) =>
+          '<button type="button" class="btn line" data-id-match="' + esc(student.id) + '">' + esc(student.name) + ' · ' + esc(student.id) + '</button>').join("") + '</div>';
+      } else {
+        result.innerHTML = !sid && submitted && typed
+          ? '<p class="ex-msg">এই পরীক্ষার তালিকায় কোনো মিল পাওয়া যায়নি।</p>'
+          : idEntryResult(ex);
+      }
     }
     if (submitted) ($(".ex-idcard .mk:not(:disabled)", result) || input).focus();
   }
@@ -700,6 +717,11 @@ window.SICExams = function (X) {
       S.correct[S.examId] = why; toast("সংশোধন চালু — নম্বর বদলে সেভ করুন, ইতিহাসে কারণসহ থাকবে"); return render();
     }
     if (t("[data-correct-end]")) { if (!leaveOk()) return; dirty = false; delete S.correct[S.examId]; return render(); }
+    if ((el = t("[data-id-match]"))) {
+      const input = $("[data-id-input]", C);
+      input.value = el.dataset.idMatch;
+      return findId();
+    }
     if (t("[data-id-find]")) return findId();
     if (t("[data-save-id]")) return saveId();
     if ((el = t("[data-sub]"))) { S.sub = el.dataset.sub; return render(); }
