@@ -2776,28 +2776,45 @@ async function api(req, res, url) {
       return send(res, 404, { error: "ফলাফল শিট পাওয়া যায়নি" });
 
     const students = new Map(db.students.map((student) => [student.id, student]));
-    const batches = new Map(db.batches.map((batch) => [batch.id, batch.name]));
+    const batches = new Map(db.batches.map((batch) => [batch.id, batch]));
     const parts = EC.parts(ex);
-    const escape = receiptEscape;
-    const cell = (value) => "<td>" + escape(value) + "</td>";
-    const number = (value) => value == null ? "—" : EC.round2(value).toLocaleString("bn-BD");
-    const rows = EC.results(ex).rows.map((row) => {
+    const number = (value) => value == null ? "—" : bnNum(EC.round2(value));
+    const ranks = new Map();
+    const byBatch = new Map();
+    const results = EC.results(ex);
+    for (const row of results.present) {
+      const batchId = students.get(row.sid)?.batchId;
+      if (!row.pass || !batchId || !ex.published[batchId]) continue;
+      if (!byBatch.has(batchId)) byBatch.set(batchId, []);
+      byBatch.get(batchId).push(row);
+    }
+    for (const rows of byBatch.values()) {
+      let rank = 0, previous = null;
+      rows.forEach((row, index) => {
+        const score = Math.round((row.total + row.cq / 1e4) * 100);
+        if (score !== previous) rank = index + 1;
+        previous = score;
+        ranks.set(row.sid, rank);
+      });
+    }
+    const body = results.rows.filter((row) => isPublishedFor(ex, students.get(row.sid))
+      && (!row.absent || ((ex.marks || {})[row.sid] || []).some(EC.isAbsent))).map((row) => {
       const student = students.get(row.sid);
-      if (!isPublishedFor(ex, student) || (row.absent && !((ex.marks || {})[row.sid] || []).some(EC.isAbsent))) return "";
-      return "<tr>" + [number(row.rank), student.name, batches.get(student.batchId) || "—",
+      return [number(row.rank), number(ranks.get(row.sid)), row.sid, student.name, batchLabel(batches.get(student.batchId)) || "—",
         ...parts.map((part) => row.absent ? "—" : number(row.scores[part.key])),
-        number(row.total), row.absent ? "—" : number(row.percent) + "%",
-        row.absent ? "অনুপস্থিত" : row.pass ? "পাস" : "ফেল"].map(cell).join("") + "</tr>";
-    }).join("");
-    const headings = ["মেধাক্রম", "নাম", "ব্যাচ", ...parts.map((part) => part.subject + " " + part.part.toUpperCase()), "মোট", "%", "ফলাফল"];
+        number(row.total), row.absent ? "—" : bnNum(Math.round(row.percent)) + "%",
+        row.absent ? "অনুপস্থিত" : row.pass ? "পাস" : "ফেল"];
+    });
+    const head = ["সেশন মেধা", "ব্যাচ মেধা", "আইডি", "নাম", "ব্যাচ", ...parts.map((part) => part.subject + " " + part.part.toUpperCase()), "মোট", "%", "ফলাফল"];
+    const title = ex.title + " — রেজাল্ট শিট";
+    const sub = EC.typeName(ex.type) + " · " + (ex.date ? receiptDate(ex.date) : "—") + " · পূর্ণমান " + number(EC.fullOf(ex));
+    const { nameBn, address, phone } = db.settings;
+    const data = Buffer.from(JSON.stringify({ sheet: { title, sub, head, body }, settings: { nameBn, address, phone } })).toString("base64");
+    const nonce = crypto.randomBytes(18).toString("base64");
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'",
+      "Content-Security-Policy": "default-src 'none'; script-src 'self' 'nonce-" + nonce + "'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self'; frame-ancestors 'none'",
       "X-Robots-Tag": "noindex, nofollow" });
-    return res.end('<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
-      + escape(ex.title) + ' — ফলাফল শিট</title><style>body{font:15px system-ui,sans-serif;color:#113c33;background:#f1f6f3;margin:0;padding:16px}main{max-width:980px;margin:auto;background:white;padding:20px;border-radius:14px}header{text-align:center;margin-bottom:20px}img{width:85px}h1{font-size:23px;margin:8px 0}p{margin:5px 0}.table{overflow:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border:1px solid #d5e5dd}th{background:#17634e;color:white}tbody tr:nth-child(even){background:#f2f8f5}@media print{body{background:white;padding:0}main{padding:0}thead{display:table-header-group}tr{break-inside:avoid}th{color:#113c33;background:#e6f2ec}}</style><main><header><img src="/images/logo-receipt.png" alt=""><p>শাহিন’স আইসিটি কেয়ার</p><h1>'
-      + escape(ex.title) + ' — ফলাফল শিট</h1><p>' + escape(receiptDate(ex.date)) + ' · পূর্ণমান ' + number(EC.fullOf(ex))
-      + '</p></header><div class="table"><table><thead><tr>' + headings.map((heading) => '<th scope="col">' + escape(heading) + '</th>').join("")
-      + '</tr></thead><tbody>' + (rows || '<tr><td colspan="' + headings.length + '">প্রকাশিত নম্বর বা অনুপস্থিতির এন্ট্রি নেই।</td></tr>') + '</tbody></table></div></main></html>');
+    return res.end('<!doctype html><html lang="bn"><meta charset="utf-8"><title>ফলাফল শিট</title><body><script src="/js/common.js?v=shared-review-sheet"></script><script src="/js/student-result-sheet.js" data-sheet="' + data + '" nonce="' + nonce + '"></script></body></html>');
   }
   const sdm = p.match(/^\/api\/student\/docs\/([\w-]+)\/file$/);
   if (sdm && m === "GET") {

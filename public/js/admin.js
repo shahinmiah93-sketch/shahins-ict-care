@@ -312,21 +312,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
   function printDoc(title, html) {
     const w = window.open("", "_blank");
     if (!w) return toast("পপ-আপ বন্ধ আছে — ব্রাউজারে পপ-আপের অনুমতি দিন", true);
-    w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><title>${esc(title)}</title>${U.DOC_FONTS}
-      <style>${U.DOC_CSS}*{box-sizing:border-box}@page{size:A4;margin:9mm}body{font-family:"BnNum","Hind Siliguri","Nirmala UI",sans-serif;color:#1d2b28;margin:0;background:#eef2f0;font-size:13px}
-      .pg{max-width:200mm;margin:14px auto;background:#fff;padding:8mm;box-shadow:0 4px 18px rgba(0,0,0,.08)}
-      h1,h2{font-family:"Hind Siliguri","Nirmala UI",sans-serif;margin:0;color:#0b2e28}h1{font-size:20px}h3{color:#0b2e28}
-      table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}th,td{border:1px solid #d6e3de;padding:6px 9px;text-align:left}
-      th{background:#1f6b52;color:#fff;font-weight:700}tbody tr:nth-child(even) td{background:#f5f9f7}thead{display:table-header-group}tr{break-inside:avoid}
-      .r{text-align:right}.big{font-size:22px;font-weight:700}
-      .sign{display:flex;justify-content:space-between;gap:12mm;margin-top:16mm}.sign span{flex:0 0 52mm;border-top:1.2px solid #1d2b28;padding-top:1.5mm;text-align:center;font-weight:600}
-      .card{width:54mm;height:85.6mm;border:1px solid #ccc;border-radius:10px;overflow:hidden;text-align:center;display:inline-block;vertical-align:top;margin:6px;font-size:11px}
-      .card .t{background:linear-gradient(150deg,#0b3b36,#071f3a);color:#fff;padding:8px 4px}.card .t img{display:block;width:56px;margin:0 auto 2px}.card .t b{display:block;font-size:12px}.card .t .ct{display:block;font-size:10px;line-height:1.3;color:#f3c55d}.card .t .lb{display:inline-block;margin-top:6px;padding:2px 10px;border:1px solid #f8dc91;border-radius:999px;background:#f5d47f;color:#143e42;font-size:10px;font-weight:700;line-height:1.5}
-      .card .ph{width:48px;height:48px;border-radius:14px;background:#f3c55d;margin:8px auto 4px;display:grid;place-items:center;font-size:26px;font-weight:700;overflow:hidden}
-      .card .card-sign{display:flex;flex-direction:column;align-items:center;margin:0 8px 4px}.card-sign img{height:14px;width:auto;max-width:68px;object-fit:contain}.card-sign span{border-top:1px solid #7b9390;min-width:90px;font-size:9px;padding-top:2px}
-      .card h3{margin:2px;font-size:13px}.card .id{font-family:'Hind Siliguri','Nirmala UI',sans-serif;font-weight:700;color:#b07d1c}.card dl{display:grid;grid-template-columns:auto 1fr;gap:1px 6px;text-align:left;padding:6px 8px;margin:0}.card dt{color:#5d7570}.card dd{margin:0;font-weight:600}
-      @media print{body{background:#fff}.pg{margin:0;padding:0;box-shadow:none;max-width:none}button{display:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}${U.PRINT_BAR_CSS}</style></head><body>${U.PRINT_BAR}
-      <main class="pg">${U.docHead(title, DB.settings)}${html}${U.docFoot(DB.settings)}</main></body></html>`);
+    w.document.write(U.printDocument(title, html, DB.settings));
     w.document.close();
   }
   // স্টুডেন্ট রিপোর্ট — একজন শিক্ষার্থীর সব কিছুর সারাংশ এক জায়গায় (A4, প্রিভিউ থেকে প্রিন্ট / PDF):
