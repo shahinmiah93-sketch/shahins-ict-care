@@ -3449,10 +3449,14 @@ async function api(req, res, url) {
   if (p === "/api/admin/results/sms-plan" && m === "POST") {
     const b = await readBody(req), ex = db.exams.find((e) => e.id === str(b.examId, 60)), batchId = str(b.batchId, 60);
     if (!ex) return send(res, 404, { error: "পরীক্ষা পাওয়া যায়নি" });
-    if (!(ex.published || {})[batchId]) return send(res, 400, { error: "আগে এই ব্যাচের ফলাফল Publish করুন" });
+    const published = ex.published || {};
+    const batches = b.all === true ? Object.keys(published).filter((id) => published[id]) : published[batchId] ? [batchId] : [];
+    if (!batches.length) return send(res, 400, { error: "আগে ফলাফল Publish করুন" });
     if (!smsOn()) return send(res, 400, { error: "SMS সার্ভিস চালু নেই" });
     const out = { todo: [], numbers: 0, got: 0, pending: 0, noPhone: 0, off: 0 };
-    for (const s of db.students.filter((x) => x.batchId === batchId && ((ex.studentIds || []).includes(x.id) || (ex.marks || {})[x.id]))) {
+    const batchSet = new Set(batches);
+    const studentSet = new Set(ex.studentIds || []);
+    for (const s of db.students.filter((x) => batchSet.has(x.batchId) && (studentSet.has(x.id) || (ex.marks || {})[x.id]))) {
       if (s.status === "inactive") { out.off++; continue; }
       const r = resultSmsOf(ex, s);
       if (!r) { out.pending++; continue; }

@@ -182,6 +182,7 @@ window.SICResults = function (X) {
           <button type="button" class="btn ${ver ? "rs-done" : "line"}" data-verify>${ver ? "✓ যাচাই হয়েছে" : "✓ Verify"}</button>
           <button type="button" class="btn ${st === "full" ? "rs-done" : "gold"}" data-publish${st === "full" ? " disabled" : ""}>${st === "full" ? "✓ প্রকাশিত" : st === "part" ? "বাকি ব্যাচে Publish" : "Publish"}</button>
           <button type="button" class="btn line danger" data-unpublish${st === "draft" || st === "none" ? " disabled" : ""}>Unpublish Result</button>
+          ${pubState(ex).pub.length ? '<button type="button" class="btn gold" data-sms-all>সব প্রকাশিত ব্যাচে SMS</button>' : ""}
           <a class="btn line" href="#exams/${ex.id}">✎ নম্বর এন্ট্রি</a></div>`;
       })()}
       <div class="tbl-wrap"><table class="exam-entry-table"><thead><tr><th>ব্যাচ</th><th class="num">শিক্ষার্থী</th><th class="num">নম্বর দেওয়া</th><th class="num">অনুপস্থিত</th><th class="num">বাকি</th><th class="num">পাস</th><th class="num">ফেল</th><th>অবস্থা</th><th></th></tr></thead><tbody>
@@ -203,10 +204,10 @@ window.SICResults = function (X) {
   async function smsBatch(batchId, btn) {
     const ex = exById(S.examId); if (!ex) return;
     try {
-      const pl = await api("/api/admin/results/sms-plan", { body: { examId: ex.id, batchId } });
+      const pl = await api("/api/admin/results/sms-plan", { body: { examId: ex.id, batchId, all: !batchId } });
       const skip = [pl.got && `আগে পেয়েছে ${bn(pl.got)} জন`, pl.pending && `নম্বর বাকি ${bn(pl.pending)} জন`, pl.off && `পড়া বন্ধ ${bn(pl.off)} জন`, pl.noPhone && `মোবাইল নেই ${bn(pl.noPhone)} জন`].filter(Boolean).join(", ");
       if (!pl.todo.length) return toast(skip ? `পাঠানোর মতো কেউ নেই — ${skip}` : "পাঠানোর মতো কেউ নেই", true);
-      if (!confirm(`${ex.title} — ব্যাচ ${X.batchName(batchId)}\n\n${bn(pl.todo.length)} জনের ফলাফল ${bn(pl.numbers)}টি নম্বরে যাবে (শিক্ষার্থী ও অভিভাবক)। প্রতিটার জন্য SMS ব্যালেন্স কাটবে।${skip ? `\n\nবাদ যাবে: ${skip}` : ""}\n\nপাঠাবেন?`)) return;
+      if (!confirm(`${ex.title} — ${batchId ? "ব্যাচ " + X.batchName(batchId) : "পরীক্ষার সব প্রকাশিত ব্যাচ"}\n\n${bn(pl.todo.length)} জনের ফলাফল ${bn(pl.numbers)}টি নম্বরে যাবে (শিক্ষার্থী ও অভিভাবক)। প্রতিটার জন্য SMS ব্যালেন্স কাটবে।${skip ? `\n\nবাদ যাবে: ${skip}` : ""}\n\nপাঠাবেন?`)) return;
       const label = btn.textContent, failed = [];
       let ok = 0, inRow = 0, why = "";
       btn.disabled = true;
@@ -827,6 +828,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
       if (S.scope === "batch" && !S.scopeBatch) return toast("কোন ব্যাচ — বেছে নিন", true);
       return publish(t("[data-publish]") ? "publish" : "unpublish", S.scope === "batch" ? [S.scopeBatch] : all);
     }
+    if ((el = t("[data-sms-all]"))) return smsBatch("", el);
     if ((el = t("[data-sms-batch]"))) return smsBatch(el.dataset.smsBatch, el);
     if ((el = t("[data-pub-one]"))) return publish("publish", [el.dataset.pubOne]);
     if ((el = t("[data-unpub-one]"))) return publish("unpublish", [el.dataset.unpubOne]);
