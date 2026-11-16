@@ -182,6 +182,7 @@ window.SICResults = function (X) {
           <button type="button" class="btn ${ver ? "rs-done" : "line"}" data-verify>${ver ? "✓ যাচাই হয়েছে" : "✓ Verify"}</button>
           <button type="button" class="btn ${st === "full" ? "rs-done" : "gold"}" data-publish${st === "full" ? " disabled" : ""}>${st === "full" ? "✓ প্রকাশিত" : st === "part" ? "বাকি ব্যাচে Publish" : "Publish"}</button>
           <button type="button" class="btn line danger" data-unpublish${st === "draft" || st === "none" ? " disabled" : ""}>Unpublish Result</button>
+          <button type="button" class="btn line" data-review-pdf>ফলাফল শিট PDF</button>
           ${pubState(ex).pub.length ? '<button type="button" class="btn gold" data-sms-all>সব প্রকাশিত ব্যাচে SMS</button>' : ""}
           <a class="btn line" href="#exams/${ex.id}">✎ নম্বর এন্ট্রি</a></div>`;
       })()}
@@ -236,14 +237,18 @@ window.SICResults = function (X) {
   }
 
   // ================= Result Sheets =================
-  function examSheet(ex) {
+  function examSheet(ex, { reviewOnly = false } = {}) {
     const ps = EC.parts(ex), R = resOf(ex);
     const bRank = new Map(); // ব্যাচের ভেতরে মেধাক্রম (শুধু পাস)
     for (const b of exBatches(ex)) rankBy(R.rows.filter((r) => !r.absent && r.pass && batchOf(r.sid) === b).map((r) => ({ sid: r.sid, v: r.total + r.cq / 1e4 })), "v").forEach((x) => bRank.set(x.sid, x.vRank));
     let rows = R.rows.filter((r) => !S.f.batch || batchOf(r.sid) === S.f.batch);
+    if (reviewOnly) {
+      const batches = new Set(reviewBatches(ex));
+      rows = rows.filter((r) => batches.has(batchOf(r.sid)) && (!r.absent || isAbs(ex, r.sid)));
+    }
     rows = sortRows(rows.map((r) => ({ ...r, id: r.sid, name: stu(r.sid).name, merit: r.rank ? -r.rank : -1e9, val: r.absent ? -1 : r.total })));
     const head = ["সেশন মেধা", "ব্যাচ মেধা", "আইডি", "নাম", "ব্যাচ", ...ps.map((p) => `${p.subject} ${p.part.toUpperCase()}`), "মোট", "%", "ফলাফল"];
-    const body = rows.filter(hit).map((r) => [r.rank ? bn(r.rank) : "—", bRank.has(r.sid) ? bn(bRank.get(r.sid)) : "—", r.sid, r.name, X.batchName(batchOf(r.sid)), ...ps.map((p) => (r.absent ? "—" : num2(r.scores[p.key]))), r.absent ? "—" : num2(r.total), r.absent ? "—" : bn(Math.round(r.percent)) + "%", r.absent ? "অনুপস্থিত" : r.pass ? "পাস" : "ফেল"]);
+    const body = (reviewOnly ? rows : rows.filter(hit)).map((r) => [r.rank ? bn(r.rank) : "—", bRank.has(r.sid) ? bn(bRank.get(r.sid)) : "—", r.sid, r.name, X.batchName(batchOf(r.sid)), ...ps.map((p) => (r.absent ? "—" : num2(r.scores[p.key]))), r.absent ? "—" : num2(r.total), r.absent ? "—" : bn(Math.round(r.percent)) + "%", r.absent ? "অনুপস্থিত" : r.pass ? "পাস" : "ফেল"]);
     return { title: `${ex.title} — রেজাল্ট শিট`, sub: `${EC.typeName(ex.type)} · ${U.date(ex.date)} · পূর্ণমান ${bn(EC.fullOf(ex))}${S.f.batch ? " · ব্যাচ " + X.batchName(S.f.batch) : ""}`, head, body, list: [ex] };
   }
   function combinedSheet(kind) {
@@ -827,6 +832,11 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
       if (!all.length) return toast("এই সেশনে প্রকাশের জন্য কোনো ব্যাচ নেই", true);
       if (S.scope === "batch" && !S.scopeBatch) return toast("কোন ব্যাচ — বেছে নিন", true);
       return publish(t("[data-publish]") ? "publish" : "unpublish", S.scope === "batch" ? [S.scopeBatch] : all);
+    }
+    if (t("[data-review-pdf]")) {
+      const sh = examSheet(exById(S.examId), { reviewOnly: true });
+      if (!sh.body.length) return toast("নম্বর বা অনুপস্থিতি এখনো দেওয়া হয়নি", true);
+      return printReport(sh.title, sh.sub, plainTable(sh.head, sh.body));
     }
     if ((el = t("[data-sms-all]"))) return smsBatch("", el);
     if ((el = t("[data-sms-batch]"))) return smsBatch(el.dataset.smsBatch, el);
