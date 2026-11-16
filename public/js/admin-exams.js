@@ -244,17 +244,20 @@ window.SICExams = function (X) {
       <tbody>${studs.map((s) => { const cell = ((ex.marks || {})[s.id] || [])[S.attempt] || {}; const lk = lockedFor(ex, s.id); return `<tr data-sid="${esc(s.id)}"${lk ? ' class="ex-locked"' : ""}><td class="ek-id">${lk ? "" : ""}${esc(s.id)}</td><td class="ek-nm">${esc(s.name)}</td><td class="ek-bt">${esc(X.batchName(s.batchId))}</td>${ps.map((p, j) => `<td class="ek-m">${markInput(p, j, cell, lk)}</td>`).join("")}<td class="ek-m ek-ab">${absentBox(cell, lk)}</td><td class="tot ek-t">${cellTotal(cell, ps)}</td><td class="res ek-rs">${passChip(EC.studentResult(ex, s.id))}</td><td class="ek-rk">${rankOf.has(s.id) ? `<span class="ek-pill">${bn(rankOf.get(s.id))}</span>` : "—"}</td></tr>`; }).join("") || `<tr><td colspan="${ps.length + 7}" class="empty">এই পরীক্ষায় কোনো পরীক্ষার্থী নেই — "✎ সম্পাদনা" থেকে যোগ করুন</td></tr>`}</tbody></table></div></div>`;
   }
   function idEntry(ex) {
+    return `<div class="ex-id"><label>শিক্ষার্থীর রোল / আইডি<input data-id-input inputmode="numeric" placeholder="যেমন: ${esc((ex.studentIds || [])[0] || "270001")}" value="${esc(idSid)}" autocomplete="off"></label><button type="button" class="btn" data-id-find>শিক্ষার্থী খুঁজুন</button></div><div data-id-result>${idEntryResult(ex)}</div>`;
+  }
+  function idEntryResult(ex) {
     const ps = EC.parts(ex), s = idSid && X.studentById(idSid), inEx = s && (ex.studentIds || []).includes(s.id);
     const cell = (s && ((ex.marks || {})[s.id] || [])[S.attempt]) || {};
     const mine = recent.filter((r) => r.exam === ex.id && r.a === S.attempt);
-    return `<div class="ex-id"><label>Student Unique ID<input data-id-input inputmode="numeric" placeholder="যেমন: ${esc((ex.studentIds || [])[0] || "270001")}" value="${esc(idSid)}" autocomplete="off"></label><button type="button" class="btn line" data-id-find>খুঁজুন</button></div>
+    return `
       ${idSid && !s ? '<p class="ex-msg">এই আইডির কোনো শিক্ষার্থী নেই।</p>' : ""}
       ${s && !inEx ? `<p class="ex-msg">${esc(s.name)} (${esc(s.id)}) এই পরীক্ষার পরীক্ষার্থী তালিকায় নেই — "✎ সম্পাদনা" থেকে যোগ করুন।</p>` : ""}
       ${s && inEx ? `<div class="ex-idcard"><div class="ex-idwho"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${EC.attemptsOf(ex) > 1 ? " · " + EC.ATTEMPT_NAMES[S.attempt] : ""}</small></div>
         <div class="ex-idmarks">${ps.map((p, j) => `<label>${esc(p.subject)} ${p.part.toUpperCase()} <small>/ ${bn(p.full)}</small>${markInput(p, j, cell, lockedFor(ex, s.id))}</label>`).join("")}${absentBox(cell, lockedFor(ex, s.id))}</div>
         ${lockedFor(ex, s.id) ? '<p class="ex-msg" style="flex-basis:100%">এই শিক্ষার্থীর ফলাফল প্রকাশিত — বদলাতে উপরের "✎ সংশোধন চালু করুন" চাপুন।</p>' : ""}
         <button type="button" class="btn gold" data-save-id>✓ সেভ করুন (Enter)</button></div>`
-        : !idSid ? '<p class="ex-hint">আইডি লিখে Enter চাপুন → নাম দেখে নম্বর দিন → আবার Enter চাপলে সেভ হয়ে পরের আইডির জন্য তৈরি হবে।</p>' : ""}
+        : !idSid ? '<p class="ex-hint">পুরো রোল লিখলে নাম দেখা যাবে। নম্বর লিখে Enter চাপলে সেভ হবে।</p>' : ""}
       ${mine.length ? `<h4 class="ex-rh">এইমাত্র সেভ হলো (${bn(mine.length)})</h4><div class="ex-recent">${mine.slice(0, 12).map((r) => `<span><b>${esc(r.sid)}</b> ${esc(r.name)} — ${r.total} ${passChip(EC.studentResult(ex, r.sid))}</span>`).join("")}</div>` : ""}`;
   }
   function rankingTable(ex) {
@@ -323,9 +326,20 @@ window.SICExams = function (X) {
   }
   function findId() {
     const inp = $("[data-id-input]", C); if (!inp) return;
-    idSid = enNum(inp.value).toUpperCase();
-    focusAfter = X.studentById(idSid) ? ".ex-idcard .mk" : "[data-id-input]";
-    render();
+    updateIdResult(inp, true);
+  }
+  function updateIdResult(input, submitted = false) {
+    const ex = exById(S.examId), result = $("[data-id-result]", C);
+    if (!ex || !result) return;
+    const typed = enNum(input.value).toUpperCase();
+    const sid = submitted || X.studentById(typed) ? typed : "";
+    if (sid !== idSid) {
+      if (!leaveOk()) { input.value = idSid; return; }
+      idSid = sid;
+      dirty = false;
+      result.innerHTML = idEntryResult(ex);
+    }
+    if (submitted) ($(".ex-idcard .mk:not(:disabled)", result) || input).focus();
   }
 
   // ================= ডকুমেন্টস =================
@@ -730,6 +744,7 @@ window.SICExams = function (X) {
   let warnAt = 0;
   function onInput(e) {
     const el = e.target;
+    if (el.matches("[data-id-input]")) return updateIdResult(el);
     if (el.matches(".mk")) {
       // শুধু সংখ্যা (দশমিকসহ, ২ ঘর পর্যন্ত; জিকে ও বিশেষ পরীক্ষায় মাইনাসও), আর পূর্ণমানের বেশি হলে লেখাই যাবে না — আগের মান ফিরে আসে
       const v = enNum(el.value), max = Number(el.dataset.max);
