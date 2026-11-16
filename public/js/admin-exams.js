@@ -292,7 +292,7 @@ window.SICExams = function (X) {
     X.printDoc(`মেধা তালিকা — ${ex.title}`, `<style>.num{text-align:right}th small{display:block;font-weight:400;color:#5d7570}.ex-fail{color:#b4233c;font-weight:700}.chip{font-weight:700}.chip.ok{color:#0b5a4b}.chip.bad{color:#9b1c3c}tr.ex-abs td{color:#888}</style>
       <h1>মেধা তালিকা</h1><p><b>${esc(ex.title)}</b> · ${esc(EC.typeName(ex.type))} · ${U.date(ex.date)} · পূর্ণমান ${bn(EC.fullOf(ex))}${batchesOfEx(ex).length ? " · ব্যাচ " + esc(batchesOfEx(ex).join(", ")) : ""}</p>
       <table><thead>${head}</thead><tbody>${rows || '<tr><td colspan="9">কেউ পাস করেনি</td></tr>'}</tbody></table>
-      <p>অংশ নিয়েছে ${bn(R.stats.sat)} জন · পাস ${bn(R.stats.pass)} জন · ফেল ${bn(R.stats.fail)} জন · অনুপস্থিত ${bn(R.stats.absent)} জন</p><div class="sign"><span></span><span>শিক্ষকের স্বাক্ষর</span></div>`);
+      <p>অংশ নিয়েছে ${bn(R.stats.sat)} জন · পাস ${bn(R.stats.pass)} জন · ফেল ${bn(R.stats.fail)} জন · অনুপস্থিত ${bn(R.stats.absent)} জন</p><div class="sign" style="justify-content:flex-end">${U.sig("শিক্ষকের স্বাক্ষর")}</div>`);
   }
   // ঘরের নম্বর পড়া — ভুল হলে লাল
   function readCells(scope) {
