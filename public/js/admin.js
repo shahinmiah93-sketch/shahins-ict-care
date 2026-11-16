@@ -2555,7 +2555,7 @@ ${list.map(receiptHtml).join("")}
       <p class="bp-hint">যে টাকা দিচ্ছে তার Pay ঘরে টাকা লিখুন — শুধু তাদেরই পেমেন্ট সেভ হবে। Due = মোট বকেয়া থেকে Pay বাদে বাকি।</p>
       <div class="tbl-wrap"><table class="bp-tbl"><thead id="bpHead"></thead><tbody id="bpRows"></tbody></table></div>
       <div class="bp-foot"><span id="bpSum"></span><button type="button" class="btn gold" id="bpSave">সেভ করুন</button></div>`;
-    const studs = () => DB.students.filter((s) => (bpBatch === "*" ? sessBatches().some((b) => b.id === s.batchId) : s.batchId === bpBatch)).sort((a, b) => a.id.localeCompare(b.id));
+    const studs = () => DB.students.filter((s) => (bpBatch === "*" ? sessBatches().some((b) => b.id === s.batchId) : s.batchId === bpBatch)).sort((a, b) => Number(a.status === "inactive") - Number(b.status === "inactive") || a.id.localeCompare(b.id));
     const overdue = (students) => students.filter(s => s.fees.balance > 0);
     const dueTotal = (students) => students.reduce((total, s) => total + s.fees.balance, 0);
     $("#bpDues").onclick = () => {
