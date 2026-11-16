@@ -836,7 +836,9 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     if (t("[data-review-pdf]")) {
       const sh = examSheet(exById(S.examId), { reviewOnly: true });
       if (!sh.body.length) return toast("নম্বর বা অনুপস্থিতি এখনো দেওয়া হয়নি", true);
-      return printReport(sh.title, sh.sub, plainTable(sh.head, sh.body), true);
+      const rows = sh.body.map((row) => row.map((value, index) => index === 4 ? String(value).replace(/\s+(?=\()/, "\n") : value));
+      const style = `<style>.review-sheet th,.review-sheet td{text-align:center;vertical-align:middle}.review-sheet td:nth-child(4){text-align:left;white-space:nowrap}.review-sheet td:nth-child(5){white-space:pre; font-size:.9em}</style>`;
+      return printReport(sh.title, sh.sub, style + `<div class="review-sheet">${plainTable(sh.head, rows)}</div>`, true);
     }
     if ((el = t("[data-sms-all]"))) return smsBatch("", el);
     if ((el = t("[data-sms-batch]"))) return smsBatch(el.dataset.smsBatch, el);
