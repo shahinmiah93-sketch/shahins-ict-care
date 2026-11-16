@@ -1275,3 +1275,14 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 #bpRows tr.bp-inactive > td { background: #f7f8f8; }
 #bpRows tr.bp-inactive > td:first-child { box-shadow: inset 3px 0 #b2bfbb; }
 #bpRows tr:not(.bp-inactive) + tr.bp-inactive > td { border-top: 2px solid #d6dfdc; }
+
+/* Published result score */
+.rx .rx-mid{align-items:center;gap:14px;padding:12px;border:1px solid #e0ebe6;border-radius:14px;background:#f7faf8}
+.rx .rx-ring{flex:none;width:66px;height:66px}
+.rx .rx-ring span{width:52px;height:52px}
+.rx-score{min-width:0}
+.rx-score-label{display:block;color:#41635b;font-size:12px;font-weight:700}
+.rx-score-value{display:flex;align-items:baseline;gap:4px;line-height:1.2;margin:3px 0 6px}
+.rx-score-value b{font-size:30px;color:#103e36}
+.rx-score .rx-rank{display:inline-block;padding:3px 8px;border-radius:8px;background:#e5f1eb;font-size:12px}
+.rx-score .rx-rank.bad{background:#fbe9e7}

@@ -394,7 +394,7 @@ ${inner}
         const p = Math.round(me.percent);
         return `<div class="rx" style="--k:${k}">${head}<span class="rx-res ${me.pass ? "ok" : "bad"}">${me.pass ? "✓ পাস" : "✗ ফেল"}</span></div>
           <div class="rx-mid"><div class="rx-ring" style="--p:${Math.max(0, Math.min(100, p))}"><span>${bn(p)}%</span></div>
-            <div class="rx-score"><span class="rx-rank">প্রাপ্ত নম্বর</span><b>${n2(me.total)}</b><small> / ${bn(r.full)}</small><span class="rx-rank${me.pass ? "" : " bad"}">${me.pass ? (me.rank ? `${me.rank === 1 ? "🏆 " : ""}অবস্থান ${ord(me.rank)} · ${bn(r.of)} জনের মধ্যে` : "অবস্থান —") : "কোনো অংশে পাস নম্বর হয়নি"}</span></div></div>
+            <div class="rx-score"><span class="rx-score-label">প্রাপ্ত নম্বর</span><div class="rx-score-value"><b>${n2(me.total)}</b><small> / ${bn(r.full)}</small></div><span class="rx-rank${me.pass ? "" : " bad"}">${me.pass ? (me.rank ? `${me.rank === 1 ? "🏆 " : ""}অবস্থান ${ord(me.rank)} · ${bn(r.of)} জনের মধ্যে` : "অবস্থান —") : "কোনো অংশে পাস নম্বর হয়নি"}</span></div></div>
           <div class="rx-cmp">${cmpRow("আমার", me.total, r.full, k)}${r.avg !== null && r.avg !== undefined ? cmpRow("ব্যাচের গড়", r.avg, r.full, "#94a3b8") : ""}${r.high !== null && r.high !== undefined ? cmpRow("সর্বোচ্চ", r.high, r.full, "#d9a441") : ""}</div>
           <div class="rx-parts">${detail(r)}</div>${docs}</div>`;
       };
