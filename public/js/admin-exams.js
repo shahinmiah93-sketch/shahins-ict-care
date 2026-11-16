@@ -289,8 +289,20 @@ window.SICExams = function (X) {
   function printRank() {
     const ex = exById(S.examId); if (!ex) return;
     const { head, rows, R } = rankingTable(ex);
+    const batches = batchesOfEx(ex);
     X.printDoc(`মেধা তালিকা — ${ex.title}`, `<style>.num{text-align:right}th small{display:block;font-weight:400;color:#5d7570}.ex-fail{color:#b4233c;font-weight:700}.chip{font-weight:700}.chip.ok{color:#0b5a4b}.chip.bad{color:#9b1c3c}tr.ex-abs td{color:#888}</style>
-      <h1>মেধা তালিকা</h1><p><b>${esc(ex.title)}</b> · ${esc(EC.typeName(ex.type))} · ${U.date(ex.date)} · পূর্ণমান ${bn(EC.fullOf(ex))}${batchesOfEx(ex).length ? " · ব্যাচ " + esc(batchesOfEx(ex).join(", ")) : ""}</p>
+      <style>
+        .rank-meta{margin:0 0 12px;padding:10px 12px;background:#f3f8f6;border:1px solid #d6e5df;border-radius:6px;break-inside:avoid}
+        .rank-meta h2{margin:0 0 4px;font-size:16px;color:#0b3b36}
+        .rank-meta p{margin:0}
+        .rank-batches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 14px;margin:6px 0 0;padding:6px 0 0;border-top:1px solid #d6e5df;list-style:none}
+        .rank-batches li{margin:0;font-size:11px;line-height:1.4}
+      </style>
+      <h1>মেধা তালিকা</h1>
+      <div class="rank-meta"><h2>${esc(ex.title)}</h2>
+        <p>${esc(EC.typeName(ex.type))} · ${U.date(ex.date)} · পূর্ণমান ${bn(EC.fullOf(ex))}</p>
+        ${batches.length ? `<ul class="rank-batches" aria-label="ব্যাচ">${batches.map((label) => "<li>" + esc(label) + "</li>").join("")}</ul>` : ""}
+      </div>
       <table><thead>${head}</thead><tbody>${rows || '<tr><td colspan="9">কেউ পাস করেনি</td></tr>'}</tbody></table>
       <p>অংশ নিয়েছে ${bn(R.stats.sat)} জন · পাস ${bn(R.stats.pass)} জন · ফেল ${bn(R.stats.fail)} জন · অনুপস্থিত ${bn(R.stats.absent)} জন</p><div class="sign" style="justify-content:flex-end">${U.sig("শিক্ষকের স্বাক্ষর")}</div>`);
   }
