@@ -609,3 +609,8 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .ex-routine-file [data-routine-filename]{overflow-wrap:anywhere}
 .ex-routine-actions .btn{min-height:44px}
 @media(max-width:760px){.ex-routine-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.rs-batch-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:6px;width:clamp(145px,34vw,420px)}
+.rs-batch-card{display:flex;flex-direction:column;gap:2px;padding:5px 8px;border:1px solid #dce6e3;border-radius:8px;background:#f4f7f6;color:#173d35}
+.rs-batch-card small{margin:0;color:#425955;font-size:.8em}
+.rs-batch-card.is-published{background:#e5f5eb;border-color:#a7d6b8}
