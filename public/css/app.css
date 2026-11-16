@@ -1272,6 +1272,6 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .fee-edit-form #dscRes:empty { display: none; }
 @media (max-width: 430px) { .fee-edit-form .fgrid { grid-template-columns: minmax(0, 1fr); } }
 
-#bpRows tr.bp-inactive > td { background: #f0edf7; }
-#bpRows tr.bp-inactive > td:first-child { box-shadow: inset 3px 0 #9a87b4; }
-#bpRows tr:not(.bp-inactive) + tr.bp-inactive > td { border-top: 2px solid #c9bdd9; }
+#bpRows tr.bp-inactive > td { background: #f7f8f8; }
+#bpRows tr.bp-inactive > td:first-child { box-shadow: inset 3px 0 #b2bfbb; }
+#bpRows tr:not(.bp-inactive) + tr.bp-inactive > td { border-top: 2px solid #d6dfdc; }
