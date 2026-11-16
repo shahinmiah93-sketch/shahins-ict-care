@@ -594,7 +594,7 @@ window.SICExams = function (X) {
     $("[data-btitle]", dlg).textContent = ex ? "পরীক্ষা সম্পাদনা" : "নতুন পরীক্ষা";
     $("[data-bsave]", dlg).textContent = ex ? "সংরক্ষণ করুন" : "OK — নম্বর এন্ট্রি তৈরি করুন";
     $(".ex-berr", dlg).textContent = "";
-    f.session.innerHTML = X.opt([...DB().sessions.map((s) => [s.name, s.name + (s.active === false ? " — বন্ধ" : "")]), ...(DB().sessions.length > 1 ? [["", `উভয় (${DB().sessions.map((s) => s.name).join(" + ")})`]] : [])], session);
+    f.session.innerHTML = X.opt([...DB().sessions.map((s) => [s.name, s.name + (s.active === false ? " — বন্ধ" : "")]), ...(DB().sessions.length > 1 ? [["", "উভয়"]] : [])], session);
     // ফর্ম একবারই তৈরি হয়, তাই ধরনের তালিকা প্রতিবার এই ট্যাব অনুযায়ী (মডেল টেস্ট ট্যাবে শুধু Model Test)
     const typeNow = ex ? ex.type : S.only || S.f.type || "weekly";
     f.type.innerHTML = X.opt(EC.TYPES.filter(([k]) => k === typeNow || TYPES_HERE().some(([h]) => h === k)), typeNow);
