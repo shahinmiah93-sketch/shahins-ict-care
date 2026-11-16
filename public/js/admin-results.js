@@ -110,7 +110,7 @@ window.SICResults = function (X) {
     if (!C) return;
     cache = new Map();
     const tabs = [["eval", "মূল্যায়ন"], ["review", "Review & Publish"], ["sheets", "Overall Result Sheet"], ["profile", "Individual Result"], ["merit", "Merit Lists"], ["perf", "Performance"], ["quiz", "Online Quiz"], ["talent", "Talent Hunt"], ["reports", "Reports & PDF"]];
-    const all = exams({ anyType: true, batch: "" }), st = all.map(pubState);
+    const all = exams({ anyType: true, batch: "" }), st = all.map((ex) => pubState(ex, reviewBatches(ex)));
     C.innerHTML = `<div class="ex-page rs-page">
       <section class="ln-banner"><div><span class="eyebrow">Shahin's ICT Care • Academic Control Center</span><h2>ফলাফল ব্যবস্থাপনা</h2>
         <p>নম্বর যাচাই করে ব্যাচ ধরে ফলাফল প্রকাশ বা প্রত্যাহার, রেজাল্ট শিট, মেধাতালিকা, শিক্ষার্থীর অগ্রগতি আর প্রিন্টযোগ্য রিপোর্ট — এক জায়গায়। পরীক্ষা তৈরি আর নম্বর এন্ট্রি <a href="#exams" style="color:#ffe6a8">পরীক্ষা</a> পেজে।</p>
