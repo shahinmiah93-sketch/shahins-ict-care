@@ -202,7 +202,7 @@ window.SICExams = function (X) {
       <div class="ex-etop">
         <label class="grow">পরীক্ষা<select data-pick-exam>${list.map((e) => `<option value="${e.id}"${e.id === ex.id ? " selected" : ""}>${esc(U.examLabel(e))}</option>`).join("")}</select></label>
         ${n > 1 ? `<label>কোন বারের নম্বর<select data-pick-attempt>${EC.ATTEMPT_NAMES.map((t, a) => `<option value="${a}"${a === S.attempt ? " selected" : ""}>${t}${a === 0 ? " — প্রথম পরীক্ষা" : " — মানোন্নয়ন"}${dateOf(ex, a) ? " (" + U.date(dateOf(ex, a)) + ")" : ""}</option>`).join("")}</select></label>` : ""}
-        <div class="ex-eact"><button type="button" class="btn line sm" data-edit-exam="${ex.id}">✎ সম্পাদনা</button><button type="button" class="btn line sm" data-open="${ex.id}~${S.attempt}">পরীক্ষার পাতা</button><button type="button" class="btn line sm" data-print-rank>Print / PDF</button><button type="button" class="btn line sm danger" data-del-exam="${ex.id}" title="পরীক্ষা মুছুন">✕</button></div>
+        <div class="ex-eact"><button type="button" class="btn line sm" data-edit-exam="${ex.id}">✎ সম্পাদনা</button><button type="button" class="btn line sm" data-open="${ex.id}~${S.attempt}">পরীক্ষার পাতা</button><button type="button" class="btn line sm" data-print-rank>Print / PDF</button><button type="button" class="btn line sm danger" data-del-exam="${ex.id}" title="পরীক্ষা মুছুন" aria-label="পরীক্ষা মুছুন">✕</button></div>
       </div>
       <div class="ex-head">${typeChip(ex.type)}<b>${esc(ex.title)}</b><small>${[U.date(ex.date), modeName(ex.mode), EC.sessionName(ex), batchesOfEx(ex).join(", "), ex.chapter].filter(Boolean).map(esc).join(" · ")}</small></div>
       <div class="ex-pass">${pass}</div>
