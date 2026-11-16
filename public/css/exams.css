@@ -464,7 +464,7 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .ek-sheet .mk::placeholder{color:#b8c4bf}
 .ek-sheet .ex-abs-t{justify-content:center}
 .ek-sheet tr.ex-locked td{opacity:.8}
-.ek-sheet{min-width:0}.ek-sheet .mk{min-width:60px}.ek-sheet td.ek-nm{min-width:220px;white-space:nowrap}.ek-sheet th{padding:12px 7px}.ek-sheet td.ek-t{min-width:64px}.ek-sheet th.ek-r,.ek-sheet td.ek-rk{min-width:62px}
+.ek-sheet{min-width:0}.ek-sheet .mk{min-width:60px}.ek-sheet td.ek-nm{min-width:200px;white-space:nowrap}.ek-sheet th{padding:12px 7px}.ek-sheet td.ek-t{min-width:64px}.ek-sheet th.ek-r,.ek-sheet td.ek-rk{min-width:62px}
 /* ---------- অ্যাডমিন: ফটো গ্যালারি ---------- */
 .gl-up-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start}
 .gl-drop{display:grid;place-items:center;gap:4px;min-height:190px;padding:16px;border:2px dashed #9ec5bb;border-radius:16px;background:linear-gradient(160deg,#f0faf6,#eef5ff);cursor:pointer;text-align:center;color:#0b3b36}
