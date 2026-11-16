@@ -487,7 +487,7 @@ window.SICExams = function (X) {
         </div>
         <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>বিষয় ও পূর্ণমান</b><small>প্রতিটি বিষয়ে CQ/MCQ রাখা বা বাদ দেওয়া যাবে</small></div><button type="button" class="btn line" data-add-subject>＋ বিষয় যোগ করুন</button></div><div class="exam-subject-builder"></div></section>
         <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>পরীক্ষার্থী নির্বাচন</b><small data-pmeta>সেশন অনুযায়ী শিক্ষার্থী দেখানো হবে</small></div><button type="button" class="btn line" data-toggle-all>সব নির্বাচন করুন</button></div>
-          <div class="exam-student-course-filter"></div><div class="exam-student-picker"></div></section>
+          <div class="exam-student-course-filter fgrid"><label>সেশন<select data-picker-session></select></label><label>ব্যাচ<select data-picker-batch></select></label></div><div class="exam-student-picker"></div></section>
       </div>
       <div class="dialog-actions"><span class="ex-berr"></span><button type="button" class="btn line" data-x>Cancel</button><button type="submit" class="btn gold" data-bsave>OK — নম্বর এন্ট্রি তৈরি করুন</button></div></form>`;
     const F = $("form", dlg), rowsBox = $(".exam-subject-builder", dlg);
@@ -503,8 +503,6 @@ window.SICExams = function (X) {
         tg.textContent = on ? "×" : `＋ ${P}`; tg.setAttribute("aria-label", on ? `${P} অংশ বাদ দিন` : `${P} অংশ ফিরিয়ে আনুন`);
         return calcFull();
       }
-      const chip = e.target.closest("[data-pbatch]");
-      if (chip) { B.view = chip.dataset.pbatch; return drawPicker(); }
       if (e.target.closest("[data-toggle-all]")) {
         const shown = pickerList(), allOn = shown.every((s) => B.sel.has(s.id));
         shown.forEach((s) => (allOn ? B.sel.delete(s.id) : B.sel.add(s.id))); return drawPicker();
@@ -514,6 +512,8 @@ window.SICExams = function (X) {
       const t = e.target;
       if (t.name === "mode") { refreshMode(); calcFull(); }
       if (t.name === "type") { onType(); }
+      if (t.matches("[data-picker-session]")) { F().session.value = t.value; F().session.dispatchEvent(new Event("change", { bubbles: true })); return; }
+      if (t.matches("[data-picker-batch]")) { B.view = t.value; drawPicker(); return; }
       if (t.name === "session") { B.view = ""; B.sel = new Set(activeIn(t.value).map((s) => s.id)); drawPicker(); }
       if (t.matches(".exam-student-choice input")) { t.checked ? B.sel.add(t.value) : B.sel.delete(t.value); drawPickerMeta(); }
     });
@@ -570,9 +570,12 @@ window.SICExams = function (X) {
   const pickerList = () => activeIn(F().session.value).filter((s) => !B.view || s.batchId === B.view).sort((a, b) => a.id.localeCompare(b.id));
   function drawPicker() {
     const session = F().session.value, studs = activeIn(session), batches = DB().batches.filter((b) => !session || b.session === session);
-    const cnt = (list) => `${bn(list.filter((s) => B.sel.has(s.id)).length)}/${bn(list.length)}`;
-    $(".exam-student-course-filter", dlg).innerHTML = [["", "সব ব্যাচ", studs], ...batches.map((b) => [b.id, U.batchLabel(b), studs.filter((s) => s.batchId === b.id)])].filter(([k, , l]) => !k || l.length)
-      .map(([k, t, l]) => `<button type="button" data-pbatch="${k}" class="${B.view === k ? "active" : ""}">${esc(t)} <b>${cnt(l)}</b></button>`).join("");
+    const sessionSelect = $("[data-picker-session]", dlg);
+    sessionSelect.innerHTML = F().session.innerHTML;
+    sessionSelect.value = session;
+    const batchSelect = $("[data-picker-batch]", dlg);
+    batchSelect.innerHTML = X.opt([["", "সব ব্যাচ"], ...batches.filter((batch) =>
+      studs.some((student) => student.batchId === batch.id)).map((batch) => [batch.id, U.batchLabel(batch)])], B.view);
     const list = pickerList();
     $(".exam-student-picker", dlg).innerHTML = list.map((s) => `<label class="exam-student-choice"><input type="checkbox" value="${esc(s.id)}"${B.sel.has(s.id) ? " checked" : ""}><span><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small></span></label>`).join("") || '<p class="ex-sub" style="grid-column:1/-1">এই সেশন বা ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই। উপরে সেশন বদলে দেখুন।</p>';
     drawPickerMeta();
@@ -581,8 +584,7 @@ window.SICExams = function (X) {
     const shown = pickerList();
     $("[data-pmeta]", dlg).textContent = `${bn(B.sel.size)} জন নির্বাচিত · ${F().session.value || "উভয়"}${B.view ? " · ব্যাচ " + X.batchName(B.view) : ""}`;
     $("[data-toggle-all]", dlg).disabled = !shown.length;
-    $("[data-toggle-all]", dlg).textContent = shown.length && shown.every((s) => B.sel.has(s.id)) ? "সব বাদ দিন" : "সব নির্বাচন করুন";
-    $$(".exam-student-course-filter [data-pbatch]", dlg).forEach((b) => { const k = b.dataset.pbatch, l = activeIn(F().session.value).filter((s) => !k || s.batchId === k); $("b", b).textContent = `${bn(l.filter((s) => B.sel.has(s.id)).length)}/${bn(l.length)}`; });
+    $("[data-toggle-all]", dlg).textContent = shown.length && shown.every((s) => B.sel.has(s.id)) ? "দেখানো সবাইকে বাদ দিন" : "দেখানো সবাইকে নির্বাচন করুন";
   }
   function openBuilder(ex, date) {
     builderDialog();
