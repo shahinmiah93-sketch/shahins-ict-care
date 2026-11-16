@@ -880,24 +880,61 @@ async function notifyPaymentReceipts(items) {
   if (deliveries.length) saveDb();
 }
 
+function paymentReceiptPdf(rows) {
+  const latin = (value) => String(value).normalize("NFKD").replace(/[^ -~]/g, "").trim();
+  const literal = (value) => latin(value).replace(/[\\()]/g, "\\$&");
+  const stream = "BT /F1 16 Tf 50 785 Td (" + literal(smsBrand()) + ") Tj"
+    + " /F1 24 Tf 0 -38 Td (Money receipt) Tj /F1 12 Tf"
+    + rows.map(([label, value]) => " 0 -32 Td (" + literal(label + ": " + (latin(value) || "-")) + ") Tj").join("")
+    + " ET\n";
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    "<< /Length " + stream.length + " >>\nstream\n" + stream + "endstream",
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = objects.map((object, i) => {
+    const offset = pdf.length;
+    pdf += (i + 1) + " 0 obj\n" + object + "\nendobj\n";
+    return offset;
+  });
+  const xref = pdf.length;
+  pdf += "xref\n0 6\n0000000000 65535 f \n" + offsets.map((offset) => String(offset).padStart(10, "0") + " 00000 n \n").join("")
+    + "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n";
+  return Buffer.from(pdf, "ascii");
+}
+
 function sendPaymentReceipt(res, payment, download) {
   const student = db.students.find((s) => s.id === payment.studentId);
   if (!student) return send(res, 404, { error: "Receipt not found" });
   const escape = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const code = paymentCode(payment);
-  const rows = [
+  const fields = [
     ["Receipt No.", code], ["Payment date", payment.date], ["Student", student.nameEn || student.name],
     ["Student ID", student.id], ["Payment method", payment.method], ["Amount paid", "Tk " + payment.amount],
-  ].map(([label, value]) => "<dt>" + label + "</dt><dd>" + escape(value) + "</dd>").join("");
+  ];
+  if (download) {
+    const pdf = paymentReceiptPdf(fields);
+    res.writeHead(200, {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": 'attachment; filename="receipt-' + code.replace(/[^A-Za-z0-9-]/g, "") + '.pdf"',
+      "Content-Length": pdf.length,
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    return res.end(pdf);
+  }
+  const rows = fields.map(([label, value]) => "<dt>" + label + "</dt><dd>" + escape(value) + "</dd>").join("");
   res.writeHead(200, {
     "Content-Type": "text/html; charset=utf-8",
     "Cache-Control": "private, no-store",
     "Referrer-Policy": "no-referrer",
     "X-Robots-Tag": "noindex, nofollow",
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
-    ...(download ? { "Content-Disposition": 'attachment; filename="receipt-' + code + '.html"' } : {}),
   });
-  res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Money receipt</title><style>body{font:1rem system-ui;color:#123d36;max-width:30rem;margin:2rem auto;padding:0 1rem}main{border:1px solid #c6ded6;border-radius:1rem;padding:1.5rem}dt{font-weight:bold}dd{margin:0 0 .8rem}a{color:#135b4e}@media print{a{display:none}}</style><main><strong>' + escape(smsBrand()) + '</strong><h1>Money receipt</h1><dl>' + rows + '</dl>' + (download ? '' : '<a href="?download=1">Download receipt</a>') + '</main></html>');
+  res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Money receipt</title><style>body{font:1rem system-ui;color:#123d36;max-width:30rem;margin:2rem auto;padding:0 1rem}main{border:1px solid #c6ded6;border-radius:1rem;padding:1.5rem}dt{font-weight:bold}dd{margin:0 0 .8rem}a{color:#135b4e}@media print{a{display:none}}</style><main><strong>' + escape(smsBrand()) + '</strong><h1>Money receipt</h1><dl>' + rows + '</dl>' + (download ? '' : '<a href="?download=1">Download PDF</a>') + '</main></html>');
 }
 
 const smsStudentLogin = (s) => smsLogin(s, `${smsBrand()}: Admission complete. Student ID: ${s.id}, PIN: ${s.pin}. Use these to log in to the Student Panel. Do not share.`, `ভর্তি — আইডি ${s.id}, PIN ••••`, [s.phone, s.guardianPhone]);
