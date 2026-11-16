@@ -574,19 +574,21 @@ window.SICExams = function (X) {
     $(".exam-student-course-filter", dlg).innerHTML = [["", "সব ব্যাচ", studs], ...batches.map((b) => [b.id, U.batchLabel(b), studs.filter((s) => s.batchId === b.id)])].filter(([k, , l]) => !k || l.length)
       .map(([k, t, l]) => `<button type="button" data-pbatch="${k}" class="${B.view === k ? "active" : ""}">${esc(t)} <b>${cnt(l)}</b></button>`).join("");
     const list = pickerList();
-    $(".exam-student-picker", dlg).innerHTML = list.map((s) => `<label class="exam-student-choice"><input type="checkbox" value="${esc(s.id)}"${B.sel.has(s.id) ? " checked" : ""}><span><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small></span></label>`).join("") || '<p class="ex-sub" style="grid-column:1/-1">এই সেশনে / ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই।</p>';
+    $(".exam-student-picker", dlg).innerHTML = list.map((s) => `<label class="exam-student-choice"><input type="checkbox" value="${esc(s.id)}"${B.sel.has(s.id) ? " checked" : ""}><span><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small></span></label>`).join("") || '<p class="ex-sub" style="grid-column:1/-1">এই সেশন বা ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই। উপরে সেশন বদলে দেখুন।</p>';
     drawPickerMeta();
   }
   function drawPickerMeta() {
     const shown = pickerList();
     $("[data-pmeta]", dlg).textContent = `${bn(B.sel.size)} জন নির্বাচিত · ${F().session.value || "উভয়"}${B.view ? " · ব্যাচ " + X.batchName(B.view) : ""}`;
+    $("[data-toggle-all]", dlg).disabled = !shown.length;
     $("[data-toggle-all]", dlg).textContent = shown.length && shown.every((s) => B.sel.has(s.id)) ? "সব বাদ দিন" : "সব নির্বাচন করুন";
     $$(".exam-student-course-filter [data-pbatch]", dlg).forEach((b) => { const k = b.dataset.pbatch, l = activeIn(F().session.value).filter((s) => !k || s.batchId === k); $("b", b).textContent = `${bn(l.filter((s) => B.sel.has(s.id)).length)}/${bn(l.length)}`; });
   }
   function openBuilder(ex, date) {
     builderDialog();
-    const f = F(), session = ex ? ex.session : S.f.session || (X.liveSessions()[0] || {}).name || "";
-    B = { edit: ex || null, view: ex ? "" : S.f.batch || "", sel: new Set() };
+    const f = F(), preferred = S.f.session || X.liveSessions()[0]?.name || "";
+    const session = ex ? ex.session : activeIn(preferred).length ? preferred : (DB().sessions.find((s) => activeIn(s.name).length)?.name || preferred);
+    B = { edit: ex || null, view: !ex && activeIn(session).some((s) => s.batchId === S.f.batch) ? S.f.batch : "", sel: new Set() };
     $("[data-btitle]", dlg).textContent = ex ? "পরীক্ষা সম্পাদনা" : "নতুন পরীক্ষা";
     $("[data-bsave]", dlg).textContent = ex ? "সংরক্ষণ করুন" : "OK — নম্বর এন্ট্রি তৈরি করুন";
     $(".ex-berr", dlg).textContent = "";
