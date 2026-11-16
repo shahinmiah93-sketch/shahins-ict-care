@@ -2589,7 +2589,7 @@ ${list.map(receiptHtml).join("")}
         <tr>${last3().map((mk, i) => `<th class="c bp-m${i}">${U.month(mk)}</th>`).join("")}</tr>`;
       $("#bpRows").innerHTML = students.map((s) => {
         const items = s.fees.items.filter((i) => i.status === "active"), it = items[0];
-        return `<tr data-sid="${s.id}">
+        return `<tr data-sid="${s.id}"${s.status === "inactive" ? ' class="bp-inactive"' : ""}>
           <td class="bp-who"><b>${esc(s.name)}${s.status === "inactive" ? " · নিষ্ক্রিয়" : ""}</b><small>${esc(s.id)}${bpBatch === "*" ? " · " + esc(batchName(s.batchId)) : ""}</small></td>
           <td><select class="bp-enr">${opt([["", "সাধারণ"], ...items.map((i) => [i.enrollmentId, i.course])], it ? it.enrollmentId : "")}</select></td>
           <td class="c bp-fee">${feeCell(it)}</td>${midCells(s, it)}${totCell(s)}
