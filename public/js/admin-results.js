@@ -32,23 +32,27 @@ window.SICResults = function (X) {
   const batchOf = (sid) => (X.studentById(sid) || {}).batchId || "";
   const exBatches = (ex) => [...new Set((ex.studentIds || []).map(batchOf).filter(Boolean))];
   const session = () => S.f.session || (X.liveSessions()[0] || {}).name || "";
+  const inSession = (name) => session() === "*" || name === session();
+  const sessionLabel = () => session() === "*" ? "সব সেশন" : session();
+  const reviewBatches = (ex) => exBatches(ex).filter((id) => inSession(X.batchById(id)?.session));
   const resOf = (ex) => { let r = cache.get(ex.id); if (!r) { r = EC.results(ex); cache.set(ex.id, r); } return r; };
   // পরীক্ষাগুলো: সেশন, ব্যাচ, ধরন অনুযায়ী (সবচেয়ে নতুন আগে)
   const exams = (opt = {}) => DB().exams.filter((e) => {
-    if (e.session && e.session !== session()) return false; // Both দুই সেশনেই দেখায়
+    if (e.session && !inSession(e.session)) return false;
+    if (!e.session && session() !== "*" && !(e.studentIds || []).some((id) => inSession(X.studentById(id)?.session))) return false;
     if (!opt.anyType && S.f.type && e.type !== S.f.type) return false;
     if (opt.type && e.type !== opt.type) return false;
     const b = opt.batch !== undefined ? opt.batch : batchLocked() ? "" : S.f.batch;
     if (b && !exBatches(e).includes(b)) return false;
     return true;
   }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  const students = (batch) => DB().students.filter((s) => s.status !== "inactive" && s.session === session() && (!batch || s.batchId === batch)).sort((a, b) => a.id.localeCompare(b.id));
+  const students = (batch) => DB().students.filter((s) => s.status !== "inactive" && inSession(s.session) && (!batch || s.batchId === batch)).sort((a, b) => a.id.localeCompare(b.id));
   // প্রকাশের অবস্থা
-  function pubState(ex) {
-    const all = exBatches(ex), pub = all.filter((b) => ex.published && ex.published[b]);
+  function pubState(ex, all = exBatches(ex)) {
+    const pub = all.filter((b) => ex.published && ex.published[b]);
     return { all, pub, state: !pub.length ? "draft" : pub.length < all.length ? "partial" : "full" };
   }
-  const stateChip = (ex) => { const p = pubState(ex); return p.state === "full" ? '<span class="chip ok">প্রকাশিত</span>' : p.state === "partial" ? `<span class="chip warn">আংশিক (${bn(p.pub.length)}/${bn(p.all.length)})</span>` : '<span class="chip">Draft</span>'; };
+  const stateChip = (ex, batches) => { const p = pubState(ex, batches); return p.state === "full" ? '<span class="chip ok">প্রকাশিত</span>' : p.state === "partial" ? `<span class="chip warn">আংশিক (${bn(p.pub.length)}/${bn(p.all.length)})</span>` : '<span class="chip">Draft</span>'; };
   // একটা পরীক্ষায় শিক্ষার্থীর শতাংশ: অনুপস্থিত = ০; নম্বর এখনো না দেওয়া = null (গোনা হয় না)
   function pctIn(ex, sid) {
     if (!(ex.studentIds || []).includes(sid)) return null;
@@ -110,7 +114,7 @@ window.SICResults = function (X) {
     C.innerHTML = `<div class="ex-page rs-page">
       <section class="ln-banner"><div><span class="eyebrow">Shahin's ICT Care • Academic Control Center</span><h2>ফলাফল ব্যবস্থাপনা</h2>
         <p>নম্বর যাচাই করে ব্যাচ ধরে ফলাফল প্রকাশ বা প্রত্যাহার, রেজাল্ট শিট, মেধাতালিকা, শিক্ষার্থীর অগ্রগতি আর প্রিন্টযোগ্য রিপোর্ট — এক জায়গায়। পরীক্ষা তৈরি আর নম্বর এন্ট্রি <a href="#exams" style="color:#ffe6a8">পরীক্ষা</a> পেজে।</p>
-        <div class="ln-nums"><span><b>${bn(all.length)}</b>মোট পরীক্ষা (${esc(session())})</span><span><b>${bn(st.filter((x) => x.state === "full").length)}</b>প্রকাশিত</span><span><b>${bn(st.filter((x) => x.state === "partial").length)}</b>আংশিক</span><span><b>${bn(st.filter((x) => x.state === "draft").length)}</b>Draft</span></div></div></section>
+        <div class="ln-nums"><span><b>${bn(all.length)}</b>মোট পরীক্ষা (${esc(sessionLabel())})</span><span><b>${bn(st.filter((x) => x.state === "full").length)}</b>প্রকাশিত</span><span><b>${bn(st.filter((x) => x.state === "partial").length)}</b>আংশিক</span><span><b>${bn(st.filter((x) => x.state === "draft").length)}</b>Draft</span></div></div></section>
       <div class="ln-tabs">${tabs.map(([k, t]) => `<button type="button" data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}</button>`).join("")}</div>
       ${({ review, sheets, merit, perf, profile, quiz, talent, reports, eval: evalTab })[S.tab]()}</div>`;
     if (S.tab === "eval" && S.emode === "one") fillEval();
@@ -120,8 +124,8 @@ window.SICResults = function (X) {
   // Weekly / Monthly / Model Test সব ব্যাচ একসাথে দেয় → ব্যাচ "সব ব্যাচ"-এ আটকানো; Chapter Final / Class Assessment → যেকোনো ব্যাচ বা সব
   const batchLocked = () => EC.ALL_BATCH_TYPES.includes(S.f.type);
   function filtersHtml(keys = ["session", "type", "batch"]) {
-    const bs = DB().batches.filter((b) => b.session === session());
-    return keys.map((k) => k === "session" ? `<label>সেশন<select data-f="session">${X.opt(DB().sessions.map((s) => [s.name, s.name]), session())}</select></label>`
+    const bs = DB().batches.filter((b) => inSession(b.session));
+    return keys.map((k) => k === "session" ? `<label>সেশন<select data-f="session">${X.opt([["*", "সব সেশন"], ...DB().sessions.map((s) => [s.name, s.name])], session())}</select></label>`
       : k === "batch" ? (keys.includes("type") && batchLocked()
         ? `<label>ব্যাচ<select data-f="batch" disabled title="${esc(EC.typeName(S.f.type))} সব ব্যাচ একসাথে — ব্যাচ আলাদা বাছা যায় না"><option>সব ব্যাচ</option></select></label>`
         : `<label>ব্যাচ<select data-f="batch">${X.opt([["", "সব ব্যাচ"], ...bs.map((b) => [b.id, U.batchLabel(b)])], S.f.batch)}</select></label>`)
@@ -134,13 +138,13 @@ window.SICResults = function (X) {
     const list = exams();
     if (!list.length) return `<section class="card">${filterBar()}${empty('এই সেশন / ব্যাচ / ধরনে কোনো পরীক্ষা নেই। পরীক্ষা তৈরি করুন <a href="#exams">পরীক্ষা</a> পেজে।')}</section>`;
     if (!list.some((e) => e.id === S.examId)) S.examId = list[0].id;
-    const ex = exById(S.examId), R = resOf(ex), ps = pubState(ex), n = EC.attemptsOf(ex);
-    if (S.scopeBatch && !ps.all.includes(S.scopeBatch)) S.scopeBatch = "";
+    const ex = exById(S.examId), R = resOf(ex), batches = reviewBatches(ex), n = EC.attemptsOf(ex);
+    if (S.scopeBatch && !batches.includes(S.scopeBatch)) S.scopeBatch = "";
     // Weekly / Monthly / Model Test: সব ব্যাচ একসাথে প্রকাশ — নির্দিষ্ট ব্যাচ বাছাই নেই
     const allOnly = EC.ALL_BATCH_TYPES.includes(ex.type);
     if (allOnly) { S.scope = "all"; S.scopeBatch = ""; }
     // ব্যাচ অনুযায়ী যাচাই
-    const rows = ps.all.map((b) => {
+    const rows = batches.map((b) => {
       const ids = (ex.studentIds || []).filter((id) => batchOf(id) === b);
       let entered = 0, absent = 0, pending = 0;
       for (const id of ids) {
@@ -151,22 +155,23 @@ window.SICResults = function (X) {
       return { b, ids, entered, absent, pending, pass: pr.filter((r) => r.pass).length, fail: pr.filter((r) => !r.pass).length, pub: ex.published && ex.published[b] };
     });
     const pend = rows.reduce((t, r) => t + r.pending, 0), abs = rows.reduce((t, r) => t + r.absent, 0), fail = rows.reduce((t, r) => t + r.fail, 0);
+    const pass = rows.reduce((total, row) => total + row.pass, 0);
     const checks = [
       pend ? ["bad", `${bn(pend)} জনের নম্বর এখনো দেওয়া হয়নি (অনুপস্থিত হলে "অনুপস্থিত" টিক দিন)`] : ["ok", "সবার নম্বর বা অনুপস্থিতি দেওয়া হয়েছে"],
       abs ? ["warn", `${bn(abs)} জন অনুপস্থিত`] : null,
-      R.stats.sat ? ["ok", `${bn(R.stats.pass)} জন পাস, ${bn(fail)} জন ফেল${fail ? " — ফেল করলে মেধাক্রমে আসে না" : ""}`] : ["bad", "এখনো কারো নম্বর নেই"],
+      pass + fail ? ["ok", `${bn(pass)} জন পাস, ${bn(fail)} জন ফেল${fail ? " — ফেল করলে মেধাক্রমে আসে না" : ""}`] : ["bad", "এখনো কারো নম্বর নেই"],
       n > 1 && (ex.attemptDates || []).slice(1).some((d) => !d) ? ["warn", "Chapter Final-এর ২য় / ৩য় বারের তারিখ দেওয়া নেই"] : null,
       n > 1 ? ["ok", "Chapter Final: যতবার দিয়েছে তার গড় (CQ ও MCQ আলাদা) — নিয়ম অনুযায়ী"] : null,
     ].filter(Boolean);
-    const sel = S.scope === "batch" && S.scopeBatch ? [S.scopeBatch] : ps.all;
-    const scopeName = S.scope === "batch" && S.scopeBatch ? `ব্যাচ ${X.batchName(S.scopeBatch)}` : `${EC.sessionName(ex)} — সকল ব্যাচ`;
-    const log = (DB().resultLog || []).filter((l) => { const e = exById(l.examId); return e && (!e.session || e.session === session()); }).slice(-40).reverse();
+    const sel = S.scope === "batch" && S.scopeBatch ? [S.scopeBatch] : batches;
+    const scopeName = S.scope === "batch" && S.scopeBatch ? `ব্যাচ ${X.batchName(S.scopeBatch)}` : `${sessionLabel()} — সকল ব্যাচ`;
+    const log = (DB().resultLog || []).filter((l) => { const e = exById(l.examId); return e && (session() === "*" || (l.batchIds || []).some((id) => inSession(X.batchById(id)?.session))); }).slice(-40).reverse();
     return `<section class="card rs-review">${filterBar()}
       <div class="ex-etop"><label class="grow">পরীক্ষা নির্বাচন<select data-pick-exam>${[...list].sort(EC.byTitle).map((e) => `<option value="${e.id}"${e.id === ex.id ? " selected" : ""}>${esc(U.examLabel(e))}</option>`).join("")}</select></label>
         <div class="rs-scope"><b>প্রকাশের পরিধি</b>${allOnly ? `<span class="chip">সেশনের সব ক্লাস ব্যাচ একসাথে (${esc(EC.typeName(ex.type))})</span>`
           : `<label><input type="radio" name="scope" value="all"${S.scope !== "batch" ? " checked" : ""}> সেশনের সব ক্লাস ব্যাচ</label><label><input type="radio" name="scope" value="batch"${S.scope === "batch" ? " checked" : ""}> নির্দিষ্ট একটি ক্লাস ব্যাচ</label>
-          ${S.scope === "batch" ? `<select data-scope-batch>${X.opt([["", "ব্যাচ বেছে নিন"], ...ps.all.map((b) => [b, X.batchName(b)])], S.scopeBatch)}</select>` : ""}`}</div></div>
-      <div class="ex-head">${typeChip(ex.type)}<b>${esc(ex.title)}</b> ${stateChip(ex)}<small>${[U.date(ex.date), EC.sessionName(ex), `পূর্ণমান ${bn(EC.fullOf(ex))}`, scopeName].filter(Boolean).map(esc).join(" · ")}</small></div>
+          ${S.scope === "batch" ? `<select data-scope-batch>${X.opt([["", "ব্যাচ বেছে নিন"], ...batches.map((b) => [b, X.batchName(b)])], S.scopeBatch)}</select>` : ""}`}</div></div>
+      <div class="ex-head">${typeChip(ex.type)}<b>${esc(ex.title)}</b> ${stateChip(ex, batches)}<small>${[U.date(ex.date), EC.sessionName(ex), `পূর্ণমান ${bn(EC.fullOf(ex))}`, scopeName].filter(Boolean).map(esc).join(" · ")}</small></div>
       <div class="rs-checks">${checks.map(([k, t]) => `<p class="rs-c ${k}">${k === "ok" ? "✓" : k === "warn" ? "!" : "✗"} ${t}</p>`).join("")}</div>
       ${(() => {
         // বেছে নেওয়া পরিধির (সব ব্যাচ / একটা ব্যাচ) এখনকার অবস্থা — বাটনেই বোঝা যায় কোনটা হয়ে আছে
@@ -184,8 +189,9 @@ window.SICResults = function (X) {
         <td>${r.pub ? `<span class="chip ok">প্রকাশিত</span><small>${U.date(r.pub.at.slice(0, 10))}</small>` : '<span class="chip">Draft</span>'}</td>
         <td class="num" style="white-space:nowrap">${r.pub ? `<button type="button" class="btn sm gold" data-sms-batch="${r.b}">📩 ফলাফল SMS</button> ` : ""}${allOnly ? "" : r.pub ? `<button type="button" class="btn line sm danger" data-unpub-one="${r.b}">প্রত্যাহার</button>` : `<button type="button" class="btn gold sm" data-pub-one="${r.b}">প্রকাশ</button>`}</td></tr>`).join("") || '<tr><td colspan="9" class="empty">এই পরীক্ষায় কোনো ব্যাচ নেই</td></tr>'}</tbody></table></div>
       <p class="ex-rule">Publish করলে ঐ ব্যাচের শিক্ষার্থীরা নিজের প্যানেলে নম্বর, পাস-ফেল আর মেধাক্রম দেখবে; প্রকাশিত নম্বর লক থাকে ("পরীক্ষা" পেজে "সংশোধন" চালু করে কারণসহ বদলানো যায়)। Unpublish করলে সাময়িকভাবে লুকানো হয় — নম্বর বা ইতিহাস মুছে না। কিছু ব্যাচ বাকি থাকলে সেশনের মেধাতালিকা "চূড়ান্ত নয়" দেখায়। প্রকাশিত ব্যাচের সারিতে "ফলাফল SMS" চাপলে ঐ ব্যাচের শিক্ষার্থী ও অভিভাবকের নম্বরে নম্বর চলে যায়।</p></section>
-    <section class="card" style="margin-top:14px"><h3>এই সেশনের সব পরীক্ষার অবস্থা</h3><div class="tbl-wrap"><table class="exam-entry-table"><thead><tr><th>পরীক্ষা</th><th>তারিখ</th><th class="num">নম্বর দেওয়া</th><th>ব্যাচ অনুযায়ী</th><th>অবস্থা</th><th></th></tr></thead><tbody>
-      ${list.map((e) => { const p = pubState(e), s = resOf(e).stats; return `<tr${e.id === ex.id ? ' class="rs-sel"' : ""}><td>${typeChip(e.type)} <b>${esc(e.title)}</b></td><td>${U.date(e.date)}</td><td class="num">${bn(s.sat)}/${bn(s.students)}</td><td>${p.all.map((b) => `<span class="chip ${p.pub.includes(b) ? "ok" : ""}">${esc(X.batchName(b))}</span>`).join(" ")}</td><td>${stateChip(e)}</td><td class="num"><button type="button" class="btn line sm" data-go-exam="${e.id}">খুলুন</button></td></tr>`; }).join("")}</tbody></table></div></section>
+    <section class="card" style="margin-top:14px"><h3>${esc(sessionLabel())} — পরীক্ষার অবস্থা</h3><div class="tbl-wrap"><table class="exam-entry-table"><thead><tr><th>পরীক্ষা</th><th>তারিখ</th><th class="num">নম্বর দেওয়া</th><th>ব্যাচ অনুযায়ী</th><th>অবস্থা</th><th></th></tr></thead><tbody>
+      ${list.map((e) => { const p = pubState(e, reviewBatches(e)), ids = new Set((e.studentIds || []).filter((id) => inSession(X.studentById(id)?.session)));
+        const sat = resOf(e).rows.filter((row) => ids.has(row.sid) && !row.absent).length; return `<tr${e.id === ex.id ? ' class="rs-sel"' : ""}><td>${typeChip(e.type)} <b>${esc(e.title)}</b></td><td>${U.date(e.date)}</td><td class="num">${bn(sat)}/${bn(ids.size)}</td><td>${reviewBatches(e).map((b) => `<span class="chip ${p.pub.includes(b) ? "ok" : ""}">${esc(X.batchName(b))}</span>`).join(" ")}</td><td>${stateChip(e, p.all)}</td><td class="num"><button type="button" class="btn line sm" data-go-exam="${e.id}">খুলুন</button></td></tr>`; }).join("")}</tbody></table></div></section>
     <section class="card" style="margin-top:14px"><h3>Publication History <small class="ln-count">কে কখন কোন ব্যাচের ফলাফল প্রকাশ / প্রত্যাহার / সংশোধন করেছে</small></h3>
       ${log.length ? `<div class="tbl-wrap"><table class="exam-entry-table"><thead><tr><th>সময়</th><th>কাজ</th><th>পরীক্ষা</th><th>ব্যাচ / শিক্ষার্থী</th><th>নোট</th></tr></thead><tbody>${log.map((l) => { const [t, k] = ACTIONS[l.action] || [l.action, ""], e = exById(l.examId) || {}; return `<tr><td>${new Date(l.at).toLocaleString("bn-BD", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</td><td><span class="chip ${k}">${t}</span></td><td>${esc(e.title || "")}</td><td>${esc((l.batchIds || []).map(X.batchName).join(", "))}${l.studentIds ? `<small>${esc(l.studentIds.join(", "))}</small>` : ""}</td><td>${esc(l.note || "")}</td></tr>`; }).join("")}</tbody></table></div>` : empty("এখনো কোনো প্রকাশ বা প্রত্যাহার হয়নি।")}</section>`;
   }
@@ -251,7 +257,7 @@ window.SICResults = function (X) {
     const body = sorted.filter(hit).map((r) => [sRank.has(r.id) ? bn(sRank.get(r.id)) : "—", bRank.has(r.id) ? bn(bRank.get(r.id)) : "—", r.id, r.name, X.batchName(r.batch),
       ...list.map((e) => { if (!(e.studentIds || []).includes(r.id)) return "·"; const p = pctIn(e, r.id); return p === null ? "—" : isAbs(e, r.id) ? "অনু" : bn(Math.round(p)) + "%"; }),
       `${bn(r.given)}/${bn(r.total)}`, pct(r[val])]);
-    return { title: kind === "batch" ? `ব্যাচ ${X.batchName(batch)} — সম্মিলিত রেজাল্ট` : `${session()} — সম্পূর্ণ সেশনের রেজাল্ট`, sub: `${S.f.type ? EC.typeName(S.f.type) : "সব ধরনের পরীক্ষা (Combined: ভার অনুযায়ী)"} · ${bn(list.length)}টি পরীক্ষা · "অনু" = অনুপস্থিত (০%), "—" = নম্বর বাকি, "·" = এই পরীক্ষায় ছিল না`, head, body, list };
+    return { title: kind === "batch" ? `ব্যাচ ${X.batchName(batch)} — সম্মিলিত রেজাল্ট` : `${sessionLabel()} — সম্পূর্ণ সেশনের রেজাল্ট`, sub: `${S.f.type ? EC.typeName(S.f.type) : "সব ধরনের পরীক্ষা (Combined: ভার অনুযায়ী)"} · ${bn(list.length)}টি পরীক্ষা · "অনু" = অনুপস্থিত (০%), "—" = নম্বর বাকি, "·" = এই পরীক্ষায় ছিল না`, head, body, list };
   }
   // খোঁজ: নাম বা আইডি (বাংলা / ইংরেজি সংখ্যা দুটোই)
   const hit = (r) => !S.q || `${r[2] ?? r.id} ${r[3] ?? r.name}`.toLowerCase().includes(enNum(S.q).toLowerCase()) || `${r[3] ?? r.name}`.includes(S.q.trim());
@@ -284,7 +290,7 @@ window.SICResults = function (X) {
   // • কুইজ: প্রতিটা কুইজে সবচেয়ে ভালো চেষ্টা  • Combined Academic Merit: শুধু Weekly + Monthly + Chapter Final + Model (ভার অনুযায়ী)
   const MCATS = [["weekly", "Weekly Test Merit"], ["monthly", "Monthly Test Merit"], ["chapter", "Chapter Final Merit"], ["model", "Model Test Merit"], ["class", "Class Assessment Merit"], ["gk", "Weekly GK Test Merit"], ["special", "Special Exam Merit"], ["quiz", "Online Quiz Merit"], ["combined", "Combined Academic Merit"]];
   const ALL_LABEL = { weekly: "All Weekly Tests", monthly: "All Monthly Tests", chapter: "All Chapter Finals", model: "All Model Tests", class: "All Class Assessments", gk: "All GK Tests", special: "All Special Exams", quiz: "All Quizzes" };
-  const quizzesIn = () => (DB().quizzes || []).filter((q) => (!q.session || q.session === session()) && (!S.f.batch || !(q.batchIds || []).length || q.batchIds.includes(S.f.batch)));
+  const quizzesIn = () => (DB().quizzes || []).filter((q) => (!q.session || inSession(q.session)) && (!S.f.batch || !(q.batchIds || []).length || q.batchIds.includes(S.f.batch)));
   const quizEligible = (q, s) => (!q.session || q.session === s.session) && (!(q.batchIds || []).length || q.batchIds.includes(s.batchId));
   const quizBest = (q, sid) => { const d = ((q.attempts || {})[sid] || []).filter((a) => a.submittedAt); return d.length ? d.reduce((a, b) => (b.score > a.score ? b : a)) : null; };
   // এই ক্যাটাগরির পরীক্ষা / কুইজের তালিকা (পরীক্ষা নির্বাচনের ঘরে)
@@ -294,7 +300,7 @@ window.SICResults = function (X) {
     return withMarks(exams({ anyType: true, type: S.mcat })).sort(EC.byTitle).map((e) => ({ id: e.id, label: U.examLabel(e) }));
   }
   function meritData() {
-    const cat = S.mcat, batch = S.f.batch, where = `${session()} • ${batch ? "ব্যাচ " + X.batchName(batch) : "সকল ব্যাচ"}`;
+    const cat = S.mcat, batch = S.f.batch, where = `${sessionLabel()} • ${batch ? "ব্যাচ " + X.batchName(batch) : "সকল ব্যাচ"}`;
     const choices = meritChoices();
     if (S.mexam && !choices.some((c) => c.id === S.mexam)) S.mexam = "";
     const studs = students(batch);
@@ -407,7 +413,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     const comps = (r) => cell(r.sc.combined) + cell(r.at.pct, `${bn(r.at.p)}/${bn(r.at.total)} দিন`) + cell(r.hw.pct, `${bn(r.hw.done)}/${bn(r.hw.done + r.hw.not)}`) + cell(r.ls.pct, `${bn(r.ls.done)}/${bn(r.ls.done + r.ls.not)}`);
     const sub = { att: (r) => `${bn(r.at.p)}/${bn(r.at.total)} দিন`, hw: (r) => `${bn(r.hw.done)}/${bn(r.hw.done + r.hw.not)} কাজ`, lesson: (r) => `${bn(r.ls.done)}/${bn(r.ls.done + r.ls.not)} পড়া`, exam: (r) => `${bn(r.sc.given)}/${bn(r.sc.total)} পরীক্ষা` };
     const why = { overall: `পরীক্ষা ${bn(w.exam)} : হাজিরা ${bn(w.att)} : বাড়ির কাজ ${bn(w.hw)} : পড়া ${bn(w.lesson)} — যে অংশের তথ্য নেই সেটা বাদে বাকিগুলোর ভাগে`, att: "উপস্থিতির হার (উপস্থিত ÷ উপস্থিত + অনুপস্থিত — ছুটির দিন বাদ)", hw: "যাচাই করা বাড়ির কাজের হার — অনুপস্থিত দিন বাদে", lesson: "ক্লাসে পড়া পারার হার — অনুপস্থিত দিন বাদে", exam: "Weekly + Monthly + Chapter Final + Model Test-এর Combined (Class Assessment ও কুইজ নয়)" }[cat];
-    return `<section class="card"><div class="rs-sel-head"><small>Class Performance Leaderboard</small><b>${esc((PCATS.find((x) => x[0] === cat) || [])[1] || "")}</b><span>${esc(session())} • ${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : "সকল ব্যাচ")}</span>
+    return `<section class="card"><div class="rs-sel-head"><small>Class Performance Leaderboard</small><b>${esc((PCATS.find((x) => x[0] === cat) || [])[1] || "")}</b><span>${esc(sessionLabel())} • ${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : "সকল ব্যাচ")}</span>
         <span class="rs-sel-nums"><i>র‍্যাঙ্কিংয়ে: <b>${bn(ranked.length)}</b></i><i>সর্বোচ্চ: <b>${pct(ranked.length ? Math.max(...ranked.map((x) => x.v)) : null)}</b></i></span><small class="rs-sel-note">${esc(why)} · কমপক্ষে ${bn(w.minDays)} দিন হাজিরা থাকলে তবেই র‍্যাঙ্কিংয়ে</small></div>
       <div class="tbl-wrap"><table class="exam-entry-table rs-table"><thead><tr><th>মেধা</th><th>শিক্ষার্থী</th><th>ব্যাচ</th>${cat === "overall" ? '<th class="num">পরীক্ষা</th><th class="num">হাজিরা</th><th class="num">বাড়ির কাজ</th><th class="num">পড়া</th>' : ""}<th class="num">Score</th></tr></thead><tbody>
       ${ranked.map((r) => `<tr class="${r.vRank <= 3 ? "rs-top" : ""}"><td><b>${U.rankName(r.vRank)}</b></td><td><a href="#results/${esc(r.s.id)}" target="_blank" rel="noopener" title="নতুন ট্যাবে প্রোফাইল" data-profile="${esc(r.s.id)}"><b>${esc(r.s.name)}</b></a><small>${esc(r.s.id)}</small></td><td>${esc(X.batchName(r.s.batchId))}</td>${cat === "overall" ? comps(r) : ""}<td class="num"><b>${pct(r.v)}</b>${cat !== "overall" ? `<small>${sub[cat](r)}</small>` : ""}</td></tr>`).join("") || `<tr><td colspan="${cat === "overall" ? 8 : 4}" class="empty">র‍্যাঙ্কিংয়ে কেউ নেই</td></tr>`}</tbody></table></div>
@@ -419,15 +425,15 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
   // পয়েন্ট সমান হলে যার উপস্থিতি বেশি সে আগে; ওই মাসে হাজিরা না থাকলে তালিকায় আসে না
   function pointsBoard() {
     const hw = DB().homework || [], sess = students(S.f.batch);
-    const months = [...new Set([...Object.keys(DB().attendance || {}).map((k) => k.slice(0, 7)), ...hw.filter((h) => h.session === session()).map((h) => (h.dueDate || h.givenDate || "").slice(0, 7))].filter(Boolean))].sort().reverse();
+    const months = [...new Set([...Object.keys(DB().attendance || {}).map((k) => k.slice(0, 7)), ...hw.filter((h) => inSession(h.session)).map((h) => (h.dueDate || h.givenDate || "").slice(0, 7))].filter(Boolean))].sort().reverse();
     if (!months.includes(S.pmonth)) S.pmonth = months.includes(U.today().slice(0, 7)) ? U.today().slice(0, 7) : months[0] || U.today().slice(0, 7);
     const mo = S.pmonth;
     const rows = sess.map((s) => { const at = attOf(s.id, mo), h = U.hwRate(hw, s, "homework", mo), l = U.hwRate(hw, s, "lesson", mo), pts = at.p + h.done + l.done; return { s, at, h, l, pts, id: s.id, v: pts + at.p / 1000 }; });
     const ranked = rankBy(rows.filter((r) => r.at.total + r.at.l > 0), "v"), out = rows.filter((r) => !ranked.includes(r));
     const head = ["মেধা", "ID", "নাম", "ব্যাচ", "উপস্থিত", "বাড়ির কাজ", "পড়া পারা", "মোট পয়েন্ট"];
-    S.pointsSheet = { title: `মাসিক পয়েন্ট — ${U.month(mo)}`, sub: `${session()} • ${S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : "সকল ব্যাচ"} · উপস্থিত ১ + বাড়ির কাজ ১ + পড়া ১`, head, body: ranked.map((r) => [r.vRank, r.s.id, r.s.name, X.batchName(r.s.batchId), r.at.p, r.h.done, r.l.done, r.pts]) };
+    S.pointsSheet = { title: `মাসিক পয়েন্ট — ${U.month(mo)}`, sub: `${sessionLabel()} • ${S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : "সকল ব্যাচ"} · উপস্থিত ১ + বাড়ির কাজ ১ + পড়া ১`, head, body: ranked.map((r) => [r.vRank, r.s.id, r.s.name, X.batchName(r.s.batchId), r.at.p, r.h.done, r.l.done, r.pts]) };
     return `<section class="card"><div class="ln-months">${months.map((m) => `<button type="button" data-pmonth="${m}" class="${mo === m ? "on" : ""}">${U.month(m)}</button>`).join("")}</div>
-      <div class="rs-sel-head"><small>Monthly Points Ranking</small><b>★ মাসিক পয়েন্ট — ${esc(U.month(mo))}</b><span>${esc(session())} • ${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : "সকল ব্যাচ")}</span>
+      <div class="rs-sel-head"><small>Monthly Points Ranking</small><b>★ মাসিক পয়েন্ট — ${esc(U.month(mo))}</b><span>${esc(sessionLabel())} • ${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : "সকল ব্যাচ")}</span>
         <span class="rs-sel-nums"><i>র‍্যাঙ্কিংয়ে: <b>${bn(ranked.length)}</b></i><i>সর্বোচ্চ: <b>${ranked.length ? bn(Math.max(...ranked.map((x) => x.pts))) : "—"}</b></i><span class="rs-btns"><button type="button" class="btn line sm" data-print-points>Print / PDF</button><button type="button" class="btn line sm" data-excel-points>↓ Excel</button></span></span>
         <small class="rs-sel-note">প্রতিদিন: উপস্থিত ১ + বাড়ির কাজ ১ + পড়া পারা ১ = সর্বোচ্চ ৩ পয়েন্ট · অনুপস্থিত / ছুটিতে ০ · সমান পয়েন্টে যার উপস্থিতি বেশি সে আগে</small></div>
       <div class="tbl-wrap"><table class="exam-entry-table rs-table"><thead><tr><th>মেধা</th><th>শিক্ষার্থী</th><th>ব্যাচ</th><th class="num">উপস্থিত</th><th class="num">বাড়ির কাজ</th><th class="num">পড়া পারা</th><th class="num">মোট পয়েন্ট</th></tr></thead><tbody>
@@ -443,7 +449,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     const rows = perfRows(), ex = rows.map((r) => r.sc.mean).filter((x) => x !== null), at = rows.map((r) => r.at.pct).filter((x) => x !== null);
     const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
     return `<section class="card rs-fcard">${seg}${filterBar(["session", "batch"])}</section><div class="rs-tiles"><span><small>গড় পরীক্ষার নম্বর</small><b>${pct(avg(ex))}</b></span><span><small>গড় উপস্থিতি</small><b>${pct(avg(at))}</b></span><span class="ok"><small>ভালো / খুব ভালো (৬০%+)</small><b>${bn(ex.filter((x) => x >= 60).length)}</b></span><span class="bad"><small>দুর্বল (৪০%-এর কম)</small><b>${bn(ex.filter((x) => x < 40).length)}</b></span></div>
-      <section class="card"><h3>শিক্ষার্থীদের অগ্রগতি <small class="ln-count">${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : session())} · নামে চাপ দিলে পুরো প্রোফাইল</small></h3>
+      <section class="card"><h3>শিক্ষার্থীদের অগ্রগতি <small class="ln-count">${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : sessionLabel())} · নামে চাপ দিলে পুরো প্রোফাইল</small></h3>
       <div class="tbl-wrap"><table class="exam-entry-table"><thead><tr><th>শিক্ষার্থী</th><th>ব্যাচ</th><th class="num">পরীক্ষা দিয়েছে</th><th class="num">পরীক্ষার গড়</th><th class="num">উন্নতি</th><th class="num">উপস্থিতি</th><th class="num">বাড়ির কাজ</th><th class="num">পড়া</th><th>দুর্বল অধ্যায়</th><th>অবস্থা</th></tr></thead><tbody>
       ${rows.map((r) => { const [lv, k] = level(r.sc.mean); return `<tr><td><a href="#results/${esc(r.s.id)}" target="_blank" rel="noopener" title="নতুন ট্যাবে প্রোফাইল" data-profile="${esc(r.s.id)}"><b>${esc(r.s.name)}</b></a><small>${esc(r.s.id)}</small></td><td>${esc(X.batchName(r.s.batchId))}</td><td class="num">${bn(r.sc.given)}/${bn(r.sc.total)}${r.sc.missed ? `<small>মিস ${bn(r.sc.missed)}</small>` : ""}</td><td class="num"><b>${pct(r.sc.mean)}</b></td>
         <td class="num">${r.trend === null ? "—" : `<span class="${r.trend >= 0 ? "rs-up" : "rs-down"}">${r.trend >= 0 ? "▲" : "▼"} ${bn(Math.abs(Math.round(r.trend)))}%</span>`}</td><td class="num">${pct(r.at.pct)}<small>${bn(r.at.p)}/${bn(r.at.total)} দিন</small></td><td class="num">${pct(r.hw.pct)}<small>${bn(r.hw.done)}/${bn(r.hw.done + r.hw.not)}</small></td><td class="num">${pct(r.ls.pct)}<small>${bn(r.ls.done)}/${bn(r.ls.done + r.ls.not)}</small></td><td>${r.weak ? `${esc(r.weak[0])} <small>${pct(r.weak[1])}</small>` : "—"}</td><td>${k ? `<span class="chip ${k}">${lv}</span>` : "—"}</td></tr>`; }).join("") || '<tr><td colspan="10" class="empty">কোনো শিক্ষার্থী নেই</td></tr>'}</tbody></table></div>
@@ -518,7 +524,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
   function profile() {
     const studs = students(S.f.batch), cur = S.pid && X.studentById(S.pid);
     // আইডি দিয়ে খোঁজা শিক্ষার্থী (নিষ্ক্রিয় হলেও) তালিকায় রাখা হয়
-    if (cur && !studs.some((s) => s.id === cur.id) && cur.session === session() && (!S.f.batch || cur.batchId === S.f.batch)) studs.unshift(cur);
+    if (cur && !studs.some((s) => s.id === cur.id) && inSession(cur.session) && (!S.f.batch || cur.batchId === S.f.batch)) studs.unshift(cur);
     if (!studs.some((s) => s.id === S.pid)) S.pid = (studs[0] || {}).id || "";
     const d = S.pid && profileData(S.pid);
     return `<section class="card"><div class="rs-bar"><label>আইডি দিয়ে খুঁজুন<span class="rs-idfind"><input data-one-id inputmode="numeric" placeholder="যেমন: 270001" autocomplete="off"><button type="button" class="btn gold sm" data-one-go>খুঁজুন</button></span></label>
@@ -530,10 +536,10 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
   // ================= Online Quiz =================
   // কুইজের ফলাফল আলাদা — মূল সব ধরনের পরীক্ষার মেধায় মেশে না
   // ব্যাচের ঘরে "অনলাইন শিক্ষার্থী" — ব্যাচের বাইরে থেকে /quiz পেজে যারা কুইজ দিয়েছে (শুধু এই ট্যাবে)
-  const quizBar = () => `<div class="rs-bar">${filtersHtml(["session"])}<label>ব্যাচ<select data-qwho>${X.opt([["", "সব ব্যাচ"], ...DB().batches.filter((b) => b.session === session()).map((b) => [b.id, U.batchLabel(b)]), ["online", "অনলাইন শিক্ষার্থী (ব্যাচের বাইরে)"]], S.qOnline ? "online" : S.f.batch)}</select></label></div>`;
+  const quizBar = () => `<div class="rs-bar">${filtersHtml(["session"])}<label>ব্যাচ<select data-qwho>${X.opt([["", "সব ব্যাচ"], ...DB().batches.filter((b) => inSession(b.session)).map((b) => [b.id, U.batchLabel(b)]), ["online", "অনলাইন শিক্ষার্থী (ব্যাচের বাইরে)"]], S.qOnline ? "online" : S.f.batch)}</select></label></div>`;
   function quizOnline() {
     const guests = DB().quizGuests || [], isG = (sid) => guests.some((g) => g.id === sid);
-    const list = (DB().quizzes || []).filter((q) => (!q.session || q.session === session()) && (q.open || Object.keys(q.attempts || {}).some(isG)));
+    const list = (DB().quizzes || []).filter((q) => (!q.session || inSession(q.session)) && (q.open || Object.keys(q.attempts || {}).some(isG)));
     if (!list.length) return `<section class="card">${quizBar()}${empty('এই সেশনে ব্যাচের বাইরের শিক্ষার্থীদের জন্য খোলা কোনো কুইজ নেই। কুইজের সেটিংসে "ব্যাচের বাইরের (অনলাইন) শিক্ষার্থীরাও দিতে পারবে" টিক দিন — <a href="#quiz">অনলাইন কুইজ</a>।')}</section>`;
     const best = (q, sid) => { const d = ((q.attempts || {})[sid] || []).filter((a) => a.submittedAt); return d.length ? d.reduce((a, b) => (b.score > a.score ? b : a)) : null; };
     const rows = guests.map((g) => { const got = list.map((q) => best(q, g.id)).filter(Boolean); return { g, n: got.length, pct: got.length ? (got.reduce((t, a) => t + (a.full ? a.score / a.full : 0), 0) / got.length) * 100 : null }; }).filter((r) => r.n);
@@ -548,7 +554,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
   }
   function quiz() {
     if (S.qOnline) return quizOnline();
-    const list = (DB().quizzes || []).filter((q) => (!q.session || q.session === session()) && (!S.f.batch || !(q.batchIds || []).length || q.batchIds.includes(S.f.batch)));
+    const list = (DB().quizzes || []).filter((q) => (!q.session || inSession(q.session)) && (!S.f.batch || !(q.batchIds || []).length || q.batchIds.includes(S.f.batch)));
     if (!list.length) return `<section class="card">${quizBar()}${empty('এই সেশনে কোনো অনলাইন কুইজ নেই। কুইজ তৈরি করুন <a href="#quiz">অনলাইন কুইজ</a> থেকে।')}</section>`;
     const best = (q, sid) => { const d = ((q.attempts || {})[sid] || []).filter((a) => a.submittedAt); return d.length ? d.reduce((a, b) => (b.score > a.score ? b : a)) : null; };
     const studs = students(S.f.batch);
@@ -580,13 +586,13 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
 
   // ================= Reports & PDF =================
   function reports() {
-    const list = withMarks(exams()), batches = DB().batches.filter((b) => b.session === session());
+    const list = withMarks(exams()), batches = DB().batches.filter((b) => inSession(b.session));
     const card = (t, d, controls, btn) => `<div class="rs-rep"><b>${t}</b><small>${d}</small><div class="rs-rep-ctl">${controls}</div><button type="button" class="btn gold sm" data-rep="${btn}">Print / PDF</button></div>`;
     return `<section class="card"><div class="rs-bar" style="justify-content:center">${filtersHtml()}<label>পাতা<select data-land>${X.opt([["0", "A4 Portrait (খাড়া)"], ["1", "A4 Landscape (আড়াআড়ি)"]], S.land ? "1" : "0")}</select></label><span class="ex-sub" style="margin:0;flex-basis:100%;text-align:center">প্রিন্ট উইন্ডোতে "Save as PDF" বেছে নিলে PDF হয়। প্রতিটা রিপোর্টে লোগো, প্রতিষ্ঠানের নাম আর স্বাক্ষরের জায়গা থাকে।</span></div>
       <div class="rs-reps">
         ${card("Individual Exam Result", "একটি পরীক্ষার পূর্ণ রেজাল্ট", `<select data-rep-exam>${[...list].sort(EC.byTitle).map((e) => `<option value="${e.id}"${e.id === S.sheetExam ? " selected" : ""}>${esc(U.examLabel(e))}</option>`).join("")}</select>`, "exam")}
         ${card("Batch Result Sheet", "একটি ব্যাচের সম্মিলিত রেজাল্ট", `<select data-rep-batch>${X.opt(batches.map((b) => [b.id, U.batchLabel(b)]), S.f.batch || (batches[0] || {}).id)}</select>`, "batch")}
-        ${card("Session Result Sheet", "পুরো সেশনের সম্মিলিত রেজাল্ট", `<div class="rs-rep-fix">${esc(session())} — সব ব্যাচ</div>`, "session")}
+        ${card("Session Result Sheet", "পুরো সেশনের সম্মিলিত রেজাল্ট", `<div class="rs-rep-fix">${esc(sessionLabel())} — সব ব্যাচ</div>`, "session")}
         ${card("Merit List Report", "মেধাক্রমসহ মেধাতালিকা", '<div class="rs-rep-fix">Merit Lists ট্যাবের ফিল্টার অনুযায়ী</div>', "merit")}
         ${card("Student's Progress Report", "একজন শিক্ষার্থীর পুরো অগ্রগতি — ফল, হাজিরা, বাড়ির কাজ, পরামর্শ", `<input data-rep-sid placeholder="আইডি, যেমন 270001" value="${esc(S.pid)}">`, "student")}
         ${card("Monthly Progress Report", "এক মাসে প্রত্যেকের পরীক্ষার গড় আর হাজিরা", `<input type="month" data-rep-month value="${esc(S.month)}">`, "monthly")}
@@ -793,7 +799,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
         const mo = ($("[data-rep-month]", C) || {}).value || today().slice(0, 7); S.month = mo;
         const list = withMarks(exams({ anyType: true })).filter((e) => (e.date || "").startsWith(mo));
         const body = students(S.f.batch).map((s) => { const sc = scoreOf(s.id, list), at = attOf(s.id, mo); return [s.id, s.name, X.batchName(s.batchId), `${bn(sc.given)}/${bn(sc.total)}`, pct(sc.mean), pct(at.pct), `${bn(at.p)}/${bn(at.total)}`]; });
-        return printReport("Monthly Progress Report", `${U.month(mo)} · ${S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : session()} · ${bn(list.length)}টি পরীক্ষা`, plainTable(["আইডি", "নাম", "ব্যাচ", "পরীক্ষা দিয়েছে", "পরীক্ষার গড়", "উপস্থিতি", "উপস্থিত দিন"], body));
+        return printReport("Monthly Progress Report", `${U.month(mo)} · ${S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : sessionLabel()} · ${bn(list.length)}টি পরীক্ষা`, plainTable(["আইডি", "নাম", "ব্যাচ", "পরীক্ষা দিয়েছে", "পরীক্ষার গড়", "উপস্থিতি", "উপস্থিত দিন"], body));
       }
     } finally { Object.assign(S, { sheet: keep.sheet, sheetExam: keep.sheetExam, q: keep.q }); S.f.batch = keep.batch; }
   }
@@ -812,7 +818,8 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     if (t("[data-print-one]")) { const keep = S.pid; const inp = document.createElement("input"); inp.setAttribute("data-rep-sid", ""); inp.value = S.pid; inp.hidden = true; C.append(inp); S.examsOnlyPrint = true; try { runReport("student"); } finally { S.examsOnlyPrint = false; } inp.remove(); S.pid = keep; return; }
     if (t("[data-verify]")) { S.verified[S.examId] = true; render(); const c = $(".rs-checks", C); if (c) c.classList.add("flash"); return toast("যাচাই হয়েছে — উপরের তালিকা দেখুন"); }
     if (t("[data-publish]") || t("[data-unpublish]")) {
-      const ex = exById(S.examId), all = pubState(ex).all;
+      const ex = exById(S.examId), all = reviewBatches(ex);
+      if (!all.length) return toast("এই সেশনে প্রকাশের জন্য কোনো ব্যাচ নেই", true);
       if (S.scope === "batch" && !S.scopeBatch) return toast("কোন ব্যাচ — বেছে নিন", true);
       return publish(t("[data-publish]") ? "publish" : "unpublish", S.scope === "batch" ? [S.scopeBatch] : all);
     }
@@ -832,7 +839,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     if (t("[data-save-w]")) return saveWeights();
     if ((el = t("[data-pcat]"))) { S.pcat = el.dataset.pcat; return render(); }
     if ((el = t("[data-pmonth]"))) { S.pmonth = el.dataset.pmonth; return render(); }
-    if (t("[data-print-qsheet]") || t("[data-excel-qsheet]")) { const d = S.quizSheet; return t("[data-print-qsheet]") ? printReport("Quiz Merit — অনলাইন শিক্ষার্থী", `${session()} · ব্যাচের বাইরে থেকে দেওয়া কুইজ`, plainTable(d.head, d.body)) : excel("online-quiz-merit", d.head, d.body); }
+    if (t("[data-print-qsheet]") || t("[data-excel-qsheet]")) { const d = S.quizSheet; return t("[data-print-qsheet]") ? printReport("Quiz Merit — অনলাইন শিক্ষার্থী", `${sessionLabel()} · ব্যাচের বাইরে থেকে দেওয়া কুইজ`, plainTable(d.head, d.body)) : excel("online-quiz-merit", d.head, d.body); }
     if (t("[data-print-points]") || t("[data-excel-points]")) { const d = S.pointsSheet; return t("[data-print-points]") ? printReport(d.title, d.sub, plainTable(d.head, d.body)) : excel("monthly-points", d.head, d.body); }
     if (t("[data-save-pw]")) {
       const body = {}; $$("[data-pw]", C).forEach((i) => (body[i.dataset.pw] = Number(enNum(i.value)) || 0));
@@ -852,7 +859,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     const el = e.target;
     if (el.dataset.f) {
       S.f[el.dataset.f] = el.value;
-      if (el.dataset.f === "session") S.f.batch = "";
+      if (el.dataset.f === "session") { S.f.batch = ""; S.scope = "all"; S.scopeBatch = ""; }
       // সব ব্যাচের ধরন → ব্যাচ "সব ব্যাচ", প্রকাশও সব ব্যাচে
       if (el.dataset.f === "type" && batchLocked()) { S.f.batch = ""; S.scope = "all"; S.scopeBatch = ""; if (S.sheet === "batch") S.sheet = "session"; }
       // ব্যাচ বাছলে প্রকাশের পরিধিও সেই ব্যাচ
