@@ -2767,6 +2767,38 @@ async function api(req, res, url) {
     if (!r || !routineForStudent(r, ps)) return send(res, 404, { error: "পাওয়া যায়নি" });
     return sendExamRoutine(res, r, url);
   }
+  const sheet = p.match(/^\/api\/student\/result-sheet\/([\w-]+)$/);
+  if (sheet && m === "GET") {
+    const viewer = panelStudent();
+    if (!viewer) return send(res, 401, { error: "লগইন করুন" });
+    const ex = db.exams.find((item) => item.id === sheet[1]);
+    if (!ex || !(ex.studentIds || []).includes(viewer.id) || !isPublishedFor(ex, viewer))
+      return send(res, 404, { error: "ফলাফল শিট পাওয়া যায়নি" });
+
+    const students = new Map(db.students.map((student) => [student.id, student]));
+    const batches = new Map(db.batches.map((batch) => [batch.id, batch.name]));
+    const parts = EC.parts(ex);
+    const escape = receiptEscape;
+    const cell = (value) => "<td>" + escape(value) + "</td>";
+    const number = (value) => value == null ? "—" : EC.round2(value).toLocaleString("bn-BD");
+    const rows = EC.results(ex).rows.map((row) => {
+      const student = students.get(row.sid);
+      if (!isPublishedFor(ex, student) || (row.absent && !((ex.marks || {})[row.sid] || []).some(EC.isAbsent))) return "";
+      return "<tr>" + [number(row.rank), student.name, batches.get(student.batchId) || "—",
+        ...parts.map((part) => row.absent ? "—" : number(row.scores[part.key])),
+        number(row.total), row.absent ? "—" : number(row.percent) + "%",
+        row.absent ? "অনুপস্থিত" : row.pass ? "পাস" : "ফেল"].map(cell).join("") + "</tr>";
+    }).join("");
+    const headings = ["মেধাক্রম", "নাম", "ব্যাচ", ...parts.map((part) => part.subject + " " + part.part.toUpperCase()), "মোট", "%", "ফলাফল"];
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'",
+      "X-Robots-Tag": "noindex, nofollow" });
+    return res.end('<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+      + escape(ex.title) + ' — ফলাফল শিট</title><style>body{font:15px system-ui,sans-serif;color:#113c33;background:#f1f6f3;margin:0;padding:16px}main{max-width:980px;margin:auto;background:white;padding:20px;border-radius:14px}header{text-align:center;margin-bottom:20px}img{width:85px}h1{font-size:23px;margin:8px 0}p{margin:5px 0}.table{overflow:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border:1px solid #d5e5dd}th{background:#17634e;color:white}tbody tr:nth-child(even){background:#f2f8f5}@media print{body{background:white;padding:0}main{padding:0}thead{display:table-header-group}tr{break-inside:avoid}th{color:#113c33;background:#e6f2ec}}</style><main><header><img src="/images/logo-receipt.png" alt=""><p>শাহিন’স আইসিটি কেয়ার</p><h1>'
+      + escape(ex.title) + ' — ফলাফল শিট</h1><p>' + escape(receiptDate(ex.date)) + ' · পূর্ণমান ' + number(EC.fullOf(ex))
+      + '</p></header><div class="table"><table><thead><tr>' + headings.map((heading) => '<th scope="col">' + escape(heading) + '</th>').join("")
+      + '</tr></thead><tbody>' + (rows || '<tr><td colspan="' + headings.length + '">প্রকাশিত নম্বর বা অনুপস্থিতির এন্ট্রি নেই।</td></tr>') + '</tbody></table></div></main></html>');
+  }
   const sdm = p.match(/^\/api\/student\/docs\/([\w-]+)\/file$/);
   if (sdm && m === "GET") {
     const ps = panelStudent(), sess = ps && { sid: ps.id };
