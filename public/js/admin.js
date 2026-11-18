@@ -2945,7 +2945,7 @@ ${list.map(receiptHtml).join("")}
           ${modOff.length ? `<details class="fr-empty"><summary>ভর্তি নেই এমন মডিউল: ${bn(modOff.length)}টি</summary><p>${modOff.map((x) => `<span>${esc(x.m.name)}</span>`).join("")}</p></details>` : ""}</section>`;
       return;
     }
-    body.innerHTML = `<div class="toolbar"><input type="month" id="pm" value="" data-dp-empty="সব মাস"><input class="grow" id="pq" type="search" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="পেমেন্ট খুঁজুন — নাম, আইডি বা মোবাইল নম্বর"><button class="btn line" id="pcsv">↓ Excel</button></div>
+    body.innerHTML = `<div class="toolbar"><input type="month" id="pm" value="" data-dp-empty="সব মাস"><input class="grow" id="pq" type="search" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="পেমেন্ট খুঁজুন — নাম, আইডি বা মোবাইল নম্বর"><button class="btn line" id="pcsv">↓ Excel</button></div><div role="status" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin:12px 0;border:1px solid #cce1d8;border-radius:12px;background:#eef7f2;color:#103f35"><span id="paymentMonthLabel"></span><strong id="paymentMonthTotal" style="font-size:23px"></strong></div>
       <div class="tbl-wrap"><table><thead><tr><th>রসিদ</th><th>তারিখ</th><th>শিক্ষার্থী</th><th>মডিউল</th><th>মাস</th><th>মাধ্যম</th><th class="num">টাকা</th><th></th></tr></thead><tbody id="prows"></tbody></table></div>`;
     const modOf = (p) => { const e = DB.enrollments.find((x) => x.id === p.enrollmentId); return e ? (courseById(e.courseId) || {}).name || "" : "সাধারণ"; };
     const list = () => {
@@ -2967,6 +2967,11 @@ ${list.map(receiptHtml).join("")}
         .sort((a, b) => (b.date + String(b.receiptNo)).localeCompare(a.date + String(a.receiptNo)));
     };
     const draw = () => {
+      const month = $("#pm").value;
+      const monthlyTotal = DB.payments.filter((payment) => !month || (payment.date || "").startsWith(month))
+        .reduce((total, payment) => total + Number(payment.amount || 0), 0);
+      $("#paymentMonthLabel").textContent = month ? U.month(month) + " — মোট জমা" : "সব মাসের মোট জমা";
+      $("#paymentMonthTotal").textContent = money(monthlyTotal);
       $("#prows").innerHTML = list().map((p) => `<tr><td>#${bn(p.receiptNo)}${p.edited ? `<small class="pay-edited" title="${esc((p.editHistory || []).slice(-1).map((h) => h.reason).join(""))}">সংশোধিত</small>` : ""}</td><td>${U.date(p.date)}</td><td><b>${esc(studentName(p.studentId))}</b><small>${esc(p.studentId)}</small></td><td>${esc(modOf(p))}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td>
         <td class="num"><button class="icon-btn" title="রসিদ প্রিন্ট" data-print="${p.id}">প্রিন্ট</button><button class="icon-btn" title="অঙ্ক বা তথ্য সংশোধন (রসিদ নম্বর একই থাকবে)" data-pedit="${p.id}">✎ সম্পাদনা</button><button class="icon-btn" title="মুছুন" data-del="${p.id}">✕</button></td></tr>`).join("") || `<tr><td colspan="8" class="empty">কোনো পেমেন্ট নেই</td></tr>`;
     };
