@@ -2309,8 +2309,9 @@ ${list.map(receiptHtml).join("")}
             return day.slice(0, 7) === month && batchId === s.batchId && (marks[s.id] === "P" || marks[s.id] === "A");
           })
           .map(([, marks]) => marks[s.id]);
-        const pct = ms.length ? Math.round((ms.filter((v) => v === "P").length / ms.length) * 100) : null; // ছুটি বাদ
-        const chip = pct === null ? "" : ` · <span class="chip ${pct >= 80 ? "ok" : pct >= 60 ? "warn" : "bad"}" title="এই মাসে উপস্থিতি">এই মাসে ${bn(pct)}%</span>`;
+        const presentDays = ms.filter((value) => value === "P").length;
+        const pct = ms.length ? Math.round((presentDays / ms.length) * 100) : 0; // ছুটি বাদ
+        const chip = ` · <span class="chip ${!ms.length ? "" : pct >= 80 ? "ok" : pct >= 60 ? "warn" : "bad"}" title="বর্তমান ব্যাচে এই মাসে উপস্থিত দিনের সংখ্যা ও উপস্থিতির হার">এই মাসে ${bn(presentDays)} দিন (${bn(pct)}%)</span>`;
         ticks[s.id] = { hw: (rh?.checks || {})[s.id] === "done", lesson: (rl?.checks || {})[s.id] === "done" };
         const on = marks[s.id] === "P";
         const ini = esc(String(s.name || "?").trim().split(/\s+/).map((x) => x[0]).slice(0, 2).join(""));
