@@ -524,3 +524,31 @@ body.dash-dark .side a.nav-item[href="#bloodbank"] i{color:#ff7a7a}
 .adm-module-item strong{display:block;margin-top:4px;color:#183658;font-size:16px;overflow-wrap:anywhere}
 .adm-module-item small{display:block;margin-top:2px;color:#586b83}
 .adm-module-acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Notice list */
+.notice-list-head h2{margin:0;color:#103f35;font-size:22px}
+.notice-list-head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.notice-list-head .btn{min-height:40px}
+.notice-table-wrap{max-width:100%}
+.notice-table{table-layout:fixed;min-width:680px}
+.notice-date-col{width:10rem}
+.notice-audience-col{width:13.5rem}
+.notice-actions-col{width:10rem}
+.notice-table th,.notice-table td{overflow-wrap:anywhere}
+.notice-table th{white-space:normal}
+.notice-table .chip{max-width:100%;white-space:normal}
+.notice-title{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 8px;color:#124037}
+.notice-description{margin-top:5px;white-space:pre-line;line-height:1.55}
+.notice-date{font-size:13.5px}
+.notice-until{margin-top:4px}
+.notice-audience-tags{display:flex;flex-wrap:wrap;gap:4px}
+.notice-audience summary{display:block;list-style:none;border-radius:6px;cursor:pointer}
+.notice-audience summary::-webkit-details-marker{display:none}
+.notice-audience-toggle{display:inline-flex;align-items:center;gap:5px;margin-top:4px;color:#126653;font-size:12.5px;font-weight:700}
+.notice-audience-toggle::after{content:"";width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-top:-3px}
+.notice-audience[open] .notice-audience-toggle::after{transform:rotate(225deg);margin-top:3px}
+.notice-audience ul{margin:6px 0 0;padding:8px 10px;list-style:none;border:1px solid #dfeae5;border-radius:8px;background:#f4f9f6;color:#37564e;font-size:12.5px}
+.notice-audience li+li{margin-top:5px}
+.notice-actions{display:flex;flex-wrap:wrap;gap:6px}
+.notice-actions .btn{min-height:34px;white-space:nowrap}
+.notice-table-wrap:focus-visible,.notice-audience summary:focus-visible,.notice-actions .btn:focus-visible{outline:2px solid #17836b;outline-offset:2px}

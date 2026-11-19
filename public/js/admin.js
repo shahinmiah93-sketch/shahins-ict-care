@@ -3531,22 +3531,41 @@ ${list.map(receiptHtml).join("")}
       if (note) { note.hidden = false; note.textContent = "নির্দিষ্ট সেশন / ব্যাচের নোটিশ ওয়েবসাইটে যায় না — তাই \"ওয়েবসাইটেও দেখান\" টিক তুলে দিয়েছি।"; }
     } else if (note && !$$("#ntTarget input:checked").length) note.hidden = true;
   });
-  function noticeTargetChip(n) {
-    const parts = [...(n.sessions || []).map((s) => "সেশন " + s), ...(n.batchIds || []).map((id) => batchName(id))];
-    if (parts.length) return `<span class="chip gold" title="${esc(parts.join(", "))}">শুধু: ${esc(parts.join(", "))}</span>`;
-    if (n.studentIds && n.studentIds.length) return '<span class="chip gold">নির্দিষ্ট শিক্ষার্থী</span>';
-    return '<span class="chip gold">সব শিক্ষার্থী (প্যানেল)</span>';
+  function noticeAudience(n) {
+    const sessions = [...new Set(n.sessions || [])];
+    const batches = [...new Set(n.batchIds || [])]
+      .map((id) => batchById(id) || { name: id })
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const labels = [...sessions.map((session) => "সেশন " + session), ...batches.map((batch) => batch.name)];
+    if (!labels.length) {
+      return n.studentIds?.length ? '<span class="chip gold">নির্দিষ্ট শিক্ষার্থী</span>' : '<span class="chip gold">সব শিক্ষার্থী (প্যানেল)</span>';
+    }
+    const visibleLabels = labels.slice(0, 6).map((label) => `<span class="chip gold">${esc(label)}</span>`).join("");
+    const extra = labels.length > 6 ? `<span class="chip">+${bn(labels.length - 6)}</span>` : "";
+    const tags = `<span class="notice-audience-tags">${visibleLabels}${extra}</span>`;
+    if (!extra && !batches.some((batch) => batch.days || batch.time)) return tags;
+    const details = [...sessions.map((session) => "সেশন " + session), ...batches.map((batch) => U.batchLabel(batch))];
+    return `<details class="notice-audience">
+      <summary>${tags}<span class="notice-audience-toggle">বিস্তারিত</span></summary>
+      <ul>${details.map((label) => `<li>${esc(label)}</li>`).join("")}</ul>
+    </details>`;
   }
   function notices(c) {
-    c.innerHTML = `<div class="card"><div class="card-head"><h2>সব নোটিশ</h2><button class="btn gold" id="addN">+ নতুন নোটিশ</button></div>
-      <p style="margin-top:0;color:var(--muted)">সব নোটিশ শিক্ষার্থী প্যানেলে দেখায়। "ওয়েবসাইটেও দেখান" দিলে পাবলিক সাইটের "নোটিশ" বোর্ডেও দেখাবে।</p>
-      <div class="tbl-wrap"><table><thead><tr><th>নোটিশ</th><th>তারিখ</th><th>কোথায়</th><th></th></tr></thead><tbody>
+    c.innerHTML = `<section class="card notice-list"><div class="card-head notice-list-head">
+      <div><h2>সব নোটিশ</h2><p>শিক্ষার্থী প্যানেল ও ওয়েবসাইটের নোটিশ পরিচালনা করুন।</p></div>
+      <button type="button" class="btn gold" id="addN">+ নতুন নোটিশ</button>
+      </div>
+      <div class="tbl-wrap notice-table-wrap" role="region" aria-label="নোটিশ তালিকা" tabindex="0">
+      <table class="notice-table">
+        <colgroup><col><col class="notice-date-col"><col class="notice-audience-col"><col class="notice-actions-col"></colgroup>
+        <thead><tr><th scope="col">নোটিশ</th><th scope="col">দেখানোর তারিখ</th><th scope="col">কোথায় দেখাবে</th><th scope="col">পদক্ষেপ</th></tr></thead><tbody>
       ${DB.notices.slice().sort((a, b) => b.date.localeCompare(a.date)).map((n) => {
         const expired = n.until && n.until < U.today();
-        return `<tr><td><b>${n.important ? "" : ""}${esc(n.title)}</b>${n.pdf ? ` <a class="chip" href="/api/notice/${n.id}/pdf?v=${n.pdf.v}" target="_blank" rel="noopener" title="${esc(n.pdf.name)}">PDF</a>` : ""}<small>${esc(n.body)}</small></td><td>${U.date(n.date)}${n.until ? `<small>${expired ? "মেয়াদ শেষ" : "চলবে " + U.date(n.until) + " পর্যন্ত"}</small>` : ""}</td>
-        <td>${expired ? '<span class="chip">মেয়াদ শেষ</span>' : n.public ? '<span class="chip ok">ওয়েবসাইট + প্যানেল</span>' : noticeTargetChip(n)}</td>
-        <td class="num"><button class="icon-btn" data-en="${n.id}">✎</button><button class="icon-btn" data-dn="${n.id}">✕</button></td></tr>`;
-      }).join("") || `<tr><td colspan="4" class="empty">কোনো নোটিশ নেই</td></tr>`}</tbody></table></div></div>`;
+        return `<tr><td><div class="notice-title"><strong>${esc(n.title)}</strong>${n.important ? ' <span class="chip warn">জরুরি</span>' : ""}${n.pdf ? ` <a class="chip notice-pdf" href="/api/notice/${encodeURIComponent(n.id)}/pdf?v=${encodeURIComponent(n.pdf.v)}" target="_blank" rel="noopener" title="${esc(n.pdf.name)}">PDF</a>` : ""}</div>${n.body ? `<small class="notice-description">${esc(n.body)}</small>` : ""}</td>
+        <td><strong class="notice-date">${U.date(n.date)}</strong>${n.until ? `<small class="notice-until">${U.date(n.until)} পর্যন্ত</small>` : ""}</td>
+        <td>${expired ? '<span class="chip">মেয়াদ শেষ</span>' : n.public ? '<span class="chip ok">ওয়েবসাইট + প্যানেল</span>' : noticeAudience(n)}</td>
+        <td><div class="notice-actions"><button type="button" class="btn sm line" data-en="${esc(n.id)}">সম্পাদনা</button><button type="button" class="btn sm line danger" data-dn="${esc(n.id)}">মুছুন</button></div></td></tr>`;
+      }).join("") || `<tr><td colspan="4" class="empty">কোনো নোটিশ নেই</td></tr>`}</tbody></table></div></section>`;
     $("#addN").onclick = () => noticeForm();
     c.onclick = (e) => { const t = e.target.closest("[data-en],[data-dn]"); if (!t) return; if (t.dataset.en) noticeForm(DB.notices.find((n) => n.id === t.dataset.en)); if (t.dataset.dn) remove("notices", t.dataset.dn, "এই নোটিশ"); };
   }
