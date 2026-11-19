@@ -3481,7 +3481,7 @@ ${list.map(receiptHtml).join("")}
       fields: [
         { name: "title", label: "শিরোনাম", required: true, wide: true },
         { name: "body", label: "বিস্তারিত", type: "textarea", wide: true },
-        { name: "date", label: "তারিখ", type: "date", value: U.today() },
+        { name: "date", label: "নোটিশ দেখানো শুরুর তারিখ", type: "date", value: U.today() },
         { name: "until", label: "কবে পর্যন্ত দেখাবে (ঐচ্ছিক)", type: "date" },
         { type: "html", html: targetHtml },
         { name: "public", label: "ওয়েবসাইটেও দেখান (সবাই দেখবে)", type: "check" },
