@@ -5,11 +5,13 @@
 // "✕" দিলে শুধু এই ভিজিটের জন্য সরে — নতুন করে খুললে আবার আসে।
 (function () {
   "use strict";
+  const admin = document.currentScript?.dataset.adminApp === "true";
+  const installLabel = admin ? "অ্যাডমিন অ্যাপ ইনস্টল করুন" : "অ্যাপ ইনস্টল করুন";
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
     addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
   }
   const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  const KEY = "sic-install-hide-visit"; // আগের ৭ দিনের লুকানো ("sic-install-hide") আর ধরা হয় না
+  const KEY = admin ? "sic-admin-install-hide-visit" : "sic-install-hide-visit"; // আগের ৭ দিনের লুকানো ("sic-install-hide") আর ধরা হয় না
   const hidden = () => { try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; } };
   const hide = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} };
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios|edgios/i.test(navigator.userAgent); // iOS-এ শুধু Safari থেকে যোগ করা যায়
@@ -38,7 +40,7 @@
 
   addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault(); deferred = e; native = true;
-    show("অ্যাপ ইনস্টল করুন", async () => {
+    show(installLabel, async () => {
       if (!deferred) return;
       deferred.prompt();
       try { await deferred.userChoice; } catch {}
@@ -54,7 +56,7 @@
     // ব্রাউজার ইনস্টলের সুযোগ না দিলেও বোতাম থাকে — চাপলে মেনু থেকে ইনস্টলের নিয়ম
     whenReady(() => setTimeout(() => {
       if (native || pill) return;
-      show("অ্যাপ ইনস্টল করুন", () => help("অ্যাপ ইনস্টল করতে", ["Chrome-এর ওপরে ডানের <b>⋮</b> (তিন ফোঁটা) মেনু চাপুন", "<b>\"Install app\"</b> বা <b>\"Add to Home screen\"</b> বাছুন", "<b>Install</b> চাপুন — হোম স্ক্রিনে আইকন বসে যাবে"]));
+      show(installLabel, () => help("অ্যাপ ইনস্টল করতে", ["Chrome-এর ওপরে ডানের <b>⋮</b> (তিন ফোঁটা) মেনু চাপুন", "<b>\"Install app\"</b> বা <b>\"Add to Home screen\"</b> বাছুন", "<b>Install</b> চাপুন — হোম স্ক্রিনে আইকন বসে যাবে"]));
     }, 2500));
   }
 })();
