@@ -3338,16 +3338,17 @@ async function api(req, res, url) {
   if (p === "/api/admin/photo-backup" && m === "GET") {
     const folders = [PHOTOS, ACHIEVERS, BANNERS, GALLERY, TEACHER_IMG, LEARN_IMG, COURSE_IMG, DAILY_IMG, EBOOK_IMG, BOOK_IMG];
     const files = folders.flatMap(dir => fs.readdirSync(dir).filter(name => /^[\w.-]+\.(jpg|jpeg|png|webp|gif|avif)$/i.test(name)).sort().map(name => ({ name: path.basename(dir) + "/" + name, size: fs.statSync(path.join(dir, name)).size })));
+    const labels = { photos: "শিক্ষার্থী ও ভর্তির ছবি", achievers: "কৃতী শিক্ষার্থী", banners: "ব্যানার", gallery: "ফটো গ্যালারি", "teacher-photos": "শিক্ষক", "learn-images": "ফ্রি ক্লাস ও অনলাইন কোর্স", "course-images": "কোর্স মডিউল", "daily-images": "প্রতিদিন শিখি", "ebook-covers": "ই-বুকের প্রচ্ছদ", "book-covers": "বই ও শিটের প্রচ্ছদ" };
     const parts = []; let group = [], size = 0;
     for (const file of files) {
-      if (group.length && size + file.size > 16 * 1024 * 1024) { parts.push(group); group = []; size = 0; }
+      if (group.length && (size + file.size > 16 * 1024 * 1024 || file.name.split("/")[0] !== group[0].name.split("/")[0])) { parts.push(group); group = []; size = 0; }
       group.push(file); size += file.size;
     }
     if (group.length) parts.push(group);
     const version = crypto.createHash("sha256").update(JSON.stringify(files)).digest("hex").slice(0, 20);
     const params = new URL(req.url, "http://localhost").searchParams;
     const part = params.get("part");
-    if (part === null) return send(res, 200, { count: files.length, parts: parts.map((g, i) => ({ number: i + 1, count: g.length, size: g.reduce((n, f) => n + f.size, 0), url: "/api/admin/photo-backup?part=" + (i + 1) + "&version=" + version })) });
+    if (part === null) return send(res, 200, { count: files.length, parts: parts.map((g, i) => ({ number: i + 1, category: g[0].name.split("/")[0], label: labels[g[0].name.split("/")[0]], count: g.length, size: g.reduce((n, f) => n + f.size, 0), url: "/api/admin/photo-backup?part=" + (i + 1) + "&version=" + version })) });
     if (params.get("version") !== version) return send(res, 409, { error: "ছবির তালিকা বদলেছে। আবার ছবির ব্যাকআপ বাটনে চাপুন।" });
     if (!/^[1-9]\d*$/.test(part) || !parts[Number(part) - 1]) return send(res, 400, { error: "ব্যাকআপের অংশ পাওয়া যায়নি" });
     const zip = photoBackupZip(parts[Number(part) - 1].map(f => ({ name: f.name, data: fs.readFileSync(path.join(DATA, f.name)) })));

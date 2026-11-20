@@ -4015,7 +4015,16 @@ ${list.map(receiptHtml).join("")}
       button.disabled = true; area.textContent = "ছবির তালিকা তৈরি হচ্ছে…";
       try {
         const result = await api("/api/admin/photo-backup");
-        area.innerHTML = result.count ? '<p>মোট ' + bn(result.count) + 'টি ছবি। নিচের প্রতিটি ZIP ফাইল ডাউনলোড করুন। ZIP খুললে photos-এ শিক্ষার্থীদের ছবি, achievers-এ কৃতী শিক্ষার্থীদের ছবি এবং অন্য ছবিগুলো আলাদা ফোল্ডারে পাবেন।</p><div class="toolbar">' + result.parts.map(part => '<a class="btn line" download href="' + esc(part.url) + '">↓ ছবির ব্যাকআপ — অংশ ' + bn(part.number) + ' (' + bn(part.count) + ' ছবি · ' + (part.size / 1048576).toFixed(1) + ' MB)</a>').join('') + '</div>' : '<p>ব্যাকআপ করার মতো আপলোড করা ছবি নেই।</p>';
+        if (!result.count) { area.textContent = "ব্যাকআপ করার মতো আপলোড করা ছবি নেই।"; return; }
+        const categories = Object.values(result.parts.reduce((all, part) => { const item = all[part.category] ||= { key: part.category, label: part.label, count: 0, size: 0, parts: [] }; item.count += part.count; item.size += part.size; item.parts.push(part); return all; }, {}));
+        area.innerHTML = '<p>ক্যাটাগরি বেছে ডাউনলোড করুন। প্রতিটি ক্যাটাগরির সব ছবি একটি ZIP ফাইলে পাবেন।</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">' + categories.map((item, i) => '<section style="border:1px solid #d6e5e1;border-radius:12px;padding:16px;background:#f7faf9"><b>' + esc(item.label) + '</b><p class="muted">' + bn(item.count) + ' ছবি · ' + (item.size / 1048576).toFixed(1) + ' MB</p><button type="button" class="btn line" data-photo-category="' + i + '">↓ ZIP ডাউনলোড</button><p role="status" style="margin-bottom:0" class="muted"></p></section>').join('') + '</div>';
+        area.querySelectorAll('[data-photo-category]').forEach(btn => { btn.onclick = async () => {
+          const item = categories[Number(btn.dataset.photoCategory)], status = btn.nextElementSibling;
+          btn.disabled = true;
+          try { await window.SICPhotoBackup(item, message => { status.textContent = message; }); }
+          catch (error) { status.textContent = error.message; }
+          finally { btn.disabled = false; }
+        }; });
       } catch (error) { area.textContent = error.message; toast(error.message, true); }
       finally { button.disabled = false; }
     };
