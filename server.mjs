@@ -465,6 +465,26 @@ function nextReceiptNo() {
 const activeSessions = () => db.sessions.filter((s) => s.active !== false).map((s) => s.name);
 
 // ---------- ছবি ----------
+// Uncompressed ZIP keeps original image bytes; archive parts are capped at 16 MB.
+function photoBackupZip(files) {
+  const local = [], central = []; let offset = 0;
+  for (const file of files) {
+    const name = Buffer.from(file.name), data = file.data;
+    let crc = 0xffffffff;
+    for (const byte of data) { crc ^= byte; for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0); }
+    crc = (crc ^ 0xffffffff) >>> 0;
+    const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(20, 4); h.writeUInt16LE(0x21, 12);
+    h.writeUInt32LE(crc, 14); h.writeUInt32LE(data.length, 18); h.writeUInt32LE(data.length, 22); h.writeUInt16LE(name.length, 26);
+    local.push(h, name, data);
+    const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(0x21, 14);
+    c.writeUInt32LE(crc, 16); c.writeUInt32LE(data.length, 20); c.writeUInt32LE(data.length, 24); c.writeUInt16LE(name.length, 28); c.writeUInt32LE(offset, 42);
+    central.push(c, name); offset += h.length + name.length + data.length;
+  }
+  const directory = Buffer.concat(central), end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10); end.writeUInt32LE(directory.length, 12); end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...local, directory, end]);
+}
+
 const photoFile = (kind, id) => path.join(PHOTOS, `${kind}-${String(id).replace(/[^\w-]/g, "")}.jpg`);
 function savePhoto(dataUrl, kind, id) {
   const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ""));
@@ -3314,6 +3334,24 @@ async function api(req, res, url) {
     for (const bt of made) if (!db.batches.some((x) => x.id === bt.id)) db.batches.push(bt); else db.batches.push({ ...bt, id: uid("bat") });
     saveDb();
     return send(res, 200, { ok: true });
+  }
+  if (p === "/api/admin/photo-backup" && m === "GET") {
+    const files = fs.readdirSync(PHOTOS).filter(name => /^[\w.-]+\.(jpg|jpeg|png|webp)$/i.test(name)).sort().map(name => ({ name, size: fs.statSync(path.join(PHOTOS, name)).size }));
+    const parts = []; let group = [], size = 0;
+    for (const file of files) {
+      if (group.length && size + file.size > 16 * 1024 * 1024) { parts.push(group); group = []; size = 0; }
+      group.push(file); size += file.size;
+    }
+    if (group.length) parts.push(group);
+    const version = crypto.createHash("sha256").update(JSON.stringify(files)).digest("hex").slice(0, 20);
+    const params = new URL(req.url, "http://localhost").searchParams;
+    const part = params.get("part");
+    if (part === null) return send(res, 200, { count: files.length, parts: parts.map((g, i) => ({ number: i + 1, count: g.length, size: g.reduce((n, f) => n + f.size, 0), url: "/api/admin/photo-backup?part=" + (i + 1) + "&version=" + version })) });
+    if (params.get("version") !== version) return send(res, 409, { error: "ছবির তালিকা বদলেছে। আবার ছবির ব্যাকআপ বাটনে চাপুন।" });
+    if (!/^[1-9]\d*$/.test(part) || !parts[Number(part) - 1]) return send(res, 400, { error: "ব্যাকআপের অংশ পাওয়া যায়নি" });
+    const zip = photoBackupZip(parts[Number(part) - 1].map(f => ({ name: "photos/" + f.name, data: fs.readFileSync(path.join(PHOTOS, f.name)) })));
+    res.writeHead(200, { "Content-Type": "application/zip", "Cache-Control": "no-store", "Content-Disposition": 'attachment; filename="shahins-photos-' + today() + '-part-' + part + '.zip"' });
+    return res.end(zip);
   }
   if (p === "/api/admin/backup" && m === "GET") {
     res.writeHead(200, {

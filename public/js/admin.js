@@ -3944,8 +3944,9 @@ ${list.map(receiptHtml).join("")}
         <div class="card"><div class="card-head"><h2>ব্যাকআপ</h2></div>
           <p style="margin-top:0;color:var(--muted)">শিক্ষার্থী, পেমেন্ট, হাজিরা, ফলাফল, নোটিশ ও অন্যান্য সংরক্ষিত তথ্য একটি JSON ফাইলে নিজের কম্পিউটার বা মোবাইলে রাখুন। পরে এই ফাইল দিয়ে তথ্য ফেরানো যাবে।</p>
           <p class="muted">এই ফাইলে ছবি, ভিডিও, আপলোড করা PDF এবং লগইন / SMS-এর গোপন সেটিংস থাকে না।</p>
-          <div class="toolbar"><button type="button" class="btn gold" id="downloadBackup">↓ ব্যাকআপ ডাউনলোড করুন</button>
+          <div class="toolbar"><button type="button" class="btn line" id="photoBackup">↓ ছবির ব্যাকআপ ডাউনলোড</button><button type="button" class="btn gold" id="downloadBackup">↓ ব্যাকআপ ডাউনলোড করুন</button>
           <label class="btn line">↑ ব্যাকআপ থেকে ফেরান<input type="file" id="restore" accept=".json" hidden></label></div>
+          <div id="photoBackupFiles" aria-live="polite"></div>
           <p id="backupDownloadStatus" role="status" aria-live="polite" style="overflow-wrap:anywhere;margin:10px 0;color:var(--muted)">ডাউনলোড করা ফাইলটি নিরাপদ স্থানে রাখুন।</p>
           <div class="toolbar"><a class="btn line" href="#students">শিক্ষার্থী Excel →</a><a class="btn line" href="#fees">পেমেন্ট Excel →</a></div>
         </div>
@@ -4009,6 +4010,15 @@ ${list.map(receiptHtml).join("")}
       try { await api("/api/admin/password", { body: b }); const em = b.email; e.target.reset(); $("#credEmail").value = em; toast("লগইনের তথ্য বদলানো হয়েছে"); } catch (err) { toast(err.message, true); }
     };
     if ($("#credEmail")) api("/api/admin/creds").then((r) => { $("#credEmail").value = r.email || ""; $("#credEmail").placeholder = ""; }).catch(() => {});
+    $("#photoBackup").onclick = async () => {
+      const button = $("#photoBackup"), area = $("#photoBackupFiles");
+      button.disabled = true; area.textContent = "ছবির তালিকা তৈরি হচ্ছে…";
+      try {
+        const result = await api("/api/admin/photo-backup");
+        area.innerHTML = result.count ? '<p>মোট ' + bn(result.count) + 'টি ছবি। নিচের প্রতিটি ZIP ফাইল ডাউনলোড করুন। ZIP খুললে photos ফোল্ডারে ছবিগুলো পাবেন।</p><div class="toolbar">' + result.parts.map(part => '<a class="btn line" download href="' + esc(part.url) + '">↓ ছবির ব্যাকআপ — অংশ ' + bn(part.number) + ' (' + bn(part.count) + ' ছবি · ' + (part.size / 1048576).toFixed(1) + ' MB)</a>').join('') + '</div>' : '<p>ব্যাকআপ করার মতো আপলোড করা ছবি নেই।</p>';
+      } catch (error) { area.textContent = error.message; toast(error.message, true); }
+      finally { button.disabled = false; }
+    };
     $("#downloadBackup").onclick = async () => {
       const button = $("#downloadBackup"), status = $("#backupDownloadStatus");
       button.disabled = true; button.textContent = "ব্যাকআপ তৈরি হচ্ছে…";
