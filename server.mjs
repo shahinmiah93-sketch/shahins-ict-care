@@ -3317,8 +3317,9 @@ async function api(req, res, url) {
   }
   if (p === "/api/admin/backup" && m === "GET") {
     res.writeHead(200, {
+      "Cache-Control": "no-store",
       "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="shahins-ict-care-backup-${today()}.json"`,
+      "Content-Disposition": `attachment; filename="shahins-ict-care-backup-${today()}-${Date.now()}.json"`,
     });
     return res.end(JSON.stringify(db, null, 2));
   }

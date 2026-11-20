@@ -3942,9 +3942,11 @@ ${list.map(receiptHtml).join("")}
           <label class="wide">বর্তমান পাসওয়ার্ড <small style="font-weight:400;color:var(--muted)">(যেকোনো কিছু বদলাতে লাগবে)</small><input type="password" name="current" autocomplete="current-password" required></label>
           <div class="wide"><button class="btn gold">সেভ করুন</button></div></form></div>`}
         <div class="card"><div class="card-head"><h2>ব্যাকআপ</h2></div>
-          <p style="margin-top:0;color:var(--muted)">প্রতিদিন নিজে থেকে <b>data/backups</b> ফোল্ডারে ব্যাকআপ হয় (শেষ ৩০ দিন)। মাঝে মাঝে নিচের বাটনে ব্যাকআপ নামিয়ে USB বা Google Drive-এ রাখুন। ছবিগুলো থাকে <b>data/photos</b> ফোল্ডারে — সেটাও কপি করে রাখুন।</p>
-          <div class="toolbar"><a class="btn gold" href="/api/admin/backup">↓ ব্যাকআপ ডাউনলোড</a>
+          <p style="margin-top:0;color:var(--muted)">শিক্ষার্থী, পেমেন্ট, হাজিরা, ফলাফল, নোটিশ ও অন্যান্য সংরক্ষিত তথ্য একটি JSON ফাইলে নিজের কম্পিউটার বা মোবাইলে রাখুন। পরে এই ফাইল দিয়ে তথ্য ফেরানো যাবে।</p>
+          <p class="muted">এই ফাইলে ছবি, ভিডিও, আপলোড করা PDF এবং লগইন / SMS-এর গোপন সেটিংস থাকে না।</p>
+          <div class="toolbar"><button type="button" class="btn gold" id="downloadBackup">↓ ব্যাকআপ ডাউনলোড করুন</button>
           <label class="btn line">↑ ব্যাকআপ থেকে ফেরান<input type="file" id="restore" accept=".json" hidden></label></div>
+          <p id="backupDownloadStatus" role="status" aria-live="polite" style="overflow-wrap:anywhere;margin:10px 0;color:var(--muted)">ডাউনলোড করা ফাইলটি নিরাপদ স্থানে রাখুন।</p>
           <div class="toolbar"><a class="btn line" href="#students">শিক্ষার্থী Excel →</a><a class="btn line" href="#fees">পেমেন্ট Excel →</a></div>
         </div>
       </div>
@@ -4007,6 +4009,26 @@ ${list.map(receiptHtml).join("")}
       try { await api("/api/admin/password", { body: b }); const em = b.email; e.target.reset(); $("#credEmail").value = em; toast("লগইনের তথ্য বদলানো হয়েছে"); } catch (err) { toast(err.message, true); }
     };
     if ($("#credEmail")) api("/api/admin/creds").then((r) => { $("#credEmail").value = r.email || ""; $("#credEmail").placeholder = ""; }).catch(() => {});
+    $("#downloadBackup").onclick = async () => {
+      const button = $("#downloadBackup"), status = $("#backupDownloadStatus");
+      button.disabled = true; button.textContent = "ব্যাকআপ তৈরি হচ্ছে…";
+      status.textContent = "তথ্য সংগ্রহ হচ্ছে, একটু অপেক্ষা করুন।";
+      try {
+        const response = await fetch("/api/admin/backup", { cache: "no-store" });
+        if (!response.ok) throw new Error(response.status === 401 ? "আবার লগইন করে ব্যাকআপ ডাউনলোড করুন।" : "ব্যাকআপ ডাউনলোড হয়নি। আবার চেষ্টা করুন।");
+        const blob = await response.blob();
+        const data = JSON.parse(await blob.text());
+        if (!Array.isArray(data.students) || !data.settings) throw new Error("সঠিক ব্যাকআপ পাওয়া যায়নি। আবার চেষ্টা করুন।");
+        const filename = (response.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "shahins-ict-care-backup.json";
+        const url = URL.createObjectURL(blob), link = document.createElement("a");
+        link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        status.textContent = "✓ ব্যাকআপ প্রস্তুত। ব্রাউজারের ডাউনলোড তালিকা দেখুন: " + filename;
+        toast("ব্যাকআপ প্রস্তুত — ডাউনলোড তালিকা দেখুন");
+      } catch (error) {
+        status.textContent = error.message; toast(error.message, true);
+      } finally { button.disabled = false; button.textContent = "↓ ব্যাকআপ ডাউনলোড করুন"; }
+    };
     $("#restore").onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
       if (!confirm("এই ব্যাকআপ থেকে ফেরালে এখনকার সব তথ্য বদলে যাবে (আগের অবস্থার একটি কপি রাখা হবে)। চালিয়ে যাবেন?")) return (e.target.value = "");
