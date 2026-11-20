@@ -3336,7 +3336,8 @@ async function api(req, res, url) {
     return send(res, 200, { ok: true });
   }
   if (p === "/api/admin/photo-backup" && m === "GET") {
-    const files = fs.readdirSync(PHOTOS).filter(name => /^[\w.-]+\.(jpg|jpeg|png|webp)$/i.test(name)).sort().map(name => ({ name, size: fs.statSync(path.join(PHOTOS, name)).size }));
+    const folders = [PHOTOS, ACHIEVERS, BANNERS, GALLERY, TEACHER_IMG, LEARN_IMG, COURSE_IMG, DAILY_IMG, EBOOK_IMG, BOOK_IMG];
+    const files = folders.flatMap(dir => fs.readdirSync(dir).filter(name => /^[\w.-]+\.(jpg|jpeg|png|webp|gif|avif)$/i.test(name)).sort().map(name => ({ name: path.basename(dir) + "/" + name, size: fs.statSync(path.join(dir, name)).size })));
     const parts = []; let group = [], size = 0;
     for (const file of files) {
       if (group.length && size + file.size > 16 * 1024 * 1024) { parts.push(group); group = []; size = 0; }
@@ -3349,7 +3350,7 @@ async function api(req, res, url) {
     if (part === null) return send(res, 200, { count: files.length, parts: parts.map((g, i) => ({ number: i + 1, count: g.length, size: g.reduce((n, f) => n + f.size, 0), url: "/api/admin/photo-backup?part=" + (i + 1) + "&version=" + version })) });
     if (params.get("version") !== version) return send(res, 409, { error: "ছবির তালিকা বদলেছে। আবার ছবির ব্যাকআপ বাটনে চাপুন।" });
     if (!/^[1-9]\d*$/.test(part) || !parts[Number(part) - 1]) return send(res, 400, { error: "ব্যাকআপের অংশ পাওয়া যায়নি" });
-    const zip = photoBackupZip(parts[Number(part) - 1].map(f => ({ name: "photos/" + f.name, data: fs.readFileSync(path.join(PHOTOS, f.name)) })));
+    const zip = photoBackupZip(parts[Number(part) - 1].map(f => ({ name: f.name, data: fs.readFileSync(path.join(DATA, f.name)) })));
     res.writeHead(200, { "Content-Type": "application/zip", "Cache-Control": "no-store", "Content-Disposition": 'attachment; filename="shahins-photos-' + today() + '-part-' + part + '.zip"' });
     return res.end(zip);
   }

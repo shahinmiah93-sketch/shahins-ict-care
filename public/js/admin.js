@@ -4015,7 +4015,7 @@ ${list.map(receiptHtml).join("")}
       button.disabled = true; area.textContent = "ছবির তালিকা তৈরি হচ্ছে…";
       try {
         const result = await api("/api/admin/photo-backup");
-        area.innerHTML = result.count ? '<p>মোট ' + bn(result.count) + 'টি ছবি। নিচের প্রতিটি ZIP ফাইল ডাউনলোড করুন। ZIP খুললে photos ফোল্ডারে ছবিগুলো পাবেন।</p><div class="toolbar">' + result.parts.map(part => '<a class="btn line" download href="' + esc(part.url) + '">↓ ছবির ব্যাকআপ — অংশ ' + bn(part.number) + ' (' + bn(part.count) + ' ছবি · ' + (part.size / 1048576).toFixed(1) + ' MB)</a>').join('') + '</div>' : '<p>ব্যাকআপ করার মতো আপলোড করা ছবি নেই।</p>';
+        area.innerHTML = result.count ? '<p>মোট ' + bn(result.count) + 'টি ছবি। নিচের প্রতিটি ZIP ফাইল ডাউনলোড করুন। ZIP খুললে photos-এ শিক্ষার্থীদের ছবি, achievers-এ কৃতী শিক্ষার্থীদের ছবি এবং অন্য ছবিগুলো আলাদা ফোল্ডারে পাবেন।</p><div class="toolbar">' + result.parts.map(part => '<a class="btn line" download href="' + esc(part.url) + '">↓ ছবির ব্যাকআপ — অংশ ' + bn(part.number) + ' (' + bn(part.count) + ' ছবি · ' + (part.size / 1048576).toFixed(1) + ' MB)</a>').join('') + '</div>' : '<p>ব্যাকআপ করার মতো আপলোড করা ছবি নেই।</p>';
       } catch (error) { area.textContent = error.message; toast(error.message, true); }
       finally { button.disabled = false; }
     };
