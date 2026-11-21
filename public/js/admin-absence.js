@@ -87,7 +87,7 @@ window.SICAbsence = function (X) {
   const nextMonthFirst = () => { const [y, m] = today().split("-").map(Number); return new Date(y, m, 1).toLocaleDateString("en-CA"); };
   const stopHtml = (s, uid) => `<div class="ab-stop" hidden>
       <b>⏸ ${esc(s.name)}-এর পড়া বন্ধ করুন</b>
-      <label class="ab-opt"><input type="radio" name="stop-${uid}" value="today" checked><span><b>আজ থেকে</b><small>এই মাসে আর পড়বে না। এই মাসে একদিনও উপস্থিত না থাকলে ফি শূন্য; থাকলে আজ পর্যন্ত ক্লাসের ফি ধরা হবে।</small></span></label>
+      <label class="ab-opt"><input type="radio" name="stop-${uid}" value="today" checked><span><b>আজ থেকে</b><small>এই মাসে আর পড়বে না। ৩ দিন বা কম উপস্থিতিতে ফি নেই; বেশি হলে উপস্থিত ক্লাসের অনুপাতে। তবে ২০ তারিখ বা পরে বন্ধ ও ১৩ তারিখ বা পরে উপস্থিতি থাকলে অর্ধেক; ২৫ তারিখের পরে বন্ধ ও ২২ তারিখের পরে উপস্থিতি থাকলে পুরো ফি।</small></span></label>
       <label class="ab-opt"><input type="radio" name="stop-${uid}" value="next"><span><b>আগামী মাসের ১ তারিখ (${esc(U.date(nextMonthFirst()))}) থেকে</b><small>এই মাস পর্যন্ত পড়বে। ঐ তারিখ এলে নিজে থেকেই পড়া বন্ধ হয়ে যাবে।</small></span></label>
       <label class="ab-opt"><input type="radio" name="stop-${uid}" value="custom"><span><b>অন্য তারিখ থেকে</b><input type="date" class="ab-stop-date" value="${today()}"></span></label>
       <input class="ab-stop-reason" maxlength="300" placeholder="কারণ" value="অভিভাবক জানিয়েছেন — আর পড়বে না">

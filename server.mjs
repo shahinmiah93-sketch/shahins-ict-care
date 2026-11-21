@@ -616,6 +616,17 @@ function monthlyFeeFor(course, enrollment, month) {
   const base = num(rule ? rule.fee : enrollment.fee), pct = Math.min(100, Math.max(0, num(enrollment.discountPct)));
   return Math.max(0, base - (pct > 0 ? Math.round(base * pct / 100) : num(enrollment.discount)));
 }
+// The stopping month's fee is based on unique saved present days, not elapsed classes.
+function stoppedMonthFee(monthlyRate, presentDates, stopDate, totalClasses) {
+  const dates = [...new Set(presentDates)].filter(date => date.slice(0, 7) === stopDate.slice(0, 7) && date <= stopDate).sort();
+  const stopDay = Number(stopDate.slice(8)), got = dates.length;
+  let pauseRule, fee;
+  if (stopDay > 25 && dates.some(date => Number(date.slice(8)) > 22)) { pauseRule = "full"; fee = monthlyRate; }
+  else if (stopDay >= 20 && dates.some(date => Number(date.slice(8)) >= 13)) { pauseRule = "half"; fee = Math.round(monthlyRate / 2); }
+  else if (got <= 3) { pauseRule = "free"; fee = 0; }
+  else { pauseRule = "attendance"; fee = Math.min(monthlyRate, Math.round(monthlyRate * got / (totalClasses || STD_CLASSES))); }
+  return { fee, got, total: totalClasses || STD_CLASSES, shut: 0, monthlyRate, pauseRule, stopDate, paused: false, late: false, reasons: ["পড়া বন্ধ"] };
+}
 function enrollmentDue(e, context = {}) {
   const c = context.course || db.courses.find((x) => x.id === e.courseId) || {};
   const net = Math.max(0, num(e.fee) - num(e.discount));
@@ -635,11 +646,19 @@ function enrollmentDue(e, context = {}) {
     const md = new Date(start.getFullYear(), start.getMonth() + i, 1), Y = md.getFullYear(), M = md.getMonth();
     const month = `${Y}-${pad2(M + 1)}`;
     const pause = pauseDates.find(date => date.startsWith(month + "-"));
-    const attended = pause && Object.entries(db.attendance || {}).some(([key, marks]) => {
-      const date = key.split("|")[0];
-      return date.startsWith(month + "-") && date >= e.startDate && date <= pause && marks[s.id] === "P";
-    });
-    if (pz.has(month) || (pause && !attended)) { const row = { month, fee: 0, got: 0, total: 0, shut: 0, late: false, paused: true, reasons: ["পড়া বন্ধ"] }; adjust.push(row); breakdown.push(row); if (i === 0) firstNet = 0; continue; }
+    if (pz.has(month) && !pause) { const row = { month, fee: 0, got: 0, total: 0, shut: 0, late: false, paused: true, reasons: ["পড়া বন্ধ"] }; adjust.push(row); breakdown.push(row); if (i === 0) firstNet = 0; continue; }
+    if (pause) {
+      const presentDates = Object.entries(db.attendance || {}).filter(([key, marks]) => {
+        const date = key.split("|")[0];
+        return date.startsWith(month + "-") && date >= e.startDate && date <= pause && marks[s.id] === "P";
+      }).map(([key]) => key.split("|")[0]);
+      const monthlyRate = monthlyFeeFor(c, e, month);
+      const total = wd.length ? monthFee(monthlyRate, wd, Y, M, 1, new Set()).total : STD_CLASSES;
+      const row = { month, ...stoppedMonthFee(monthlyRate, presentDates, pause, total) };
+      due += row.fee; breakdown.push(row); adjust.push(row);
+      if (i === 0) { firstNet = row.fee; firstClasses = row.got; firstTotal = row.total; }
+      continue;
+    }
     // ভর্তির মাস: ১–৬ তারিখে শুরু হলে পুরো মাস ধরা হয়, পরে হলে শুরুর দিন থেকে (পুরনো ভর্তিতে পুরো মাস)
     const fromDay = i === 0 && e.firstTotal && !e.firstGrace ? start.getDate() : 1;
     const monthNet = monthlyFeeFor(c, e, `${Y}-${pad2(M + 1)}`);

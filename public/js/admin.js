@@ -71,7 +71,7 @@
 
   // কোন মাসে কেন ফি কম ধরা হয়েছে (দেরিতে ভর্তি / ব্যাচ বন্ধ)
   const monthName = (mk) => new Date(mk + "-01T00:00:00").toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
-  const feeAdjustHtml = (it) => (it.adjust || []).map((a) => a.paused ? `<small>${monthName(a.month)}: ❚❚ পড়া বন্ধ → ${money(0)}</small>` : `<small>${monthName(a.month)}: ${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` · ${bn(a.shut)}টি বন্ধ${a.reasons.length ? ` (${esc(a.reasons.join(", "))})` : ""}` : ""}${a.scheduled ? ` · মাসভিত্তিক ফি ${money(a.monthlyRate)}` : ""}${a.late ? " · দেরিতে ভর্তি" : ""} → ${money(a.fee)}</small>`).join("");
+  const feeAdjustHtml = (it) => (it.adjust || []).map((a) => a.pauseRule ? `<small>${monthName(a.month)}: পড়া বন্ধ · ${a.pauseRule === "free" ? "৩ দিন বা কম উপস্থিত — ফি নেই" : a.pauseRule === "half" ? "২০ তারিখ বা পরে বন্ধ, ১৩ তারিখ বা পরে উপস্থিত — অর্ধেক ফি" : a.pauseRule === "full" ? "২৫ তারিখের পরে বন্ধ, ২২ তারিখের পরে উপস্থিত — পুরো ফি" : `${bn(a.got)}/${bn(a.total)} ক্লাসে উপস্থিতির অনুপাতে`} → ${money(a.fee)}</small>` : a.paused ? `<small>${monthName(a.month)}: ❚❚ পড়া বন্ধ → ${money(0)}</small>` : `<small>${monthName(a.month)}: ${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` · ${bn(a.shut)}টি বন্ধ${a.reasons.length ? ` (${esc(a.reasons.join(", "))})` : ""}` : ""}${a.scheduled ? ` · মাসভিত্তিক ফি ${money(a.monthlyRate)}` : ""}${a.late ? " · দেরিতে ভর্তি" : ""} → ${money(a.fee)}</small>`).join("");
   // মাসিক কোর্সে ভর্তির মাসের ফি (সার্ভারের হিসাবের মতোই: ১–৬ তারিখে পুরো মাস, পরে হলে শুরুর দিন থেকে, "টাকা কমবে" এমন বন্ধ বাদ)
   function firstMonthDue(enr, net) {
     const s = studentById(enr.studentId), b = s && batchById(s.batchId);
@@ -273,7 +273,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     if (!s) return;
     const soon = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
     const paused = s.status === "inactive" || !!soon;
-    const ask = soon ? `"${s.name}"-এর পড়া ${U.date(soon.from)} থেকে বন্ধ হওয়ার কথা।\n\nবন্ধ বাতিল করতে ${soon.from} বা আগের তারিখ দিন; অথবা কবে আবার চালু হবে সেই তারিখ দিন (YYYY-MM-DD)` : paused ? `"${s.name}"-এর পড়া আবার চালু করবেন?\n\nকোন তারিখ থেকে চালু? (YYYY-MM-DD)` : `"${s.name}"-এর পড়া বন্ধ রাখবেন?\nহাজিরা, ফলাফল আর শিক্ষার্থী প্যানেলে আর দেখাবে না; বন্ধের মাসে একদিনও উপস্থিত না থাকলে ফি শূন্য। উপস্থিত থাকলে বন্ধের তারিখ পর্যন্ত ক্লাসের ফি ধরা হবে। পরে আবার চালু করা যাবে।\n\nকোন তারিখ থেকে বন্ধ? (YYYY-MM-DD)`;
+    const ask = soon ? `"${s.name}"-এর পড়া ${U.date(soon.from)} থেকে বন্ধ হওয়ার কথা।\n\nবন্ধ বাতিল করতে ${soon.from} বা আগের তারিখ দিন; অথবা কবে আবার চালু হবে সেই তারিখ দিন (YYYY-MM-DD)` : paused ? `"${s.name}"-এর পড়া আবার চালু করবেন?\n\nকোন তারিখ থেকে চালু? (YYYY-MM-DD)` : `"${s.name}"-এর পড়া বন্ধ রাখবেন?\nহাজিরা, ফলাফল আর শিক্ষার্থী প্যানেলে আর দেখাবে না; বন্ধের মাসে ৩ দিন বা কম উপস্থিত হলে ফি নেই; বেশি হলে উপস্থিত ক্লাসের অনুপাতে ফি। তবে ২০ তারিখ বা পরে বন্ধ ও ১৩ তারিখ বা পরে উপস্থিতি থাকলে অর্ধেক ফি; ২৫ তারিখের পরে বন্ধ ও ২২ তারিখের পরে উপস্থিতি থাকলে পুরো ফি। পরে আবার চালু করা যাবে।\n\nকোন তারিখ থেকে বন্ধ? (YYYY-MM-DD)`;
     const date = prompt(ask, soon ? soon.from : U.today()); if (date === null) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) return toast("তারিখ এভাবে লিখুন: 2026-10-26", true);
     const reason = paused ? "" : prompt("কেন বন্ধ? (না লিখলেও চলবে)", ""); if (reason === null) return;
