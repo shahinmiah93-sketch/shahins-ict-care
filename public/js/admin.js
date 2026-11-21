@@ -2072,7 +2072,7 @@ ${list.map(receiptHtml).join("")}
       <div class="card at-reg" id="attBatchEmpty"><p class="at-empty">হাজিরা নিতে আগে ব্যাচ বেছে নিন।</p></div>
       <div class="card at-reg" id="attBatchRegister" hidden>
         <div class="at-reg-head"><div><h3>শিক্ষার্থীর হাজিরা</h3><small id="attMeta"></small></div>
-          <div class="at-tools"><label class="at-search">⌕ <input id="attQ" placeholder="নাম বা আইডি দিয়ে খুঁজুন"></label>
+          <div class="at-tools"><label class="at-search">⌕ <input id="attQ" placeholder="নাম, আইডি বা মোবাইল নম্বর" aria-label="নাম, আইডি বা মোবাইল নম্বর দিয়ে শিক্ষার্থী খুঁজুন"></label>
             <button type="button" class="at-all p" data-all="P">✓ উপস্থিত</button><button type="button" class="at-all a" data-all="A">× অনুপস্থিত</button><button type="button" class="at-all l" data-all="L">○ ছুটি</button></div></div>
         <div class="at-cols"><span>শিক্ষার্থী</span><span class="at-nbh">নতুন ব্যাচ <button type="button" class="at-lock" id="attLock"></button></span><span>হাজিরা</span><span>বাড়ির কাজ</span><span>পড়া পারা</span><span>পয়েন্ট</span><span>অবস্থা</span></div>
         <div id="arows"></div>
@@ -2083,6 +2083,8 @@ ${list.map(receiptHtml).join("")}
     const absCalls = window.SICAbsence({ get DB() { return DB; }, batchName, load, save, openForm, callDate });
     // ক্লাসের দিন নয় এমন তারিখে হাজিরা দিতে গেলে সতর্কবার্তা (ব্যাচের দিনের সাথে তারিখের বারের মিল দেখে); বন্ধের দিন হলে আলাদা বার্তা আছে, তাই সেটা বাদ
     const dayWords = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+    const attendanceSearchText = value => String(value || "").trim().toLowerCase().replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit));
+    const attendanceContacts = student => [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone].map(value => attendanceSearchText(value).replace(/\D/g, "")).filter(Boolean).join(" ");
     const offDayInfo = () => {
       const date = $("#ad").value, bid = $("#abSel") && $("#abSel").value, bt = DB.batches.find((x) => x.id === bid);
       if (!bt || !date || U.isClassDay(bt.days, date) !== false || U.closureOn(DB.closures, bid, date)) return null;
@@ -2323,7 +2325,7 @@ ${list.map(receiptHtml).join("")}
       $("#attMeta").textContent = `${bn(list.length)} জন শিক্ষার্থী · ${batchName(b)} · ${U.date(date)}`;
       const moveCell = (s) => { const others = DB.batches.filter((x) => x.session === s.session && x.id !== s.batchId && x.active !== false); return `<div class="at-nb">${others.length ? `<select data-move="${s.id}" aria-label="নতুন ব্যাচ">${opt([["", "— বাছুন —"], ...others.map((x) => [x.id, U.batchLabel(x)])], "")}</select>` : "—"}</div>`; };
       const offList = DB.students.filter((s) => s.batchId === b && s.status === "inactive"); // এদের হাজিরা নেই, শুধু আবার চালু করা বা ব্যাচ বদলানো যায়
-      const offRows = offList.map((s) => `<div class="at-person at-off" data-sid="${s.id}" data-q="${esc((s.id + " " + s.name).toLowerCase())}">
+      const offRows = offList.map((s) => `<div class="at-person at-off" data-sid="${s.id}" data-q="${esc(attendanceSearchText(s.id + " " + s.name))}" data-contact="${esc(attendanceContacts(s))}">
           <div class="at-stu"><span class="at-av">${esc(String(s.name || "?").trim().split(/\s+/).map((x) => x[0]).slice(0, 2).join(""))}</span><div><b>${esc(s.name)}</b><small>${esc(s.id)}</small></div></div>
           ${moveCell(s)}<div class="at-offtx">পড়া বন্ধ — হাজিরা লাগবে না</div><span></span><span></span><b class="at-pts">—</b><div class="at-st">${stToggle(s)}</div></div>`).join("");
       $("#arows").innerHTML = (list.map((s) => {
@@ -2339,7 +2341,7 @@ ${list.map(receiptHtml).join("")}
         ticks[s.id] = { hw: (rh?.checks || {})[s.id] === "done", lesson: (rl?.checks || {})[s.id] === "done" };
         const on = marks[s.id] === "P";
         const ini = esc(String(s.name || "?").trim().split(/\s+/).map((x) => x[0]).slice(0, 2).join(""));
-        return `<div class="at-person" data-sid="${s.id}" data-q="${esc((s.id + " " + s.name).toLowerCase())}">
+        return `<div class="at-person" data-sid="${s.id}" data-q="${esc(attendanceSearchText(s.id + " " + s.name))}" data-contact="${esc(attendanceContacts(s))}">
           <div class="at-stu"><span class="at-av">${ini}</span><div><b>${esc(s.name)}</b><small>${esc(s.id)}${chip}</small></div></div>
           ${moveCell(s)}
           <div class="att-row" data-sid="${s.id}">${[["P", "✓ উপস্থিত"], ["A", "× অনুপস্থিত"], ["L", "○ ছুটি"]].map(([v, t]) => `<button type="button" data-v="${v}" class="${marks[s.id] === v ? "on" : ""}">${t}</button>`).join("")}</div>
@@ -2374,7 +2376,7 @@ ${list.map(receiptHtml).join("")}
       paintRow(sid); summary();
     };
     // খোঁজা: শুধু দেখা যাওয়া সারিতেই "সবাইকে একসাথে" কাজ করে
-    $("#attQ").oninput = (e) => { const q = e.target.value.trim().toLowerCase().replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)); rows().forEach((r) => (r.hidden = !!q && !r.dataset.q.includes(q))); };
+    $("#attQ").oninput = (e) => { const q = attendanceSearchText(e.target.value), phone = /^[+\d\s().-]+$/.test(q) ? q.replace(/\D/g, "") : ""; $("#arows .at-person").forEach((r) => { r.hidden = !!q && !r.dataset.q.includes(q) && !(phone && (r.dataset.contact || "").split(" ").some(number => number.includes(phone))); }); };
     $$("[data-all]", c).forEach((b) => (b.onclick = () => { rows().filter((r) => !r.hidden).forEach((r) => { const sid = r.dataset.sid; marks[sid] = b.dataset.all; if (b.dataset.all !== "P") ticks[sid] = { hw: false, lesson: false }; paintRow(sid); }); summary(); }));
     $("#attClean").onclick = () => { rows().forEach((r) => { marks[r.dataset.sid] = undefined; ticks[r.dataset.sid] = { hw: false, lesson: false }; paintRow(r.dataset.sid); }); summary(); toast("চিহ্ন মুছে গেছে — সেভ করলে তবেই বদলাবে"); };
     if (callDate) $('[data-at-tab="calls"]', c).click();
