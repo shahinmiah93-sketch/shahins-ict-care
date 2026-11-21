@@ -779,7 +779,7 @@ ${list.map(receiptHtml).join("")}
     const marks = todayRecs.flatMap(([, m]) => Object.values(m));
     const present = marks.filter((v) => v === "P").length; // L = ছুটি (উপস্থিত ধরা হয় না)
     const collected = DB.payments.filter((p) => (p.date || "").startsWith(thisMonth())).reduce((t, p) => t + p.amount, 0);
-    const dues = act.filter((s) => s.fees.balance > 0).sort((a, b) => b.fees.balance - a.fees.balance);
+    const dues = DB.students.filter((s) => s.fees.balance > 0).sort((a, b) => Number(a.status === "inactive") - Number(b.status === "inactive") || b.fees.balance - a.fees.balance);
     const totalDue = dues.reduce((t, s) => t + s.fees.balance, 0);
     const newApps = DB.applications.filter((a) => a.status === "pending");
     const notices = DB.notices.filter((n) => !n.until || n.until >= U.today());
@@ -2927,7 +2927,7 @@ ${list.map(receiptHtml).join("")}
           }
           return { s: student, totalDue, balance, paid: totalDue - balance };
         }).filter((row) => row.balance > 0);
-        rows.innerHTML = entries.map(({ s, totalDue, paid, balance }) => `<tr><td><b>${esc(s.name)}</b><small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(totalDue)}</td><td class="num">${money(paid)}</td><td class="num"><span class="chip bad">${money(balance)}</span></td>
+        rows.innerHTML = entries.map(({ s, totalDue, paid, balance }) => `<tr${s.status === "inactive" ? ' style="background:#f1f4f5"' : ""}><td><b>${esc(s.name)}</b>${s.status === "inactive" ? ' <span class="chip">নিষ্ক্রিয়</span>' : ""}<small>${esc(s.id)}</small></td><td>${esc(s.session || "")}<small>${esc(batchName(s.batchId))}</small></td><td>${esc(modulesOf(s.id).join(", "))}</td><td class="num">${money(totalDue)}</td><td class="num">${money(paid)}</td><td class="num"><span class="chip bad">${money(balance)}</span></td>
         <td class="num" style="white-space:nowrap"><button class="btn sm gold" data-pay="${s.id}">পেমেন্ট</button> ${s.guardianPhone ? `<a class="btn sm wa" target="_blank" rel="noopener" href="${waLink(s.guardianPhone, `আসসালামু আলাইকুম। ${s.name}-এর ফি বাবদ ${money(s.fees.balance).replace("৳", "")} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। — ${DB.settings.name}`)}">মনে করিয়ে দিন</a>` : ""}</td></tr>`).join("")
         || `<tr><td colspan="7" class="empty">${query ? "এই খোঁজে কাউকে পাওয়া যায়নি।" : "কোনো বকেয়া নেই।"}</td></tr>`;
       };
