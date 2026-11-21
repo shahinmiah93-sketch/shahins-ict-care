@@ -2376,7 +2376,7 @@ ${list.map(receiptHtml).join("")}
       paintRow(sid); summary();
     };
     // খোঁজা: শুধু দেখা যাওয়া সারিতেই "সবাইকে একসাথে" কাজ করে
-    $("#attQ").oninput = (e) => { const q = attendanceSearchText(e.target.value), phone = /^[+\d\s().-]+$/.test(q) ? q.replace(/\D/g, "") : ""; $("#arows .at-person").forEach((r) => { r.hidden = !!q && !r.dataset.q.includes(q) && !(phone && (r.dataset.contact || "").split(" ").some(number => number.includes(phone))); }); };
+    $("#attQ").oninput = (e) => { const q = attendanceSearchText(e.target.value), phone = /^[+\d\s().-]+$/.test(q) ? q.replace(/\D/g, "") : ""; $$("#arows .at-person").forEach((r) => { r.hidden = !!q && !r.dataset.q.includes(q) && !(phone && (r.dataset.contact || "").split(" ").some(number => number.includes(phone))); }); };
     $$("[data-all]", c).forEach((b) => (b.onclick = () => { rows().filter((r) => !r.hidden).forEach((r) => { const sid = r.dataset.sid; marks[sid] = b.dataset.all; if (b.dataset.all !== "P") ticks[sid] = { hw: false, lesson: false }; paintRow(sid); }); summary(); }));
     $("#attClean").onclick = () => { rows().forEach((r) => { marks[r.dataset.sid] = undefined; ticks[r.dataset.sid] = { hw: false, lesson: false }; paintRow(r.dataset.sid); }); summary(); toast("চিহ্ন মুছে গেছে — সেভ করলে তবেই বদলাবে"); };
     if (callDate) $('[data-at-tab="calls"]', c).click();
