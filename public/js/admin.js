@@ -661,7 +661,18 @@ ${list.map(receiptHtml).join("")}
     teachers: ["শিক্ষক ও একাডেমিক সহযোগী", teachers],
     settings: ["সেটিংস", settings],
   };
+  let attendanceUnsaved = null, renderedHash = location.hash;
+  const attendanceLeaveText = "হাজিরার পরিবর্তন এখনো সেভ হয়নি। এখন বের হলে পরিবর্তনগুলো হারিয়ে যাবে। তবুও বের হতে চান?";
+  addEventListener("beforeunload", event => {
+    if (attendanceUnsaved?.()) { event.preventDefault(); event.returnValue = ""; }
+  });
   function route() {
+    if (attendanceUnsaved?.() && !confirm(attendanceLeaveText)) {
+      if (location.hash !== renderedHash) history.replaceState(history.state, "", location.pathname + location.search + renderedHash);
+      return;
+    }
+    attendanceUnsaved = null;
+    renderedHash = location.hash;
     const [key, ...rest] = (location.hash.slice(1) || "dashboard").split("/");
     const arg = rest.join("/");
     const [title, fn] = PAGES[key] || PAGES.dashboard;
@@ -2184,6 +2195,7 @@ ${list.map(receiptHtml).join("")}
             if (saved.status) marks[student.id] = saved.status;
             else delete marks[student.id];
             ticks[student.id] = selectedTicks;
+            baseline = JSON.stringify(JSON.parse(baseline).map(row => row[0] === student.id ? [student.id, saved.status || "", !!hw, !!lesson] : row));
             paintRow(student.id);
             summary();
           }
@@ -2236,6 +2248,10 @@ ${list.map(receiptHtml).join("")}
       else if (tab === "one") idInput.focus();
       else callBadge();
     };
+    let baseline = "[]", selected = null;
+    const attendanceSnapshot = () => JSON.stringify(rows().map(row => { const id = row.dataset.sid; return [id, marks[id] || "", !!ticks[id]?.hw, !!ticks[id]?.lesson]; }));
+    const batchDirty = () => attendanceSnapshot() !== baseline;
+    attendanceUnsaved = () => batchDirty() || !!(draft && original && (draft.status !== original.status || taskFields.some(([key]) => draft[key] !== original[key])));
     let marks = {}, ticks = {}, moveLock = true; // নতুন ব্যাচের ঘর শুরুতে সবসময় লক; ব্যাচ / তারিখ বদলালে আবার লক
     const paintLock = () => { const b = $("#attLock"); b.textContent = moveLock ? "🔒 লক" : "🔓 খোলা"; b.classList.toggle("open", !moveLock); b.title = moveLock ? "চাপ দিয়ে খুলুন — তারপর ব্যাচ বদলানো যাবে" : "চাপ দিয়ে আবার লক করুন"; $$("#arows select[data-move]").forEach((x) => (x.disabled = moveLock)); };
     // ওই দিনে ওই ব্যাচের বাড়ির কাজ / পড়ার রেকর্ড (সার্ভারও একই নিয়মে খোঁজে)
@@ -2264,7 +2280,13 @@ ${list.map(receiptHtml).join("")}
         : '<select id="abSel" disabled><option value="">আগে সেশন বেছে নিন</option></select>';
       $("#abSel").onchange = fresh;
     };
-    const fresh = () => { moveLock = true; draw(); };
+    const fresh = () => {
+      if (batchDirty() && !confirm(attendanceLeaveText)) {
+        $("#ad").value = selected.date; $("#ase").value = selected.session; bsel(); $("#abSel").value = selected.batch;
+        return;
+      }
+      moveLock = true; draw();
+    };
     // ব্যাচ বদলানো / পড়া বন্ধ-চালুর পর: তালিকা নতুন করে, কিন্তু এখনো সেভ না করা চিহ্নগুলো থাকে
     const keepDraw = () => {
       const m = marks, t = ticks;
@@ -2274,6 +2296,7 @@ ${list.map(receiptHtml).join("")}
     };
     const draw = () => {
       const date = $("#ad").value, b = $("#abSel").value;
+      selected = { date, batch: b, session: $("#ase").value };
       $("#attBatchEmpty").hidden = !!b;
       $("#attBatchRegister").hidden = !b;
       $("#attSum").hidden = !b;
@@ -2282,6 +2305,7 @@ ${list.map(receiptHtml).join("")}
         marks = {};
         ticks = {};
         $("#arows").innerHTML = "";
+        baseline = "[]";
         $("#attClosed").hidden = true;
         $("#attOffDay").hidden = true;
         return;
@@ -2326,6 +2350,7 @@ ${list.map(receiptHtml).join("")}
       $("#attQ").value = "";
       paintLock();
       summary();
+      baseline = attendanceSnapshot();
     };
     bsel(); draw();
     $("#attLock").onclick = () => { moveLock = !moveLock; paintLock(); };
@@ -2370,6 +2395,7 @@ ${list.map(receiptHtml).join("")}
       fields.forEach((field) => { field.disabled = true; });
       try {
         await api("/api/admin/attendance", { body });
+        baseline = attendanceSnapshot();
         await load();
         toast("হাজিরা, বাড়ির কাজ ও পড়া সেভ হয়েছে");
         if (c.contains(batchSelect)) {
