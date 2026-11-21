@@ -34,7 +34,7 @@
       const selected=document.querySelector('#sdAudienceSelect').value,q=document.querySelector('#sdAudienceSearch').value.trim().toLowerCase();
       document.querySelector('#sdAudienceExport').disabled=!selected;
       if(!selected){visible=[];document.querySelector('#sdAudienceResults').innerHTML=`<p class="empty">আগে ${isQuiz?'ব্যাচ':'ট্যালেন্ট হান্ট'} বেছে নিন।</p>`;return;}
-      visible=all.filter(g=>(isQuiz?(g.hsc || '__none')===selected:g.huntId===selected)&&(!q||[g.id,g.roll,g.name,g.phone,g.college].join(' ').toLowerCase().includes(q)));
+      visible=all.filter(g=>(isQuiz?(g.hsc || '__none')===selected:g.huntId===selected)&&(!q||window.SICStudentSearch.match(g, q, [g.college])));
       document.querySelector('#sdAudienceResults').innerHTML=`<p class="muted">${bn(visible.length)} জন</p><div class="tbl-wrap"><table><thead><tr><th>${isQuiz?'আইডি':'রোল'}</th><th>নাম</th><th>মোবাইল</th><th>${isQuiz?'ব্যাচ / গ্রুপ':'শ্রেণি'}</th><th>কলেজ</th><th>${isQuiz?'কুইজে অংশগ্রহণ':'রেজিস্ট্রেশন'}</th></tr></thead><tbody>${visible.map(g=>{
         const played=isQuiz?(db.quizzes || []).filter(q=>(q.attempts?.[g.id] || []).length):[];
         return `<tr><td><b>${esc(isQuiz?g.id:g.roll)}</b></td><td><b>${esc(g.name)}</b></td><td>${esc(g.phone || '—')}</td><td>${esc(isQuiz?[g.hsc,g.group].filter(Boolean).join(' · '):g.klass || '—')}</td><td>${esc(g.college || '—')}</td><td>${isQuiz?played.map(q=>`<small>${esc(q.title)}</small>`).join(''):U.date((g.createdAt || '').slice(0,10))}</td></tr>`;
@@ -44,7 +44,7 @@
     document.querySelector('#sdAudienceExport').onclick=()=>U.xlsx(`students-${type}-${U.today()}.xlsx`,[isQuiz?'আইডি':'রোল','নাম','মোবাইল',isQuiz?'এইচএসসি ব্যাচ':'শ্রেণি','কলেজ'],visible.map(g=>[isQuiz?g.id:g.roll,g.name,g.phone,isQuiz?g.hsc:g.klass,g.college]));
   }
   function legacyTable(container,db,filters) {
-    const {esc,bn}=U,rows=legacyOnline(db).filter(l=>(!filters.q||[l.name,l.phone,l.klass,l.college].join(' ').toLowerCase().includes(filters.q))&&(!filters.session||l.klass===filters.session));
+    const {esc,bn}=U,rows=legacyOnline(db).filter(l=>(!filters.q||window.SICStudentSearch.match(l, filters.q, [l.klass, l.college]))&&(!filters.session||l.klass===filters.session));
     const scoped=rows.map(l=>({l,enrollments:(db.ocEnrolls || []).filter(e=>e.learnerId===l.id&&(!filters.module||filters.module==='legacy:'+e.courseId)&&(!filters.status||e.status===filters.status))})).filter(x=>x.enrollments.length);
     if(!legacyOnline(db).length){container.innerHTML='';return;}
     container.innerHTML=`<section class="card" style="margin-top:18px"><h3>অনলাইন কোর্সের শিক্ষার্থী <small>(${bn(scoped.length)} জন)</small></h3><div class="tbl-wrap"><table><thead><tr><th>আইডি</th><th>নাম</th><th>মোবাইল</th><th>অনলাইন কোর্স</th><th>অবস্থা</th></tr></thead><tbody>${scoped.map(({l,enrollments})=>`<tr><td>${esc(l.id)}</td><td><b>${esc(l.name)}</b><small>${esc(l.college || '')}</small></td><td>${esc(l.phone)}</td><td>${enrollments.map(e=>`<small>${esc((db.onlineCourses || []).find(c=>c.id===e.courseId)?.title || 'অনলাইন কোর্স')}</small>`).join('')}</td><td>${enrollments.some(e=>e.status==='active')?'চালু':'অপেক্ষায়'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>'}</tbody></table></div></section>`;

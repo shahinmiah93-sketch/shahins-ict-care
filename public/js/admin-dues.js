@@ -38,7 +38,7 @@ window.SICDues = function (X) {
   };
   const inScope = (s) => {
     const b = batchOf(s.batchId), q = S.q.trim().toLowerCase();
-    return (!S.session || (b && b.session === S.session)) && (!S.batch || s.batchId === S.batch) && (!q || (s.id + " " + s.name).toLowerCase().includes(q));
+    return (!S.session || (b && b.session === S.session)) && (!S.batch || s.batchId === S.batch) && (!q || window.SICStudentSearch.match(s, q));
   };
   const dueStudents = () => DB().students.filter((s) => s.status !== "inactive" && s.fees && s.fees.balance > 0);
   const msgFor = (s) => `আসসালামু আলাইকুম। ${DB().settings.name || "Shahin's ICT Care"} থেকে বলছি। ${s.name}-এর ফি বাবদ ${money(s.fees.balance).replace("৳", "")} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন।`;

@@ -28,7 +28,7 @@ window.SICDueSms = function (X) {
   const inScope = (s) => {
     const b = batchOf(s.batchId), q = S.q.trim().toLowerCase();
     return (S.inactive || s.status !== "inactive") && (!S.session || (b && b.session === S.session)) && (!S.batch || s.batchId === S.batch)
-      && (!q || (s.id + " " + s.name).toLowerCase().includes(q)) && s.fees.balance >= (Number(S.min) || 0);
+      && (!q || window.SICStudentSearch.match(s, q)) && s.fees.balance >= (Number(S.min) || 0);
   };
   const rows = () => DB().students.filter((s) => s.fees && s.fees.balance > 0 && inScope(s)).sort((a, b) => b.fees.balance - a.fees.balance || String(a.id).localeCompare(String(b.id)));
   const fill = (tpl, s) => tpl.replaceAll("{নাম}", s.name).replaceAll("{আইডি}", s.id).replaceAll("{বকেয়া}", Math.round(s.fees.balance).toLocaleString("bn-BD")).replaceAll("{ব্যাচ}", (batchOf(s.batchId) || {}).name || "");

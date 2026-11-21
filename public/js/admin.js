@@ -962,7 +962,7 @@ ${list.map(receiptHtml).join("")}
       <div class="tbl-wrap"><table><thead><tr><th>আবেদন</th><th>শিক্ষার্থী</th><th>মডিউল</th><th>বিভাগ</th><th>এইচএসসি ব্যাচ</th><th>মোবাইল</th><th>পেমেন্ট</th><th>অবস্থা</th><th></th></tr></thead><tbody id="oarows"></tbody></table></div></div>`;
     const list = () => {
       const st = $("#oas").value, q = $("#oaq").value.trim().toLowerCase();
-      return (DB.onlineApps || []).filter((a) => (!st || a.status === st) && (!q || [a.appNo, a.nameEn, a.phone, a.guardianPhone, a.college].join(" ").toLowerCase().includes(q)))
+      return (DB.onlineApps || []).filter((a) => (!st || a.status === st) && (!q || window.SICStudentSearch.match(a, q, [a.college])))
         .sort((x, y) => (y.createdAt || "").localeCompare(x.createdAt || ""));
     };
     const draw = () => {
@@ -1000,7 +1000,7 @@ ${list.map(receiptHtml).join("")}
       <div class="tbl-wrap"><table><thead><tr><th>আবেদন</th><th>শিক্ষার্থী</th><th>মডিউল</th><th>সেশন / ব্যাচ</th><th>মোবাইল</th><th>অবস্থা</th><th></th></tr></thead><tbody id="arows"></tbody></table></div></div>`;
     const list = () => {
       const st = $("#as").value, q = $("#aq").value.trim().toLowerCase();
-      return DB.applications.filter((a) => (!st || a.status === st) && (!q || [a.appNo, a.name, a.phone, a.guardianPhone].join(" ").toLowerCase().includes(q)))
+      return DB.applications.filter((a) => (!st || a.status === st) && (!q || window.SICStudentSearch.match(a, q)))
         .sort((x, y) => (y.createdAt || "").localeCompare(x.createdAt || ""));
     };
     const draw = () => {
@@ -1885,7 +1885,7 @@ ${list.map(receiptHtml).join("")}
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
       return DB.students.filter((s) => scopeIds.has(s.id) && (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
         && (!fm || enrollmentsOf(s.id).some((e) => e.courseId === fm && e.status === "active"))
-        && (!qv || [s.id, s.name, s.phone, s.guardianPhone].join(" ").toLowerCase().includes(qv))).map(s => ({ ...s, fees: scopedFees(s) }));
+        && (!qv || window.SICStudentSearch.match(s, qv))).map(s => ({ ...s, fees: scopedFees(s) }));
     };
     const draw = () => {
       const l = list();
@@ -1994,7 +1994,7 @@ ${list.map(receiptHtml).join("")}
       const qv = $("#q").value.trim().toLowerCase(), se = $("#fse").value, fb = $("#fbSel").value, fm = $("#fm").value, fs = $("#fs").value;
       return DB.students.filter((s) => offlineIds.has(s.id) && (!se || s.session === se) && (!fb || s.batchId === fb) && (!fs || s.status === fs)
         && (!fm || enrollmentsOf(s.id).some((e) => e.courseId === fm && e.status === "active"))
-        && (!qv || [s.id, s.name, s.phone, s.guardianPhone].join(" ").toLowerCase().includes(qv)));
+        && (!qv || window.SICStudentSearch.match(s, qv)));
     };
     const syncSave = () => { const n = moves.size, b = $("#bmSave"); b.disabled = !n; b.textContent = n ? `পরিবর্তন সেভ করুন (${bn(n)} জন)` : "পরিবর্তন সেভ করুন"; };
     const available = (student, batch) => batch.active !== false && batch.session === student.session && batch.id !== student.batchId;
@@ -2084,7 +2084,7 @@ ${list.map(receiptHtml).join("")}
     // ক্লাসের দিন নয় এমন তারিখে হাজিরা দিতে গেলে সতর্কবার্তা (ব্যাচের দিনের সাথে তারিখের বারের মিল দেখে); বন্ধের দিন হলে আলাদা বার্তা আছে, তাই সেটা বাদ
     const dayWords = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
     const attendanceSearchText = value => String(value || "").trim().toLowerCase().replace(/[০-৯]/g, digit => "০১২৩৪৫৬৭৮৯".indexOf(digit));
-    const attendanceContacts = student => [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone].map(value => attendanceSearchText(value).replace(/\D/g, "")).filter(Boolean).join(" ");
+    const attendanceContacts = student => window.SICStudentSearch.phones(student).join(" ");
     const offDayInfo = () => {
       const date = $("#ad").value, bid = $("#abSel") && $("#abSel").value, bt = DB.batches.find((x) => x.id === bid);
       if (!bt || !date || U.isClassDay(bt.days, date) !== false || U.closureOn(DB.closures, bid, date)) return null;
@@ -2157,10 +2157,7 @@ ${list.map(receiptHtml).join("")}
       const exact = students.find((student) => student.id === query);
       if (exact) return selectOne(exact);
       const phone = /^[+\d\s().-]+$/.test(query) ? query.replace(/\D/g, "") : "";
-      const matches = students.filter((student) =>
-        normalize(student.name).includes(query) || normalize(student.nameEn).includes(query) ||
-        (phone.length >= 3 && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone]
-          .some((value) => normalize(value).replace(/\D/g, "").includes(phone))));
+      const matches = students.filter(student => window.SICStudentSearch.match(student, query));
       if (matches.length === 1 && showEmpty) return selectOne(matches[0]);
       oneResult.innerHTML = matches.length ? `<div class="at-one-suggestions">${matches.slice(0, 8).map((student) =>
         `<button type="button" class="btn line" data-one-pick="${esc(student.id)}"><b>${esc(student.name)}</b><small>${esc(student.id)} · ${esc(batchName(student.batchId))}</small></button>`).join("")}</div>`
@@ -2325,7 +2322,7 @@ ${list.map(receiptHtml).join("")}
       $("#attMeta").textContent = `${bn(list.length)} জন শিক্ষার্থী · ${batchName(b)} · ${U.date(date)}`;
       const moveCell = (s) => { const others = DB.batches.filter((x) => x.session === s.session && x.id !== s.batchId && x.active !== false); return `<div class="at-nb">${others.length ? `<select data-move="${s.id}" aria-label="নতুন ব্যাচ">${opt([["", "— বাছুন —"], ...others.map((x) => [x.id, U.batchLabel(x)])], "")}</select>` : "—"}</div>`; };
       const offList = DB.students.filter((s) => s.batchId === b && s.status === "inactive"); // এদের হাজিরা নেই, শুধু আবার চালু করা বা ব্যাচ বদলানো যায়
-      const offRows = offList.map((s) => `<div class="at-person at-off" data-sid="${s.id}" data-q="${esc(attendanceSearchText(s.id + " " + s.name))}" data-contact="${esc(attendanceContacts(s))}">
+      const offRows = offList.map((s) => `<div class="at-person at-off" data-sid="${s.id}" data-q="${esc(attendanceSearchText(s.id + " " + s.name + " " + (s.nameEn || "")))}" data-contact="${esc(attendanceContacts(s))}">
           <div class="at-stu"><span class="at-av">${esc(String(s.name || "?").trim().split(/\s+/).map((x) => x[0]).slice(0, 2).join(""))}</span><div><b>${esc(s.name)}</b><small>${esc(s.id)}</small></div></div>
           ${moveCell(s)}<div class="at-offtx">পড়া বন্ধ — হাজিরা লাগবে না</div><span></span><span></span><b class="at-pts">—</b><div class="at-st">${stToggle(s)}</div></div>`).join("");
       $("#arows").innerHTML = (list.map((s) => {
@@ -2341,7 +2338,7 @@ ${list.map(receiptHtml).join("")}
         ticks[s.id] = { hw: (rh?.checks || {})[s.id] === "done", lesson: (rl?.checks || {})[s.id] === "done" };
         const on = marks[s.id] === "P";
         const ini = esc(String(s.name || "?").trim().split(/\s+/).map((x) => x[0]).slice(0, 2).join(""));
-        return `<div class="at-person" data-sid="${s.id}" data-q="${esc(attendanceSearchText(s.id + " " + s.name))}" data-contact="${esc(attendanceContacts(s))}">
+        return `<div class="at-person" data-sid="${s.id}" data-q="${esc(attendanceSearchText(s.id + " " + s.name + " " + (s.nameEn || "")))}" data-contact="${esc(attendanceContacts(s))}">
           <div class="at-stu"><span class="at-av">${ini}</span><div><b>${esc(s.name)}</b><small>${esc(s.id)}${chip}</small></div></div>
           ${moveCell(s)}
           <div class="att-row" data-sid="${s.id}">${[["P", "✓ উপস্থিত"], ["A", "× অনুপস্থিত"], ["L", "○ ছুটি"]].map(([v, t]) => `<button type="button" data-v="${v}" class="${marks[s.id] === v ? "on" : ""}">${t}</button>`).join("")}</div>
@@ -2376,7 +2373,7 @@ ${list.map(receiptHtml).join("")}
       paintRow(sid); summary();
     };
     // খোঁজা: শুধু দেখা যাওয়া সারিতেই "সবাইকে একসাথে" কাজ করে
-    $("#attQ").oninput = (e) => { const q = attendanceSearchText(e.target.value), phone = /^[+\d\s().-]+$/.test(q) ? q.replace(/\D/g, "") : ""; $$("#arows .at-person").forEach((r) => { r.hidden = !!q && !r.dataset.q.includes(q) && !(phone && (r.dataset.contact || "").split(" ").some(number => number.includes(phone))); }); };
+    $("#attQ").oninput = e => { $$("#arows .at-person").forEach(row => { row.hidden = !window.SICStudentSearch.match(studentById(row.dataset.sid), e.target.value); }); };
     $$("[data-all]", c).forEach((b) => (b.onclick = () => { rows().filter((r) => !r.hidden).forEach((r) => { const sid = r.dataset.sid; marks[sid] = b.dataset.all; if (b.dataset.all !== "P") ticks[sid] = { hw: false, lesson: false }; paintRow(sid); }); summary(); }));
     $("#attClean").onclick = () => { rows().forEach((r) => { marks[r.dataset.sid] = undefined; ticks[r.dataset.sid] = { hw: false, lesson: false }; paintRow(r.dataset.sid); }); summary(); toast("চিহ্ন মুছে গেছে — সেভ করলে তবেই বদলাবে"); };
     if (callDate) $('[data-at-tab="calls"]', c).click();
@@ -2459,8 +2456,7 @@ ${list.map(receiptHtml).join("")}
       const q = normQ(raw), ql = String(raw || "").trim().toLowerCase(), dg = digitsOf(q); if (!q) return []; // ql: বাংলা অঙ্ক সহ নাম ("শিক্ষার্থী ৪") মেলাতে
       const pool = DB.students;
       const exact = pool.filter((x) => String(x.id).toLowerCase() === q); if (exact.length) return exact;
-      return pool.filter((x) => String(x.id).toLowerCase().includes(q) || [x.name, x.nameEn].some((n) => { const t = String(n || "").toLowerCase(); return t.includes(q) || t.includes(ql) || normQ(t).includes(q); })
-        || (dg.length >= 3 && [x.phone, x.guardianPhone, x.fatherPhone, x.motherPhone].some((p) => digitsOf(p).includes(dg)))).slice(0, 8);
+      return pool.filter(x => window.SICStudentSearch.match(x, q)).slice(0, 8);
     };
     const drawSug = () => {
       const box = $("#paySug"); if (!box) return;
@@ -2514,7 +2510,7 @@ ${list.map(receiptHtml).join("")}
       const q = bb.q.trim().toLowerCase();
       return pool().filter((s) => (!bb.sess || s.session === bb.sess) && (!bb.batch || s.batchId === bb.batch)
         && (!bb.g || (bb.g === "?" ? !groupOf(s) : groupOf(s) === bb.g))
-        && (!q || [s.name, s.nameEn, s.id, s.phone, s.guardianPhone, s.fatherPhone, s.motherPhone].join(" ").toLowerCase().includes(q)))
+        && (!q || window.SICStudentSearch.match(s, q)))
         .sort((a, b) => (groupOf(a) || "zz").localeCompare(groupOf(b) || "zz") || a.id.localeCompare(b.id));
     };
     const tel = (n, who) => n ? `<a class="bb-tel" href="tel:${esc(n)}">${esc(n)}</a>${who ? `<small>${esc(who)}</small>` : ""}` : '<span class="muted">—</span>';
@@ -2917,9 +2913,7 @@ ${list.map(receiptHtml).join("")}
       const drawDues = () => {
         const query = normalize(search.value);
         const phone = /^[+\d\s().-]+$/.test(query) ? digits(query) : "";
-        const filtered = !query ? dues : dues.filter((student) =>
-          [student.name, student.nameEn, student.id].some((value) => normalize(value).includes(query)) ||
-          (phone && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone].some((value) => digits(value).includes(phone))));
+        const filtered = dues.filter(student => window.SICStudentSearch.match(student, query));
         const month = monthField.value;
         $("#duePaidHeading", body).textContent = month ? "জমা ও ছাড়" : "পরিশোধ";
         const entries = filtered.map((student) => {
@@ -2984,10 +2978,7 @@ ${list.map(receiptHtml).join("")}
       const matches = new Set();
       if (query) {
         for (const student of DB.students) {
-          const name = [student.name, student.nameEn].some((value) => normalize(value).includes(query));
-          const number = phone && [student.phone, student.guardianPhone, student.fatherPhone, student.motherPhone]
-            .some((value) => normalize(value).replace(/\D/g, "").replace(/^88(?=01)/, "").includes(phone));
-          if (name || number) matches.add(student.id);
+          if (window.SICStudentSearch.match(student, query)) matches.add(student.id);
         }
       }
       return DB.payments.filter((payment) => (!month || (payment.date || "").startsWith(month)) &&

@@ -170,7 +170,7 @@ window.SICBooks = function (X) {
   function salesHtml() {
     const q = S.saleQ.trim().toLowerCase();
     const L = sales().filter((s) => (S.saleFilter === "due" ? dueOf(s) > 0 : S.saleFilter === "free" ? s.free : S.saleFilter === "student" ? s.buyerType === "student" : S.saleFilter === "outside" ? s.buyerType === "outside" : true)
-      && (!S.month || String(s.date).startsWith(S.month)) && (!q || `${s.name} ${s.studentId} ${s.phone} S${s.saleNo} ${linesText(s.lines)}`.toLowerCase().includes(q)));
+      && (!S.month || String(s.date).startsWith(S.month)) && (!q || (window.SICStudentSearch.match(s, q, ["S" + s.saleNo, linesText(s.lines)]) || window.SICStudentSearch.match(DB().students.find(student => student.id === s.studentId), q))));
     const tot = L.reduce((a, s) => a + Number(s.total || 0), 0), got = L.reduce((a, s) => a + paidOf(s), 0), due = L.reduce((a, s) => a + dueOf(s), 0), copies = L.reduce((a, s) => a + s.lines.reduce((n, l) => n + l.qty, 0), 0);
     const chips = [["all", "সব"], ["due", "বাকি আছে"], ["free", "ফ্রি দেওয়া"], ["student", "শিক্ষার্থী"], ["outside", "বাইরের ক্রেতা"]];
     return `<section class="card"><div class="bk-head"><h3>বিক্রির খাতা</h3><input type="search" data-saleq value="${esc(S.saleQ)}" placeholder="নাম, আইডি, মোবাইল, রসিদ নং"><input type="month" data-month value="${esc(S.month)}" title="মাস (খালি = সব)"></div>

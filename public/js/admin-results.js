@@ -270,7 +270,7 @@ window.SICResults = function (X) {
     return { title: kind === "batch" ? `ব্যাচ ${X.batchName(batch)} — সম্মিলিত রেজাল্ট` : `${sessionLabel()} — সম্পূর্ণ সেশনের রেজাল্ট`, sub: `${S.f.type ? EC.typeName(S.f.type) : "সব ধরনের পরীক্ষা (Combined: ভার অনুযায়ী)"} · ${bn(list.length)}টি পরীক্ষা · "অনু" = অনুপস্থিত (০%), "—" = নম্বর বাকি, "·" = এই পরীক্ষায় ছিল না`, head, body, list };
   }
   // খোঁজ: নাম বা আইডি (বাংলা / ইংরেজি সংখ্যা দুটোই)
-  const hit = (r) => !S.q || `${r[2] ?? r.id} ${r[3] ?? r.name}`.toLowerCase().includes(enNum(S.q).toLowerCase()) || `${r[3] ?? r.name}`.includes(S.q.trim());
+  const hit = r => window.SICStudentSearch.match(stu(r[2] ?? r.id ?? r.sid), S.q, [r[2] ?? r.id ?? r.sid, r[3] ?? r.name]);
   function sortRows(rows) {
     const k = S.sort;
     return rows.sort((a, b) => (k === "id" ? a.id.localeCompare(b.id) : k === "name" ? String(a.name).localeCompare(String(b.name), "bn") : b.merit - a.merit || b.val - a.val || a.id.localeCompare(b.id)));

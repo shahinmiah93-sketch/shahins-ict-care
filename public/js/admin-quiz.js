@@ -218,7 +218,7 @@ window.SICQuizPage = function (X) {
 
   function guestRows() {
     const q = S.q.trim().toLowerCase();
-    return guests().filter((g) => (!S.hsc || g.hsc === S.hsc) && (!S.group || g.group === S.group) && (!q || [g.id, g.name, g.phone, g.college].join(" ").toLowerCase().includes(q)))
+    return guests().filter((g) => (!S.hsc || g.hsc === S.hsc) && (!S.group || g.group === S.group) && (!q || window.SICStudentSearch.match(g, q, [g.college])))
       .map((g) => ({ g, t: taken(g.id) })).sort((a, b) => String(b.g.createdAt).localeCompare(String(a.g.createdAt)));
   }
   function guestsTab() {

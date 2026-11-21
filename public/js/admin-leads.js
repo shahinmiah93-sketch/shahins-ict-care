@@ -29,7 +29,7 @@ window.SICLeads = function (X) {
     const f = S.f, q = f.q.trim().toLowerCase();
     return leads().filter((l) => (!f.source || (l.sources || []).some((s) => s.type === f.source)) && (!f.status || l.status === f.status) && (!f.batch || l.batch === f.batch)
       && (!f.campaign || (l.sources || []).some((s) => s.campaign === f.campaign)) && (!f.sms || (f.sms === "yes" ? smsOk(l) : !smsOk(l)))
-      && (!q || [l.leadNo, l.name, l.phone, l.guardianPhone, l.institution, l.location, l.course, l.remarks].join(" ").toLowerCase().includes(q)))
+      && (!q || window.SICStudentSearch.match(l, q, [l.institution, l.location, l.course, l.remarks])))
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
   }
   const filterText = () => { const f = S.f, p = []; if (f.source) p.push(SRC[f.source]); if (f.status) p.push(ST[f.status][0]); if (f.batch) p.push(f.batch); if (f.campaign) p.push("ক্যাম্পেইন: " + f.campaign); if (f.sms) p.push(f.sms === "yes" ? "SMS দেওয়া যাবে" : "SMS দেওয়া যাবে না"); if (f.q) p.push(`"${f.q}"`); return p.join(" · ") || "সবাই"; };

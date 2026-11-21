@@ -35,7 +35,7 @@ window.SICTalent = function (X) {
   }
   const site = () => DB().settings || {};
   const info = (h) => ({ ...h, full: full(h) });
-  const filteredRegs = (h) => { const q = S.q.trim().toLowerCase(); return regs(h.id).filter((r) => !q || [r.roll, r.name, r.phone, r.college, r.klass].join(" ").toLowerCase().includes(q)); };
+  const filteredRegs = (h) => { const q = S.q.trim().toLowerCase(); return regs(h.id).filter((r) => !q || window.SICStudentSearch.match(r, q, [r.college, r.klass])); };
 
   // ================= সব ট্যালেন্ট হান্ট =================
   function listView() {

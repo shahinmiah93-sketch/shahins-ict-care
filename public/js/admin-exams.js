@@ -354,9 +354,7 @@ window.SICExams = function (X) {
     const phoneQuery = /^[+\d\s()-]+$/.test(typed) ? digits(typed) : "";
     const matches = !exact && typed.length >= 2 ? (ex.studentIds || []).map(X.studentById).filter((student) => {
       if (!student) return false;
-      if (!phoneQuery) return [student.name, student.nameEn].some((name) => enNum(name).toUpperCase().includes(typed));
-      return [student.phone, student.phone2, student.guardianPhone, student.fatherPhone, student.motherPhone]
-        .some((phone) => phoneQuery.length >= 3 && digits(phone).replace(/^88(?=01\d{9}$)/, "").includes(phoneQuery.replace(/^88(?=01\d{9}$)/, "")));
+      return window.SICStudentSearch.match(student, typed);
     }) : [];
     const sid = exact ? exact.id : matches.length === 1 ? matches[0].id : "";
     const selectionChanged = sid !== idSid;
