@@ -2878,7 +2878,7 @@ ${list.map(receiptHtml).join("")}
 
   function fees(c, tab) {
     const act = activeStudents();
-    const dues = act.filter((s) => s.fees.balance > 0).sort((a, b) => b.fees.balance - a.fees.balance); const dueCalls = window.SICDues({ get DB() { return DB; }, batchName, load, paymentForm, openForm }), dcPending = dueCalls.pending();
+    const dues = DB.students.filter((s) => s.fees.balance > 0).sort((a, b) => Number(a.status === "inactive") - Number(b.status === "inactive") || b.fees.balance - a.fees.balance); const dueCalls = window.SICDues({ get DB() { return DB; }, batchName, load, paymentForm, openForm }), dcPending = dueCalls.pending();
     c.innerHTML = `
       <div class="tiles">
         <div class="tile dark"><small>এই মাসের আদায়</small><b>${money(DB.payments.filter((p) => (p.date || "").startsWith(thisMonth())).reduce((t, p) => t + p.amount, 0))}</b></div>
