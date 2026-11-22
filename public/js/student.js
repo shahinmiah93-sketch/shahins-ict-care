@@ -438,7 +438,7 @@ ${inner}
     },
     fees() {
       const f = D.fees;
-      return `${AS && EMBED ? '<div class="no-print" style="display:flex;justify-content:flex-end;margin-bottom:12px"><button type="button" class="btn gold" data-as-pay>৳ পেমেন্ট নিন</button></div>' : ""}${pBtn("fee", "ফি-র রিপোর্ট")}<div class="tiles">
+      return `<div class="tiles">
           <div class="tile"><small>মোট ফি (এখন পর্যন্ত)</small><b>${money(f.totalDue)}</b></div>
           <div class="tile"><small>পরিশোধ করেছেন</small><b>${money(f.paid)}</b></div>
           <div class="tile dark"><small>${f.balance >= 0 ? "বকেয়া" : "অগ্রিম"}</small><b>${money(Math.abs(f.balance))}</b></div>
@@ -446,7 +446,11 @@ ${inner}
         <section class="student-module-fees"><h2>মডিউল অনুযায়ী বেতনের হিসাব</h2><p class="sf-intro">কোন মাসে কত ফি ধরা হয়েছে, নিচে আলাদা করে দেখুন।</p>${f.items.map(moduleFeeCard).join('') || '<p class="empty">কোনো মডিউল নেই</p>'}</section>
         <div class="card"><h2>পেমেন্টের ইতিহাস</h2><div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>রসিদ</th><th>তারিখ</th><th>মাস</th><th>মাধ্যম</th><th class="num">টাকা</th></tr></thead><tbody>
           ${D.payments.map((p) => `<tr><td>#${bn(p.receiptNo)}</td><td>${U.date(p.date)}</td><td>${U.month(p.month)}</td><td>${esc(p.method)}</td><td class="num"><b>${money(p.amount)}</b>${p.discount > 0 ? `<small>+ ছাড় ${money(p.discount)}</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="5" class="empty">কোনো পেমেন্ট নেই</td></tr>'}
-        </tbody></table></div></div>`;
+        </tbody></table></div></div>
+<div class="student-fee-actions no-print">
+<button type="button" class="btn fee-action-print" data-pcard="fee">▤ ফি-র রিপোর্ট প্রিন্ট</button>
+${AS && EMBED ? '<button type="button" class="btn fee-action-pay" data-as-pay>৳ পেমেন্ট নিন</button>' : ""}
+</div>`;
     },
     // অনলাইন কুইজ: চলমান (শুরু করো), সামনে, আগে দেওয়া (নম্বর ও উত্তর)
     quiz() {
