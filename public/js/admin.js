@@ -1191,6 +1191,8 @@ ${list.map(receiptHtml).join("")}
         </div>
       </form>`;
 
+    const admissionFiles = window.SICAdmissionFiles(s?.id || "");
+    $("#admForm .adm-actions").before(admissionFiles.element);
     const form = $("#admForm"), q = (n) => form.querySelector(`[name="${n}"]`);
     $$("[data-combo]", form).forEach((el) => U.combo(el, () => U.optList(el.dataset.combo)));
     U.combo(q("college"), U.MADARIPUR_INSTITUTIONS || []);
@@ -1396,14 +1398,17 @@ ${list.map(receiptHtml).join("")}
         }
         if (showPerson && photoData) await api("/api/admin/student-photo", { body: { id: stu.id, photo: photoData, original: photoOriginal } });
         else if (showPerson && photoGone && (s || a)) await api("/api/admin/student-photo", { body: { id: stu.id, remove: true } });
+        await admissionFiles.bind(stu.id);
         await load();
         stu = studentById(stu.id);
         if (enr) enr = DB.enrollments.find((x) => x.id === enr.id);
         if (pay) pay = DB.payments.find((x) => x.id === pay.id);
         if (print) printAdmission(stu, formExtra(stu, enr, pay), enr);
+        if (mode === "edit" && admissionFiles.hasPending()) { toast("তথ্য সেভ হয়েছে; বাকি সংযুক্তি আবার আপলোড করুন", true); $$(".adm-actions .btn").forEach(button => { button.disabled = false; }); return; }
         if (mode === "edit") { toast("সেভ হয়েছে"); location.hash = editBack || "students"; editBack = null; return; }
-        if (replacing) { toast("মডিউল বদলানো হয়েছে"); location.hash = `admission/edit/${s.id}`; return; }
+        if (replacing && !admissionFiles.hasPending()) { toast("মডিউল বদলানো হয়েছে"); location.hash = `admission/edit/${s.id}`; return; }
         admissionDone(c, stu, enr, pay, mode === "enroll");
+        c.appendChild(admissionFiles.element);
       } catch (er) { err(er.message); $$(".adm-actions .btn").forEach((b) => (b.disabled = false)); }
     };
   }
@@ -1814,6 +1819,7 @@ ${list.map(receiptHtml).join("")}
       try { await api("/api/admin/student-photo-review", { body: { id: s.id, action: button.dataset.photoReview, version: s.pendingPhoto.version } }); await load(); viewStudent(s.id); toast("ছবির সিদ্ধান্ত সংরক্ষিত হয়েছে"); }
       catch (error) { toast(error.message, true); $$("#modalBody [data-photo-review]").forEach(b => b.disabled = false); }
     }; });
+    $("#modalBody").appendChild(window.SICAdmissionFiles(s.id).element);
     $("#pinReset").onclick = async () => {
       if (!confirm("নতুন PIN তৈরি করবেন? আগের PIN আর কাজ করবে না।")) return;
       try { const r = await api("/api/admin/student-pin", { body: { id: s.id } }); $("#pinVal").textContent = r.pin; s.pin = r.pin; delete s.loginSms; $("#pinSmsNote").textContent = loginSmsNote(s); toast("নতুন PIN তৈরি হয়েছে"); } catch (e) { toast(e.message, true); }

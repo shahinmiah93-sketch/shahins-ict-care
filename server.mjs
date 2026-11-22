@@ -22,6 +22,8 @@ const DATA = path.join(ROOT, "data");
 const DB_FILE = path.join(DATA, "database.json");
 const AUTH_FILE = path.join(DATA, "auth.json");
 const BACKUPS = path.join(DATA, "backups");
+const ADMISSION_FILES = path.join(DATA, "admission-files");
+fs.mkdirSync(ADMISSION_FILES, { recursive: true });
 const PHOTOS = path.join(DATA, "photos"); // শিক্ষার্থী ও আবেদনের ছবি (s-<id>.jpg, a-<id>.jpg)
 const PORT = Number(process.env.PORT) || 8090;
 const HOST = "127.0.0.1"; // শুধু এই কম্পিউটার থেকে খোলা যায়
@@ -328,6 +330,42 @@ const DOC_TYPES = {
   ".xls": ["application/vnd.ms-excel", "file"], ".xlsx": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "file"],
 };
 const docPath = (d) => path.join(DOCS, `${String(d.id).replace(/[^\w-]/g, "")}${path.extname(d.file.name).toLowerCase()}`);
+async function admissionAttachmentAction(req, res, url, sid, fileId) {
+  if (!db.students.some(student => student.id === sid)) return send(res, 404, { error: "শিক্ষার্থী পাওয়া যায়নি" });
+  let items = db.admissionAttachments || [];
+  if (req.method === "GET" && !fileId) return send(res, 200, { items: items.filter(item => item.studentId === sid) });
+  if (req.method === "GET" && fileId) {
+    const item = items.find(item => item.studentId === sid && item.id === fileId);
+    if (!item) return send(res, 404, { error: "ফাইল পাওয়া যায়নি" });
+    const file = path.join(ADMISSION_FILES, item.id + item.ext);
+    if (!fs.existsSync(file)) return send(res, 404, { error: "ফাইল পাওয়া যায়নি" });
+    const disposition = url.searchParams.get("download") === "1" ? "attachment" : "inline";
+    res.writeHead(200, { "Content-Type": item.type, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox", "Content-Disposition": disposition + '; filename="admission-' + item.id + item.ext + '"; filename*=UTF-8\'\'' + encodeURIComponent(item.name) });
+    return fs.createReadStream(file).pipe(res);
+  }
+  if (req.method !== "POST" || fileId) return send(res, 405, { error: "এই কাজটি করা যাবে না" });
+  const name = str(url.searchParams.get("name"), 180).replace(/[\r\n]/g, " ");
+  const ext = path.extname(name).toLowerCase();
+  const types = { ".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
+  if (!types[ext]) return send(res, 400, { error: "PDF, JPG, PNG বা WEBP ফাইল দিন" });
+  let data;
+  try { data = await readRaw(req, 10 * 1024 * 1024); } catch { return send(res, 413, { error: "প্রতি ফাইল সর্বোচ্চ ১০ MB দিন" }); }
+  const valid = ext === ".pdf" ? data.subarray(0, 5).toString() === "%PDF-" : ext === ".png" ? data.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) : ext === ".webp" ? data.subarray(0,4).toString() === "RIFF" && data.subarray(8,12).toString() === "WEBP" : data[0] === 255 && data[1] === 216 && data[2] === 255;
+  if (!valid) return send(res, 400, { error: "ফাইলের ধরন ঠিক নেই। আসল PDF বা ছবি দিন।" });
+  items = db.admissionAttachments || [];
+  const item = { id: uid("adf"), studentId: sid, name, ext, type: types[ext], size: data.length, createdAt: new Date().toISOString() };
+  const file = path.join(ADMISSION_FILES, item.id + ext);
+  try {
+    fs.writeFileSync(file, data);
+    db.admissionAttachments = [...items, item]; saveDb();
+  } catch (error) {
+    db.admissionAttachments = items;
+    try { if (fs.existsSync(file)) fs.unlinkSync(file); } catch {}
+    return send(res, 500, { error: "ফাইল সংরক্ষণ হয়নি। আবার চেষ্টা করুন।" });
+  }
+  return send(res, 200, { ok: true, item });
+}
+
 function readRaw(req, limit) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
@@ -3374,6 +3412,8 @@ async function api(req, res, url) {
     res.writeHead(200, { "Content-Type": "application/zip", "Cache-Control": "no-store", "Content-Disposition": 'attachment; filename="shahins-photos-' + today() + '-part-' + part + '.zip"' });
     return res.end(zip);
   }
+  const admissionFileRoute = p.match(/^\/api\/admin\/admission-files\/([\w-]+)(?:\/([\w-]+))?$/);
+  if (admissionFileRoute) return admissionAttachmentAction(req, res, url, admissionFileRoute[1], admissionFileRoute[2]);
   if (p === "/api/admin/backup" && m === "GET") {
     res.writeHead(200, {
       "Cache-Control": "no-store",
