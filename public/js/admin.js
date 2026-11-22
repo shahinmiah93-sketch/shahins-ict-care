@@ -1879,7 +1879,6 @@ ${list.map(receiptHtml).join("")}
       </div>
       <div class="tbl-wrap"><table class="students-table"><thead><tr><th>আইডি</th><th>নাম</th><th>সেশন / ব্যাচ</th><th>মডিউল</th><th>মোবাইল</th><th>ফি</th><th>অবস্থা</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>${mode === "online" ? '<div id="sdLegacyOnline"></div>' : ""}`;
-    window.SICSearchHistory($("#q"), "students-" + mode);
     const openProfileRequests = () => {
       const pending=DB.students.filter(s=>scopeIds.has(s.id)&&s.pendingProfile);
       openModal({title:`তথ্য সংশোধনের অনুরোধ (${bn(pending.length)})`,body:pending.length ? `<div style="display:grid;gap:10px">${pending.map(s=>`<button type="button" class="btn line" data-review-profile="${esc(s.id)}">${esc(s.name)} · ${esc(s.id)} · ${bn(Object.keys(s.pendingProfile.changes).length)}টি সংশোধন →</button>`).join("")}</div>` : '<p class="empty">এখন কোনো সংশোধন অনুমোদনের অপেক্ষায় নেই।</p>'});
