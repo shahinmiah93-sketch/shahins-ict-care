@@ -438,7 +438,7 @@ ${inner}
     },
     fees() {
       const f = D.fees;
-      return `${pBtn("fee", "ফি-র রিপোর্ট")}<div class="tiles">
+      return `${AS && EMBED ? '<div class="no-print" style="display:flex;justify-content:flex-end;margin-bottom:12px"><button type="button" class="btn gold" data-as-pay>৳ পেমেন্ট নিন</button></div>' : ""}${pBtn("fee", "ফি-র রিপোর্ট")}<div class="tiles">
           <div class="tile"><small>মোট ফি (এখন পর্যন্ত)</small><b>${money(f.totalDue)}</b></div>
           <div class="tile"><small>পরিশোধ করেছেন</small><b>${money(f.paid)}</b></div>
           <div class="tile dark"><small>${f.balance >= 0 ? "বকেয়া" : "অগ্রিম"}</small><b>${money(Math.abs(f.balance))}</b></div>
@@ -712,7 +712,7 @@ ${inner}
       if (EMBED) {
         document.documentElement.classList.add("embed");
         if (!$("#tabs [data-t=\"eval\"]")) $("#tabs [data-t=\"home\"]").insertAdjacentHTML("afterend", '<button data-t="eval" class="tab-eval">📊 মূল্যায়ন প্রতিবেদন</button>');
-        document.addEventListener("click", (ev) => { if (ev.target.closest("[data-as-eval]")) parent.postMessage({ sicAct: "eval", id: AS }, location.origin); });
+        document.addEventListener("click", (ev) => { if (ev.target.closest("[data-as-pay]")) parent.postMessage({ sicAct: "pay", id: AS }, location.origin); if (ev.target.closest("[data-as-eval]")) parent.postMessage({ sicAct: "eval", id: AS }, location.origin); });
         // অ্যাডমিন প্যানেলের বোতাম: নাম / তথ্য সম্পাদনা আর কোর্স (মডিউল) বদল — কাজটা অ্যাডমিন পাতা করে
         if (!$(".as-acts")) { $("#logout").insertAdjacentHTML("beforebegin", `<span class="as-acts no-print"><button type="button" class="btn sm gold" data-as="eval">📊 মূল্যায়ন প্রতিবেদন</button><button type="button" class="btn sm line" data-as="report">📋 স্টুডেন্ট রিপোর্ট</button><button type="button" class="btn sm gold" data-as="edit">✎ Edit</button><button type="button" class="btn sm line" data-as="course">📚 কোর্স / মডিউল</button><button type="button" class="btn sm line" data-as="sms">📩 আইডি ও PIN SMS</button><button type="button" class="btn sm line" data-as="pause">${D.profile.status === "inactive" ? "▶ পড়া আবার চালু" : "⏸ পড়া বন্ধ রাখুন"}</button></span>`);
           $$(".as-acts [data-as]").forEach((b) => (b.onclick = () => parent.postMessage({ sicAct: b.dataset.as, id: AS }, location.origin))); }

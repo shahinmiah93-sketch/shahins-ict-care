@@ -289,6 +289,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     if (e.data.sicAct && studentById(e.data.id)) {
       if (e.data.sicAct === "edit") { editBack = "student/" + encodeURIComponent(e.data.id); return studentForm(studentById(e.data.id)); }
       if (e.data.sicAct === "sms") { const s = studentById(e.data.id); if (confirm(`${s.name}-কে আইডি আর PIN SMS-এ পাঠাবেন?\n\n${loginSmsNote(s)}`)) resendLogin(s); return; }
+      if (e.data.sicAct === "pay" && e.source === $(".stu-embed iframe")?.contentWindow) return paymentForm(e.data.id);
       if (e.data.sicAct === "report") return printStudentReport(e.data.id);
       if (e.data.sicAct === "pause") return togglePause(studentById(e.data.id));
       if (e.data.sicAct === "eval") return evalReport(e.data.id);
