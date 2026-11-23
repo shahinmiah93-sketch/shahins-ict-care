@@ -1314,6 +1314,8 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 .pay-hist table{border-collapse:separate;border-spacing:0}
 .pay-hist td{padding:14px 12px;font-size:15px}
 .pay-hist td.pay-no{font-weight:700;color:var(--cc,#0b6b62);letter-spacing:.2px}
+.pay-hist table{width:100%}
+.pay-hist th.pay-act,.pay-hist td.pay-act{width:1%;white-space:nowrap}
 .pay-hist tbody tr{transition:background .15s}
 .pay-hist tbody tr:hover td{background:rgba(11,107,98,.07)}
 .pay-hist tbody tr:last-child td{border-bottom:0}
