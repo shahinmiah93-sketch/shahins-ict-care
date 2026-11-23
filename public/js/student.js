@@ -518,7 +518,7 @@ ${AS && EMBED ? '<button type="button" class="btn fee-action-pay" data-as-pay>�
       const shown = Object.keys(kinds).filter((k) => !selected || k === selected);
       const dayKey = (h) => h.dueDate || h.givenDate || "";
       const days = {};
-      items.forEach((h) => { (days[dayKey(h)] ||= { homework: [], lesson: [] })[h.kind]?.push(h); });
+      items.forEach((h) => { const k = dayKey(h), d = days[k] || (days[k] = { homework: [], lesson: [] }); if (d[h.kind]) d[h.kind].push(h); }); // নতুন ধরনের যোগ-বসানো চিহ্ন নয়, যাতে পুরোনো Chrome-ও বোঝে
       let keys = Object.keys(days).filter(Boolean).sort((x, y) => y.localeCompare(x));
       if (period === "open") keys.reverse();
       if (days[""]) keys.push("");
