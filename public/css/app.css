@@ -1317,9 +1317,9 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 .pay-hist tbody tr{transition:background .15s}
 .pay-hist tbody tr:hover td{background:rgba(11,107,98,.07)}
 .pay-hist tbody tr:last-child td{border-bottom:0}
-.pay-hist .pay-receipt{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:10px;background:var(--cc,#0b6b62);color:#fff;font-family:inherit;font-weight:700;font-size:13.5px;line-height:1.2;text-decoration:none;white-space:nowrap;border:0;box-shadow:0 2px 6px rgba(15,23,42,.18);transition:transform .15s,box-shadow .15s,filter .15s}
-.pay-hist .pay-receipt:hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(15,23,42,.24);filter:brightness(1.08)}
-.pay-hist .pay-receipt:active{transform:none;box-shadow:0 1px 3px rgba(15,23,42,.2)}
+.pay-hist .pay-receipt{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:8px;background:#fff;color:var(--cc,#0b6b62);font-family:inherit;font-weight:700;font-size:13.5px;line-height:1.2;text-decoration:none;white-space:nowrap;border:1px solid var(--cl,#e5d9b6);transition:background .15s,border-color .15s}
+.pay-hist .pay-receipt:hover{background:var(--cb,#fff6dc);border-color:var(--cc,#0b6b62)}
+.pay-hist .pay-receipt:active{background:var(--cl,#f3dd9b)}
 .pay-hist .pay-receipt:focus-visible{outline:3px solid rgba(217,164,65,.55);outline-offset:2px}
 .pay-hist .pay-receipt svg{flex:none}
 @media(max-width:560px){
