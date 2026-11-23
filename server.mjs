@@ -2961,6 +2961,7 @@ async function api(req, res, url) {
       homework: db.homework.filter((h) => h.session === s.session && (!(h.batchIds || []).length || h.batchIds.includes(s.batchId)))
         .map(({ id, kind, title, details, subject, chapter, givenDate, dueDate, checks }) => ({ id, kind, title, details, subject, chapter, givenDate, dueDate, status: (checks || {})[s.id] || "" }))
         .sort((a, b) => (b.dueDate || b.givenDate).localeCompare(a.dueDate || a.givenDate)).slice(0, 60),
+      attendanceClosures: db.closures.filter((c) => (c.batchIds || []).includes(s.batchId) && (!c.noticeFrom || c.noticeFrom <= today())).map(({ from, to, reason }) => ({ from, to, reason })),
       // নিজের ব্যাচের চলমান / সামনের বন্ধ (ছুটি)
       closures: db.closures.filter((c) => (c.batchIds || []).includes(s.batchId) && c.to >= today() && (!c.noticeFrom || c.noticeFrom <= today())).map(({ from, to, reason }) => ({ from, to, reason })).sort((a, b) => a.from.localeCompare(b.from)),
       myRating: (({ stars, comment } = {}) => (stars ? { stars, comment } : null))(db.ratings.find((r) => r.studentId === s.id)),

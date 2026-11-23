@@ -428,20 +428,23 @@ ${inner}
     },
     att() {
       const now = new Date();
-      const months = [...new Set([now.toLocaleDateString("en-CA").slice(0, 7), ...D.attendance.map((a) => a.date.slice(0, 7))])].sort().reverse();
+      const closures = D.attendanceClosures || [];
+      const closedOn = date => closures.find(c => c.from <= date && date <= c.to);
+      const months = [...new Set([now.toLocaleDateString("en-CA").slice(0, 7), ...D.attendance.map((a) => a.date.slice(0, 7)), ...closures.flatMap(c => [c.from.slice(0,7), c.to.slice(0,7)])])].sort().reverse();
       const m = TABS._month || months[0];
       const [y, mo] = m.split("-").map(Number);
       const first = new Date(y, mo - 1, 1).getDay(), days = new Date(y, mo, 0).getDate();
       const map = Object.fromEntries(D.attendance.filter((a) => a.date.startsWith(m)).map((a) => [Number(a.date.slice(8)), a.status]));
       const cnt = (s) => Object.values(map).filter((v) => v === s).length;
       const todayStr = U.today();
+      const closedCount = Array.from({length:days}, (_, i) => !map[i+1] && closedOn(m + "-" + String(i+1).padStart(2,"0"))).filter(Boolean).length;
       return `${pBtn("att", "হাজিরার রিপোর্ট")}<div class="card">
         <div class="card-head"><h2>হাজিরার ক্যালেন্ডার</h2><select class="field" id="mSel">${months.map((x) => `<option value="${x}"${x === m ? " selected" : ""}>${U.month(x)}</option>`).join("")}</select></div>
-        <div class="toolbar"><span class="chip ok">উপস্থিত ${bn(cnt("P"))}</span><span class="chip bad">অনুপস্থিত ${bn(cnt("A"))}</span><span class="chip warn">ছুটি ${bn(cnt("L"))}</span></div>
+        <div class="toolbar"><span class="chip ok">উপস্থিত ${bn(cnt("P"))}</span><span class="chip bad">অনুপস্থিত ${bn(cnt("A"))}</span><span class="chip warn">ছুটি ${bn(cnt("L"))}</span><span class="chip cal-closed-chip">বন্ধ ${bn(closedCount)}</span></div>
         <div class="cal">${["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"].map((d) => `<div class="h">${d}</div>`).join("")}
           ${"<div></div>".repeat(first)}
-          ${Array.from({ length: days }, (_, i) => { const d = i + 1, ds = `${m}-${String(d).padStart(2, "0")}`; return `<div class="d ${map[d] || ""}${ds === todayStr ? " today" : ""}" title="${map[d] ? STATUS[map[d]] : ""}">${bn(d)}</div>`; }).join("")}
-        </div></div>`;
+          ${Array.from({ length: days }, (_, i) => { const d = i + 1, ds = `${m}-${String(d).padStart(2, "0")}`; const closed = !map[d] && closedOn(ds); return `<div class="d ${map[d] || (closed ? "closed" : "")}${ds === todayStr ? " today" : ""}" title="${esc(closed ? "বন্ধ" + (closed.reason ? " — " + closed.reason : "") : map[d] ? STATUS[map[d]] : "")}">${bn(d)}${closed ? '<small>বন্ধ</small>' : ""}</div>`; }).join("")}
+        </div>${closures.filter(c => c.from <= m + "-31" && c.to >= m + "-01").map(c => `<p class="cal-closure-note"><b>বন্ধ: ${U.date(c.from)}${c.to !== c.from ? " – " + U.date(c.to) : ""}</b>${c.reason ? " · " + esc(c.reason) : ""}</p>`).join("")}</div>`;
     },
     books() {
       const account = D.books || { total:0, paid:0, balance:0, items:[] };

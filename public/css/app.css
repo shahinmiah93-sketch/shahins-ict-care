@@ -1304,3 +1304,5 @@ html .stu-hero .student-welcome{width:fit-content;max-width:100%;background:line
 
 /* Slowly shifting cyan-blue-violet welcome text. */
 html .stu-hero .student-welcome{background-image:linear-gradient(100deg,#ecffff 0%,#a5f3fc 20%,#60a5fa 40%,#a5a0ff 60%,#a5f3fc 80%,#ecffff 100%);background-size:250% 100%;animation:studentWelcomeColors 8s ease-in-out infinite alternate}@keyframes studentWelcomeColors{from{background-position:0% 50%}to{background-position:100% 50%}}@media(prefers-reduced-motion:reduce){html .stu-hero .student-welcome{animation:none;background-position:35% 50%}}@media print{html .stu-hero .student-welcome{animation:none;background:none}}
+
+.cal .d.closed{background:#ede9fe;border:1px dashed #a78bfa;color:#6d28d9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}.cal .d.closed small{font-size:11px;line-height:1.2}.cal-closed-chip{background:#ede9fe;color:#6d28d9}.cal-closure-note{padding:10px 12px;border-radius:9px;background:#f5f3ff;color:#65448b;font-size:13px;margin:12px 0 0}
