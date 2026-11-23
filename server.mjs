@@ -2954,6 +2954,15 @@ async function api(req, res, url) {
     if (!mine && !adminView) { res.writeHead(403); return res.end(); }
     return sendVideo(req, res, videoPath(modLessonKey(c, l), l.file), VIDEO_TYPES[l.file.ext] || "video/mp4");
   }
+  // শিক্ষার্থী নিজের পেমেন্টের রসিদ খোলে (প্রিন্ট / PDF বাটনসহ); অন্যের রসিদ নয়
+  const myReceipt = p.match(/^\/api\/student\/receipt\/([\w-]+)$/);
+  if (myReceipt && m === "GET") {
+    const s = panelStudent(res);
+    if (!s) return send(res, 401, { error: "লগইন করুন" });
+    const payment = db.payments.find((x) => x.id === myReceipt[1] && x.studentId === s.id);
+    if (!payment) return send(res, 404, { error: "রসিদ পাওয়া যায়নি" });
+    return sendPaymentReceipt(res, payment, false);
+  }
   if (p === "/api/student/me" && m === "GET") {
     const s = panelStudent(res);
     if (!s) return send(res, 401, { error: "লগইন করুন" });
