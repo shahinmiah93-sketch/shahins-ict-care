@@ -2,6 +2,17 @@
 (function () {
   const { $, $$, esc, bn, money, api } = U;
   let D = null;
+  function studentGreeting(now = new Date()) {
+    const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', hourCycle: 'h23' }).format(now));
+    return hour < 4 || hour >= 21 ? 'শুভ রাত্রি' : hour < 6 ? 'শুভ প্রভাত' : hour < 12 ? 'শুভ সকাল' : hour < 15 ? 'শুভ মধ্যাহ্ন' : hour < 18 ? 'শুভ অপরাহ্ণ' : 'শুভ সন্ধ্যা';
+  }
+  function updateGreeting() {
+    const label = document.getElementById('studentGreeting');
+    if (label) label.textContent = studentGreeting() + ',';
+  }
+  setInterval(updateGreeting, 30000);
+  document.addEventListener('visibilitychange', updateGreeting);
+
   const STATUS = { P: "উপস্থিত", A: "অনুপস্থিত", L: "ছুটি" };
   function requestProfilePhoto() {
     if (AS) return;
@@ -743,6 +754,7 @@ ${AS && EMBED ? '<button type="button" class="btn fee-action-pay" data-as-pay>�
     $("#completeStudentProfile>span:nth-child(2)").textContent = pendingCount ? "পাঠানো তথ্য দেখুন" : completion?.complete ? "তথ্য সংশোধন করুন" : "ভর্তি ফর্ম সম্পূর্ণ করুন";
     $("#completeStudentProfile").onclick = () => window.SICStudentProfile({ profile: D.profile, onSaved: async () => { await openPanel(); } });
     $("#sName").textContent = p.name;
+    updateGreeting();
     $("#sMeta").innerHTML = `<span class="student-info-item student-roll"><small>শিক্ষার্থী রোল</small><strong>${esc(p.id)}</strong></span><span class="student-info-item student-batch"><small>সেশন · ${esc(p.session || "—")}</small><strong>ব্যাচ ${esc(D.batch?.name || "—")}</strong></span><span class="student-info-item student-schedule"><small>ক্লাসের সময়</small><strong>${esc(D.batch?.time || "সময় নির্ধারিত হয়নি")}</strong><span>${esc(D.batch?.days || "")}</span></span>`;
     // অনলাইন মডিউলের রেকর্ড ক্লাস থাকলে "ক্লাস ভিডিও" ট্যাব (সারসংক্ষেপের পরেই)
     const vt = $("#tabs [data-t=\"videos\"]");
