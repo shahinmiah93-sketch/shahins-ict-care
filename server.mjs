@@ -774,9 +774,10 @@ function syncResultNotice(ex, gone) {
   if (!batchIds.length) { if (i >= 0) db.notices.splice(i, 1); return; }
   const names = batchIds.map((id) => (db.batches.find((b) => b.id === id) || {}).name || id).join(", ");
   const until = new Date(Date.parse(today() + "T00:00:00Z") + 14 * 864e5).toISOString().slice(0, 10);
-  const n = { title: `${ex.title}-এর ফলাফল প্রকাশিত হয়েছে`, body: `ব্যাচ ${names}: "${ex.title}"-এর ফলাফল প্রকাশিত হয়েছে। "ফলাফল" ট্যাবে নিজের নম্বর, পাস-ফেল আর মেধাক্রম দেখো।`, date: today(), until, public: false, important: true, tag: "ফলাফল", resultExamId: ex.id, batchIds };
+  const n = { title: `${ex.title}-এর ফলাফল প্রকাশিত হয়েছে`, body: `ব্যাচ ${names}: "${ex.title}"-এর ফলাফল প্রকাশিত হয়েছে। "ফলাফল" ট্যাবে নিজের নম্বর, পাস-ফেল আর মেধাক্রম দেখো।`, date: today(), until, public: false, tag: "ফলাফল", resultExamId: ex.id, batchIds };
+  // স্বয়ংক্রিয় নোটিশ "জরুরি" (📌) নয় — জরুরি করা শুধু অ্যাডমিনের হাতে; বানানোর সময় false, পরে হালনাগাদে অ্যাডমিনের টিক বদলায় না
   if (i >= 0) Object.assign(db.notices[i], n, { updatedAt: new Date().toISOString() });
-  else db.notices.push({ id: uid("not"), ...n, createdAt: new Date().toISOString() });
+  else db.notices.push({ id: uid("not"), important: false, ...n, createdAt: new Date().toISOString() });
 }
 // কুইজের ঘোষণা → নোটিশ বোর্ডে একটা নোটিশ (কুইজ বদলালে নোটিশও বদলায়, ঘোষণা তুলে নিলে / কুইজ মুছলে নোটিশও মুছে যায়)
 function syncQuizNotice(q, gone) {
@@ -791,10 +792,10 @@ function syncQuizNotice(q, gone) {
   const n = {
     title: `অনলাইন কুইজ: ${subj || q.title} — ${new Date(q.opensAt).toLocaleDateString("bn-BD", { day: "numeric", month: "long" })}`,
     body: `${when(q.opensAt)} থেকে "${q.title}" অনলাইন কুইজ।${subj ? ` বিষয়: ${subj}।` : ""} সময় ${bnD(q.duration)} মিনিট${q.closesAt ? `, ${when(q.closesAt)}-এর মধ্যে দিতে হবে` : ""}।${q.negative ? ` প্রতি ভুলে −${bnD(q.negValue)} নম্বর কাটা যাবে।` : ""} কারা দেবে: ${who}${q.open ? " ও অনলাইন শিক্ষার্থীরা (ওয়েবসাইটের অনলাইন কুইজ পেজ)" : ""}। শিক্ষার্থী প্যানেলের "অনলাইন কুইজ" ট্যাব থেকে দিতে হবে।`,
-    until: (q.closesAt || q.opensAt).slice(0, 10), public: !!q.open, important: true, tag: "কুইজ", quizId: q.id,
+    until: (q.closesAt || q.opensAt).slice(0, 10), public: !!q.open, tag: "কুইজ", quizId: q.id,
   };
   if (i >= 0) Object.assign(db.notices[i], n, { updatedAt: new Date().toISOString() });
-  else db.notices.push({ id: uid("not"), date: today(), ...n, createdAt: new Date().toISOString() });
+  else db.notices.push({ id: uid("not"), date: today(), important: false, ...n, createdAt: new Date().toISOString() });
 }
 // ---- অনলাইন (ব্যাচের বাইরের) শিক্ষার্থী ----
 // ছোট ফর্ম (নাম, মোবাইল, এইচএসসি ব্যাচ, গ্রুপ, কলেজ) পূরণ করে "সবার জন্য খোলা" কুইজ দেয়। মোবাইল দিয়ে চেনা হয়, আইডি G0001…
@@ -4170,9 +4171,24 @@ function installRegularMonthlyFees() {
     saveDb(); console.info("Regular monthly fee schedule installed"); return true;
   } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
 }
+// একবারের সংস্কার: আগে তৈরি স্বয়ংক্রিয় ফলাফল / কুইজের নোটিশ থেকে "জরুরি" (📌) তুলে দেওয়া। অ্যাডমিন নিজে যেটা জরুরি করেছেন (সাধারণ নোটিশ) সেটা ছোঁয়া হয় না।
+function unpinAutoNotices() {
+  const key = "auto-notices-unpinned-202611";
+  if (db.meta?.repairs?.[key]) return false;
+  const auto = (db.notices || []).filter((n) => (n.resultExamId || n.quizId) && n.important);
+  const original = JSON.stringify(db);
+  try {
+    if (auto.length) fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-unpin-notices-${Date.now()}.json`));
+    for (const n of auto) n.important = false;
+    db.meta ||= {}; db.meta.repairs ||= {};
+    db.meta.repairs[key] = { at: new Date().toISOString(), count: auto.length };
+    saveDb(); if (auto.length) console.info(`Auto notices unpinned: ${auto.length}`); return true;
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
+}
 repairConfirmedAdmissionStart();
 renumberStudentsByAdmission();
 installRegularMonthlyFees();
+unpinAutoNotices();
 
 // ---------- ফাইল পরিবেশন ----------
 const TYPES = {
