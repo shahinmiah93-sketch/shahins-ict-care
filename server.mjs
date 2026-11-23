@@ -366,6 +366,16 @@ async function admissionAttachmentAction(req, res, url, sid, fileId) {
   return send(res, 200, { ok: true, item });
 }
 
+// একজন ছাত্রের সব ভর্তি-সংযুক্তি (রেকর্ড + ফাইল) মোছে। saveDb কলকারীর কাজ।
+function dropAdmissionFiles(studentId) {
+  const all = db.admissionAttachments || [];
+  const mine = all.filter((item) => item.studentId === studentId);
+  if (!mine.length) return 0;
+  for (const item of mine) { try { fs.unlinkSync(path.join(ADMISSION_FILES, item.id + item.ext)); } catch {} }
+  db.admissionAttachments = all.filter((item) => item.studentId !== studentId);
+  return mine.length;
+}
+
 function readRaw(req, limit) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
@@ -3989,6 +3999,7 @@ async function api(req, res, url) {
         removePhoto("s", id); removePhoto("o", id); removePhoto("p", id); removePhoto("po", id);
         db.enrollments = db.enrollments.filter((e) => e.studentId !== id);
         db.payments = db.payments.filter((x) => x.studentId !== id);
+        dropAdmissionFiles(id); // ভর্তির কাগজপত্রও যাবে, নইলে একই আইডি আবার দিলে নতুন ছাত্রে দেখা যেত
       }
       if (col === "applications") removePhoto("a", id);
       // ডকুমেন্ট মুছলে তার ফাইলও; পরীক্ষা মুছলে তার সব ডকুমেন্ট ও ফাইল
@@ -4188,6 +4199,30 @@ function unpinAutoNotices() {
 repairConfirmedAdmissionStart();
 renumberStudentsByAdmission();
 installRegularMonthlyFees();
+
+// একবারের সাফাই: যে ছাত্র আর নেই তার পড়ে-থাকা ভর্তি-সংযুক্তি। আগে ডেটার ব্যাকআপ, ফাইলগুলোও ব্যাকআপ ফোল্ডারে কপি।
+function dropOrphanAdmissionFiles() {
+  const key = "orphan-admission-files-202611";
+  if (db.meta?.repairs?.[key]) return false;
+  const ids = new Set((db.students || []).map((s) => s.id));
+  const orphans = (db.admissionAttachments || []).filter((item) => !ids.has(item.studentId));
+  const original = JSON.stringify(db);
+  try {
+    if (orphans.length) {
+      const stamp = Date.now();
+      fs.copyFileSync(DB_FILE, path.join(BACKUPS, `before-orphan-admission-files-${stamp}.json`));
+      for (const item of orphans) {
+        const file = path.join(ADMISSION_FILES, item.id + item.ext);
+        try { if (fs.existsSync(file)) { fs.copyFileSync(file, path.join(BACKUPS, `orphan-${stamp}-${item.id}${item.ext}`)); fs.unlinkSync(file); } } catch {}
+      }
+      db.admissionAttachments = db.admissionAttachments.filter((item) => ids.has(item.studentId));
+    }
+    db.meta ||= {}; db.meta.repairs ||= {};
+    db.meta.repairs[key] = { at: new Date().toISOString(), count: orphans.length };
+    saveDb(); if (orphans.length) console.info(`Orphan admission files removed: ${orphans.length}`); return true;
+  } catch (error) { db = JSON.parse(original); writeJsonAtomic(DB_FILE, db); throw error; }
+}
+dropOrphanAdmissionFiles();
 unpinAutoNotices();
 
 // ---------- ফাইল পরিবেশন ----------
