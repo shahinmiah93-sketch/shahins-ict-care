@@ -4219,7 +4219,7 @@ const server = http.createServer(async (req, res) => {
 syncPauses(); setInterval(syncPauses, 60e3).unref(); // সামনের তারিখের বন্ধ / চালু সময়মতো কার্যকর
 
 // ---------- জন্মদিনের শুভেচ্ছা ----------
-// প্রতিদিন রাত ১২:০১-এ, জন্মদিন আজ এমন সক্রিয় শিক্ষার্থীকে: নিজের নোটিশে আর SMS-এ — বছরে একবারই (সার্ভার দেরিতে চালু হলেও সেদিনই যায়)
+// প্রতিদিন রাত ১২:০১-এ, জন্মদিন আজ এমন সক্রিয় ও নিষ্ক্রিয় শিক্ষার্থীকে: নিজের নোটিশে আর SMS-এ — বছরে একবারই (সার্ভার দেরিতে চালু হলেও সেদিনই যায়)
 const BIRTHDAY_BODY = "Wishing you happiness, success, and a wonderful year ahead. Keep learning, keep smiling, and keep moving toward your dreams.\n\nBest wishes,\nMd Shahin Miah (Mentor-ICT)";
 const firstName = (s) => { const en = str(s.nameEn, 120).split(/[\s.]+/).filter((w) => w && !/^(md|mohammad|mohammed|muhammad|mohammod|mst|mosammat|mosammad|most|mrs?|miss|ms)$/i.test(w)); return en[0] || s.nameEn || s.name || ""; };
 // প্যানেলের জন্মদিনের নোটিশ: শুভেচ্ছা বাংলায়, শিক্ষার্থীর পুরো বাংলা নামে (SMS ইংরেজিতেই থাকে — বাংলা অক্ষরে SMS-এর খরচ বেশি)
@@ -4230,7 +4230,7 @@ const birthdayTitle = (s) => `শুভ জন্মদিন, ${nameBn(s)}! �
 const birthdayToday = (dob, day) => { const md = String(dob || "").slice(5), now = day.slice(5), y = Number(day.slice(0, 4)); return /^\d{4}-\d{2}-\d{2}$/.test(dob || "") && (md === now || (md === "02-29" && now === "02-28" && !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)))); };
 async function sendBirthdays() {
   const clock = new Date(); if (clock.getHours() === 0 && clock.getMinutes() < 1) return; // ১২:০১ থেকে
-  const day = today(), year = day.slice(0, 4), list = db.students.filter((s) => s.status !== "inactive" && s.lastBirthday !== year && birthdayToday(s.dob, day));
+  const day = today(), year = day.slice(0, 4), list = db.students.filter((s) => s.lastBirthday !== year && birthdayToday(s.dob, day));
   const stale = db.notices.filter((n) => n.birthday && n.until < day);
   // আগের (ইংরেজি) জন্মদিনের নোটিশ থাকলে প্যানেলের জন্য বাংলা নাম আর বাংলা শুভেচ্ছায় বদলে দেওয়া — সেদিনের জন্যই, নতুন করে পাঠানো হয় না
   let upgraded = false;
