@@ -1301,3 +1301,6 @@ html .stu-hero .student-welcome{display:flex;flex-direction:row;flex-wrap:wrap;a
 
 /* One coordinated gradient across the complete welcome line. */
 html .stu-hero .student-welcome{width:fit-content;max-width:100%;background:linear-gradient(100deg,#ffffff 0%,#d7f3ff 55%,#a9d6ff 100%);background-clip:text;-webkit-background-clip:text}html .stu-hero .student-welcome p.student-greeting,html .stu-hero .student-welcome #sName{background:none;color:transparent;-webkit-text-fill-color:transparent;text-shadow:none;font-weight:600;letter-spacing:0}@media print{html .stu-hero .student-welcome{background:none}html .stu-hero .student-welcome p.student-greeting,html .stu-hero .student-welcome #sName{color:#123f36;-webkit-text-fill-color:#123f36}}
+
+/* Slowly shifting cyan-blue-violet welcome text. */
+html .stu-hero .student-welcome{background-image:linear-gradient(100deg,#ecffff 0%,#a5f3fc 20%,#60a5fa 40%,#a5a0ff 60%,#a5f3fc 80%,#ecffff 100%);background-size:250% 100%;animation:studentWelcomeColors 8s ease-in-out infinite alternate}@keyframes studentWelcomeColors{from{background-position:0% 50%}to{background-position:100% 50%}}@media(prefers-reduced-motion:reduce){html .stu-hero .student-welcome{animation:none;background-position:35% 50%}}@media print{html .stu-hero .student-welcome{animation:none;background:none}}
