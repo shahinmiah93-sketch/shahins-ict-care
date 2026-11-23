@@ -1295,3 +1295,6 @@ html .stu-hero .student-welcome p.student-greeting{display:block;margin:0;paddin
 html .stu-hero .student-welcome #sName{margin:0!important;color:#fff;font-family:'Hind Siliguri','Nirmala UI',sans-serif;font-size:30px!important;font-weight:600;line-height:1.45;letter-spacing:0;overflow-wrap:anywhere;text-shadow:none}
 @media(max-width:650px){.stu-hero .student-welcome{grid-column:2;grid-row:1;align-self:center;gap:4px;margin:0}.stu-hero .avatar{align-self:center}html .stu-hero .student-welcome p.student-greeting{font-size:18px}html .stu-hero .student-welcome #sName{font-size:23px!important;line-height:1.5}}
 @media print{html .stu-hero .student-welcome p.student-greeting{background:none;text-shadow:none;color:#123f36;-webkit-text-fill-color:#123f36}}
+
+/* Inline greeting and student name */
+html .stu-hero .student-welcome{display:flex;flex-direction:row;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:0}html .stu-hero .student-welcome #sName{font-size:22px!important;line-height:1.6}@media(max-width:650px){html .stu-hero .student-welcome{column-gap:6px}html .stu-hero .student-welcome #sName{font-size:18px!important;line-height:1.6}}
