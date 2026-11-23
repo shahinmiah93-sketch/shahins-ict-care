@@ -460,7 +460,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
           ${cell("শিক্ষার্থীর নাম", esc(s.name))}${cell("তারিখ", U.date(p.date))}
           ${cell("শিক্ষার্থী আইডি", esc(p.studentId))}${cell("ফি-এর ধরন", esc(kind), esc(mod))}
           ${cell("সেশন / ব্যাচ", esc([s.session, batchName(s.batchId)].filter(Boolean).join(" · ") || "—"))}${cell("পেমেন্টের মাধ্যম", esc(p.method || "নগদ"), p.note ? esc(p.note) : "")}
-          <div class="c amt"><small>এই রসিদে মোট জমা</small><b>${money(p.amount)}</b></div>
+          <div class="c amt"><small>এই রসিদে মোট জমা${p.edited ? " (সংশোধিত রসিদ)" : ""}</small><b>${money(p.amount)}</b>${p.discount > 0 ? `<i>এছাড়া ছাড়: ${money(p.discount)}</i>` : ""}</div>
           <div class="c ${due ? "unpaid" : "paid"}"><small>বর্তমান মোট বকেয়া</small><b>${due ? money(due) : "বকেয়া নেই"}</b></div>
           ${receiptCoverage(cov)}
         </div>

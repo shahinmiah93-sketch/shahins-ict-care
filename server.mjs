@@ -1020,7 +1020,7 @@ function receiptHtml(p) {
         ${cell("শিক্ষার্থীর নাম", receiptEscape(s.name))}${cell("তারিখ", receiptDate(p.date))}
         ${cell("শিক্ষার্থী আইডি", receiptEscape(p.studentId))}${cell("ফি-এর ধরন", receiptEscape(kind), receiptEscape(mod))}
         ${cell("সেশন / ব্যাচ", receiptEscape([s.session, batchLabel(db.batches.find((batch) => batch.id === s.batchId))].filter(Boolean).join(" · ") || "—"))}${cell("পেমেন্টের মাধ্যম", receiptEscape(p.method || "নগদ"), p.note ? receiptEscape(p.note) : "")}
-        <div class="c amt"><small>এই রসিদে মোট জমা</small><b>${receiptMoney(p.amount)}</b></div>
+        <div class="c amt"><small>এই রসিদে মোট জমা${p.edited ? " (সংশোধিত রসিদ)" : ""}</small><b>${receiptMoney(p.amount)}</b>${p.discount > 0 ? `<i>এছাড়া ছাড়: ${receiptMoney(p.discount)}</i>` : ""}</div>
         <div class="c ${due ? "unpaid" : "paid"}"><small>বর্তমান মোট বকেয়া</small><b>${due ? receiptMoney(due) : "বকেয়া নেই"}</b></div>
         ${receiptCoverage(cov)}
       </div>
