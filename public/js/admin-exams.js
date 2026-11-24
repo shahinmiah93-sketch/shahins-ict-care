@@ -625,7 +625,7 @@ window.SICExams = function (X) {
     sessionSelect.value = session;
     const available = batches.filter(batch => studs.some(student => student.batchId === batch.id));
     $("[data-batch-summary]", dlg).textContent = B.views === null ? "সব ব্যাচ" : B.views.length ? bn(B.views.length) + "টি ব্যাচ নির্বাচিত" : "ব্যাচ বেছে নিন";
-    $("[data-batch-options]", dlg).innerHTML = '<label><input type="checkbox" data-picker-all' + (B.views === null ? ' checked' : '') + '> সব ব্যাচ</label>' + available.map(batch => '<label><input type="checkbox" data-picker-batch value="' + esc(batch.id) + '"' + (B.views === null || B.views.includes(batch.id) ? ' checked' : '') + '> ' + esc(U.batchLabel(batch)) + '</label>').join('');
+    $("[data-batch-options]", dlg).innerHTML = '<label><input type="checkbox" data-picker-all' + (B.views === null ? ' checked' : '') + '><span>সব ব্যাচ</span></label>' + available.map(batch => '<label><input type="checkbox" data-picker-batch value="' + esc(batch.id) + '"' + (B.views === null || B.views.includes(batch.id) ? ' checked' : '') + '><span>' + esc(U.batchLabel(batch)) + '</span></label>').join('');
     const list = pickerList();
     $(".exam-student-picker", dlg).innerHTML = list.map((s) => `<label class="exam-student-choice"><input type="checkbox" value="${esc(s.id)}"${B.sel.has(s.id) ? " checked" : ""}><span><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small></span></label>`).join("") || '<p class="ex-sub" style="grid-column:1/-1">এই সেশন বা ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই। উপরে সেশন বদলে দেখুন।</p>';
     drawPickerMeta();
