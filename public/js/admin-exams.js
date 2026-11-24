@@ -589,7 +589,7 @@ window.SICExams = function (X) {
     const box = $(".exam-subject-builder", dlg), row = document.createElement("div");
     row.className = "exam-subject-row";
     const part = (k, v, on) => `<div class="builder-mark-part builder-${k}-wrap${on ? "" : " part-removed"}"><div class="builder-mark-part-head"><span>${k.toUpperCase()} নম্বর</span><button type="button" class="toggle-exam-part" data-part="${k}" aria-label="${on ? `${k.toUpperCase()} অংশ বাদ দিন` : `${k.toUpperCase()} অংশ ফিরিয়ে আনুন`}">${on ? "×" : "＋ " + k.toUpperCase()}</button></div><input class="builder-${k}-mark" inputmode="decimal" value="${v === "" || v === undefined || v === 0 ? "" : esc(v)}" placeholder="${k.toUpperCase()} পূর্ণমান"${on ? "" : " disabled"}></div>`;
-    row.innerHTML = `<label>বিষয়ের নাম *<input class="builder-subject-name" value="${esc(name)}" placeholder="বিষয়ের নাম" required></label>${part("cq", cq, cqOn)}${part("mcq", mcq, mcqOn)}<button type="button" class="remove-exam-subject" aria-label="বিষয় বাদ দিন">×</button>`;
+    row.innerHTML = `<label>বিষয়ের নাম *<input class="builder-subject-name" value="${esc(name)}" placeholder="বিষয়ের নাম" required></label>${part("cq", cq, cqOn)}${part("mcq", mcq, mcqOn)}<div class="builder-row-total"><span>মোট পূর্ণমান</span><output data-row-total aria-live="polite">—</output></div><button type="button" class="remove-exam-subject" aria-label="বিষয় বাদ দিন">×</button>`;
     box.append(row);
     refreshMode();
   }
@@ -607,7 +607,12 @@ window.SICExams = function (X) {
       return { name: $(".builder-subject-name", r).value.trim(), cq: v("cq"), mcq: v("mcq"), cqOn: on("cq"), mcqOn: on("mcq") };
     });
   }
-  function calcFull() { const t = readSubjects().reduce((n, s) => n + s.cq + s.mcq, 0); $("[data-total-full]", dlg).textContent = t ? bn(t) : "—"; }
+  function calcFull() {
+    const rows = $$(".exam-subject-row", dlg), subs = readSubjects(), t = subs.reduce((n, s) => n + s.cq + s.mcq, 0);
+    rows.forEach((r, i) => { const x = subs[i] ? subs[i].cq + subs[i].mcq : 0; $("[data-row-total]", r).textContent = x ? bn(x) : "—"; });
+    $("[data-total-full]", dlg).textContent = t ? bn(t) : "—";
+    $(".exam-full-summary", dlg).style.display = rows.length > 1 ? "" : "none"; // একটা বিষয় হলে সারির মোটই যথেষ্ট; একাধিক হলে সব বিষয়ের যোগফল নিচে
+  }
   function onType() {
     const f = F(), type = f.type.value;
     $("[data-only-ch]", dlg).hidden = type !== "chapter";
