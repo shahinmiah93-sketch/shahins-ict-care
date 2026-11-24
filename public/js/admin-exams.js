@@ -558,7 +558,17 @@ window.SICExams = function (X) {
     });
     dlg.addEventListener("change", (e) => {
       const t = e.target;
-      if (t.matches("[data-batch-date]")) { B.batchDates[t.dataset.batchDate] = t.value; return; }
+      if (t.matches("[data-all-date]")) {
+        if (!t.value) return;
+        $$("[data-batch-date]", dlg).forEach((i) => { i.value = t.value; B.batchDates[i.dataset.batchDate] = t.value; });
+        return;
+      }
+      if (t.matches("[data-batch-date]")) {
+        B.batchDates[t.dataset.batchDate] = t.value;
+        const all = $("[data-all-date]", dlg), vs = $$("[data-batch-date]", dlg).map((i) => i.value);
+        if (all) all.value = vs.length && vs.every((v) => v === vs[0]) ? vs[0] : "";
+        return;
+      }
 
       if (t.name === "mode") { refreshMode(); calcFull(); }
       if (t.name === "type") { onType(); }
@@ -645,7 +655,8 @@ window.SICExams = function (X) {
   }
   function drawBatchDates() {
     const ids = [...new Set([...B.sel].map(id => X.studentById(id)?.batchId).filter(Boolean))];
-    $("[data-batch-dates]", dlg).innerHTML = '<h3>ব্যাচ অনুযায়ী পরীক্ষার তারিখ</h3><p>প্রতিটি নির্বাচিত ব্যাচের পরীক্ষার তারিখ দিন।</p>' + ids.map(id => '<label><span>' + esc(X.batchName(id)) + '</span><input type="date" data-batch-date="' + esc(id) + '" value="' + esc(B.batchDates[id] ?? B.defaultDate) + '"></label>').join("");
+    const vals = ids.map(id => B.batchDates[id] ?? B.defaultDate), same = vals.length && vals.every(v => v === vals[0]) ? vals[0] : "";
+    $("[data-batch-dates]", dlg).innerHTML = '<h3>ব্যাচ অনুযায়ী পরীক্ষার তারিখ</h3><p>প্রতিটি নির্বাচিত ব্যাচের পরীক্ষার তারিখ দিন।</p>' + (ids.length > 1 ? '<label class="all-batch-date"><span><b>সব ব্যাচের একই তারিখ</b></span><input type="date" data-all-date value="' + esc(same) + '"></label>' : '') + ids.map(id => '<label><span>' + esc(X.batchName(id)) + '</span><input type="date" data-batch-date="' + esc(id) + '" value="' + esc(B.batchDates[id] ?? B.defaultDate) + '"></label>').join("");
   }
   function drawPickerMeta() {
     const shown = pickerList();

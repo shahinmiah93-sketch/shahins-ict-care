@@ -626,3 +626,6 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .builder-row-total{display:grid;gap:8px;align-content:end;color:#485b56;font-size:12px;font-weight:600}
 .builder-row-total span{min-height:24px;display:flex;align-items:center}
 .builder-row-total output{display:flex;align-items:center;justify-content:center;height:44px;padding:0 12px;border-radius:10px;background:#e5f4ee;color:#12624f;font-size:20px;font-weight:700}
+/* পরীক্ষার ফর্ম: সব ব্যাচের একই তারিখ বসানোর ঘর */
+.exam-builder-dialog .exam-batch-dates .all-batch-date{padding:10px 12px;margin:0 0 10px;border-radius:10px;background:#fff;border:1px dashed #b9cadb}
+.exam-builder-dialog .exam-batch-dates .all-batch-date b{color:#12624f}
