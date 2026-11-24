@@ -418,10 +418,22 @@ window.SICExams = function (X) {
       S.rtTitle = ""; await X.load(); render(); toast("রুটিন যোগ হয়েছে — শিক্ষার্থীরা নিজের প্যানেলে পাবে");
     } catch (e) { toast(e.message, true); btn.disabled = false; if (prog) prog.hidden = true; }
   }
-  const examDateOf = (d) => String(dateOf(exById(d.examId) || {}, 0)); // ডকুমেন্টের তালিকা: নতুন পরীক্ষা আগে (০৪, ০৩, ০২, ০১)
+  const examDateOf = (d) => String(dateOf(exById(d.examId) || {}, 0));
+  // ডকুমেন্টের তালিকা: একই সিরিজের পরীক্ষা নামের নম্বর অনুযায়ী নতুন আগে (Weekly GK Test-04, 03, 02, 01)।
+  // সিরিজ = নামের শেষের নম্বর বাদ দিয়ে বাকিটা; সিরিজের সারি সাজে তার সবচেয়ে নতুন তারিখ ধরে, নম্বর না থাকলে তারিখই ভরসা।
+  const seriesOf = (t) => String(t || "").replace(/[\s\-–—_#.:]*[0-9০-৯]+\s*$/, "").trim().toLowerCase();
+  const numOf = (t) => { const m = String(t || "").match(/([0-9০-৯]+)\s*$/); return m ? Number(enNum(m[1])) : -1; };
+  function sortDocs(list) {
+    const newest = {};
+    list.forEach((d) => { const k = seriesOf((exById(d.examId) || {}).title), dt = examDateOf(d); if (!(k in newest) || dt > newest[k]) newest[k] = dt; });
+    return list.sort((a, b) => {
+      const ea = exById(a.examId) || {}, eb = exById(b.examId) || {}, ka = seriesOf(ea.title), kb = seriesOf(eb.title);
+      return newest[kb].localeCompare(newest[ka]) || ka.localeCompare(kb) || numOf(eb.title) - numOf(ea.title) || examDateOf(b).localeCompare(examDateOf(a)) || String(b.createdAt).localeCompare(String(a.createdAt));
+    });
+  } // ডকুমেন্টের তালিকা: নতুন পরীক্ষা আগে (০৪, ০৩, ০২, ০১)
   function docsTab() {
     const nd = DB().docs.filter((d) => exams().some((e) => e.id === d.examId)), q = S.q.toLowerCase();
-    const list = nd.filter((d) => !q || `${d.title} ${(exById(d.examId) || {}).title} ${d.note || ""} ${d.studentId || ""}`.toLowerCase().includes(q)).sort((a, b) => examDateOf(b).localeCompare(examDateOf(a)) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const list = sortDocs(nd.filter((d) => !q || `${d.title} ${(exById(d.examId) || {}).title} ${d.note || ""} ${d.studentId || ""}`.toLowerCase().includes(q)));
     // নতুন ডকুমেন্ট: আগে পরীক্ষার ধরন, তারপর সেই ধরনের পরীক্ষার নাম, তারপর ডকুমেন্টের ধরন ও ফাইল
     const typesHere = TYPES_HERE(), docEx = exById(S.docTarget), docType = docEx ? docEx.type : S.docType || (typesHere.length === 1 ? typesHere[0][0] : "");
     const targets = docType ? exams().filter((e) => e.type === docType).sort(EC.byTitle) : [];
