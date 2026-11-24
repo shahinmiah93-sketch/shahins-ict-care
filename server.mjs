@@ -1587,7 +1587,7 @@ const CLEAN = {
   docs: (b) => {
     const url = str(b.url, 500), yt = youtubeId(url);
     return {
-      examId: str(b.examId, 60), category: ["question", "answer", "script"].includes(b.category) ? b.category : "question", studentId: str(b.studentId, 40),
+      examId: str(b.examId, 60), category: ["question", "answer", "qa", "script"].includes(b.category) ? b.category : "question", studentId: str(b.studentId, 40),
       attempt: Math.max(0, Math.min(2, Math.floor(num(b.attempt)))), title: str(b.title, 150), note: str(b.note, 300),
       ...(url ? { url: /^https?:\/\//i.test(url) ? url : "", kind: yt ? "youtube" : "link", youtube: yt } : {}),
     };

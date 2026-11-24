@@ -13,7 +13,7 @@ window.SICExams = function (X) {
   const DAYS = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"];
   const TYPE_C = { weekly: "#286fa3", monthly: "#6c5bb5", chapter: "#9a6a12", model: "#c0394f", class: "#187460", gk: "#b4531f", special: "#0e7490" };
   const ICON = { pdf: "PDF", image: "ছবি", video: "ভিডিও", audio: "অডিও", youtube: "►", link: "লিংক", file: "ফাইল" };
-  const CATS = { question: "প্রশ্ন", answer: "উত্তরপত্র", script: "মূল্যায়ন খাতা" };
+  const CATS = { question: "প্রশ্ন", answer: "উত্তরপত্র", qa: "প্রশ্ন ও উত্তরপত্র", script: "মূল্যায়ন খাতা" };
   const num2 = (x) => (x === null || x === undefined ? "—" : bn(String(EC.round2(x))));
   const enNum = (v) => String(v ?? "").replace(/[০-৯]/g, (d) => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[−–]/g, "-").trim();
   const negHere = () => EC.allowsNegative(exById(S.examId));
@@ -61,12 +61,16 @@ window.SICExams = function (X) {
       const batchIds = S.f.batch ? [S.f.batch] : (ex.batchIds || []);
       const groups = new Map();
       for (const id of batchIds.length ? batchIds : ['']) { const date = a === 0 ? ex.batchDates?.[id] || ex.date || '' : dateOf(ex, a); if (!groups.has(date)) groups.set(date, []); if (id) groups.get(date).push(id); }
-      for (const [date, ids] of groups) out.push({ key: ex.id + '~' + a + '~' + date, ex, a, date, done: !!date && date <= today(), isToday: date === today(), title: ex.title + (EC.attemptsOf(ex) > 1 ? ' · ' + EC.ATTEMPT_NAMES[a] : '') + (groups.size > 1 ? ' · ' + ids.map(X.batchName).join(', ') : '') });
+      for (const [date, ids] of groups) {
+        // ক্যালেন্ডারে ব্যাচের শুধু ছোট নাম (28-F); পুরো লেবেল (ক্লাসের দিন-সময়সহ) এখানে বসালে ঘর এলোমেলো হয়ে যায়
+        const base = ex.title + (EC.attemptsOf(ex) > 1 ? ' · ' + EC.ATTEMPT_NAMES[a] : ''), sub = groups.size > 1 ? ids.map((id) => X.batchById?.(id)?.name || X.batchName(id)).join(', ') : '';
+        out.push({ key: ex.id + '~' + a + '~' + date, ex, a, date, done: !!date && date <= today(), isToday: date === today(), base, sub, title: base + (sub ? ' · ' + sub : '') });
+      }
     }
     return out.sort((x, y) => (x.date || "9999").localeCompare(y.date || "9999"));
   }
   const docsOf = (exId) => DB().docs.filter((d) => d.examId === exId);
-  const batchesOfEx = (ex) => [...new Set((ex.studentIds || []).map((id) => (X.studentById(id) || {}).batchId).filter(Boolean))].map(X.batchName);
+  const batchesOfEx = (ex) => [...new Set((ex.studentIds || []).map((id) => (X.studentById(id) || {}).batchId).filter(Boolean))].map((id) => X.batchById?.(id)?.name || X.batchName(id));
 
   // ================= পেজ =================
   function render() {
@@ -181,7 +185,7 @@ window.SICExams = function (X) {
     let cells = DAYS.map((d) => `<span class="mb-wd">${d}</span>`).join("") + "<i></i>".repeat(first);
     for (let d = 1; d <= days; d++) {
       const iso = `${ym}-${String(d).padStart(2, "0")}`, l = list.filter((i) => i.date === iso);
-      cells += `<div class="mb-day${l.length ? " on" : ""}${iso === t ? " today" : ""}${iso > t ? " future" : ""}"${l.length ? ` style="--k:${TYPE_C[l[0].ex.type]}"` : ""} data-new="${iso}" title="চাপ দিন — এই দিনে পরীক্ষা যোগ করুন"><b>${bn(d)}</b>${l.slice(0, 2).map((i) => `<button type="button" data-open="${i.key}" title="${esc(i.title)}">${i.done ? "✓ " : ""}${esc(i.title)}${docsOf(i.ex.id).length ? " " : ""}</button>`).join("")}${l.length > 2 ? `<small>+${bn(l.length - 2)}</small>` : ""}</div>`;
+      cells += `<div class="mb-day${l.length ? " on" : ""}${iso === t ? " today" : ""}${iso > t ? " future" : ""}"${l.length ? ` style="--k:${TYPE_C[l[0].ex.type]}"` : ""} data-new="${iso}" title="চাপ দিন — এই দিনে পরীক্ষা যোগ করুন"><b>${bn(d)}</b>${l.slice(0, 2).map((i) => `<button type="button" data-open="${i.key}" title="${esc(i.title)}">${i.done ? "✓ " : ""}${esc(i.base ?? i.title)}${i.sub ? `<small class="mb-sub">${esc(i.sub)}</small>` : ""}${docsOf(i.ex.id).length ? " " : ""}</button>`).join("")}${l.length > 2 ? `<small>+${bn(l.length - 2)}</small>` : ""}</div>`;
     }
     const right = `<section class="mb-right"><div class="mb-calnav"><button type="button" data-month="-1">‹ আগের</button><b>${monthBn(ym)}</b><span class="mb-navr"><button type="button" class="mb-addbig" data-new="${ym === ymOf(t) ? t : ym + "-01"}">＋ পরীক্ষা যোগ করুন</button><button type="button" data-month="1">পরের ›</button></span></div>
       <p class="mb-hint">ক্যালেন্ডারের যেকোনো তারিখে চাপ দিন — সেদিনের জন্য নতুন পরীক্ষা তৈরি হবে।</p><div class="mb-grid">${cells}</div>
@@ -423,7 +427,7 @@ window.SICExams = function (X) {
     return `<section class="card"><div class="ln-dochead"><h3>সব ডকুমেন্ট (${bn(nd.length)})</h3><input data-docq placeholder="খুঁজুন — শিরোনাম, পরীক্ষা, আইডি…" value="${esc(S.q)}"></div>
       ${list.length ? `<div class="ln-docs">${list.map((d) => docCard(d, true)).join("")}</div>` : empty(nd.length ? "এই খোঁজে কিছু পাওয়া যায়নি।" : "এখনো কোনো ডকুমেন্ট নেই।")}</section>
       <section class="card" style="margin-top:14px"><h3>＋ নতুন ডকুমেন্ট যোগ করুন</h3><p class="ex-sub">কোন পরীক্ষার ডকুমেন্ট বেছে নিন, তারপর ফাইল বা লিংক দিন। প্রশ্ন আর উত্তরপত্র ঐ পরীক্ষার সব পরীক্ষার্থী নিজের প্যানেলে পায়। প্রত্যেকের দেখা খাতা দিতে পরীক্ষার পাতা খুলে "মূল্যায়ন খাতা"-তে যান।</p>
-      <div class="ln-filter light"><label>পরীক্ষার ধরন<select data-doc-type>${X.opt([["", "বেছে নিন…"], ...typesHere], docType)}</select></label><label style="flex:1">পরীক্ষার নাম<select data-doc-target${docType && targets.length ? "" : " disabled"}><option value="">${!docType ? "আগে পরীক্ষার ধরন বাছুন" : targets.length ? "বেছে নিন…" : "এই ধরনের কোনো পরীক্ষা নেই"}</option>${targets.map((e) => `<option value="${e.id}"${S.docTarget === e.id ? " selected" : ""}>${esc(U.examLabel(e))}</option>`).join("")}</select></label><label>ডকুমেন্টের ধরন<select data-doc-cat>${X.opt([["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"]], S.docCat)}</select></label></div>
+      <div class="ln-filter light"><label>পরীক্ষার ধরন<select data-doc-type>${X.opt([["", "বেছে নিন…"], ...typesHere], docType)}</select></label><label style="flex:1">পরীক্ষার নাম<select data-doc-target${docType && targets.length ? "" : " disabled"}><option value="">${!docType ? "আগে পরীক্ষার ধরন বাছুন" : targets.length ? "বেছে নিন…" : "এই ধরনের কোনো পরীক্ষা নেই"}</option>${targets.map((e) => `<option value="${e.id}"${S.docTarget === e.id ? " selected" : ""}>${esc(U.examLabel(e))}</option>`).join("")}</select></label><label>ডকুমেন্টের ধরন<select data-doc-cat>${X.opt([["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"], ["qa", "প্রশ্ন ও উত্তরপত্র"]], S.docCat)}</select></label></div>
       ${S.docTarget && exById(S.docTarget) ? uploader(S.docTarget, S.docCat) : ""}</section>`;
   }
 
@@ -444,7 +448,7 @@ window.SICExams = function (X) {
       <section class="ln-hero" style="--k:${TYPE_C[ex.type]}"><span class="ln-date big">${d ? `<b>${d.day}</b><small>${d.mon}</small>` : "<b>—</b>"}</span><div><small>${esc(EC.typeName(ex.type))}${n > 1 ? " · " + EC.ATTEMPT_NAMES[i.a] : ""}</small><h2>${esc(ex.title)}</h2>${ex.chapter ? `<p>${esc(ex.chapter)}</p>` : ""}${ex.syllabus ? `<p class="pre">${esc(ex.syllabus)}</p>` : ""}</div></section>
       <div class="ln-two"><section class="card"><h3>তথ্য</h3><div class="ln-info">${info.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join("")}</div></section>
         <section class="card"><h3>ফলাফলের সারসংক্ষেপ${n > 1 ? ` <small class="ln-count">${EC.ATTEMPT_NAMES[i.a]}</small>` : ""}</h3>${summary}</section></div>`;
-    const SUBS = [["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"], ["script", "মূল্যায়ন খাতা"]];
+    const SUBS = [["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"], ["qa", "প্রশ্ন ও উত্তরপত্র"], ["script", "মূল্যায়ন খাতা"]];
     let sub;
     if (S.sub === "script") {
       const rankOf = new Map(R.present.map((r) => [r.sid, r]));
@@ -454,7 +458,7 @@ window.SICExams = function (X) {
       }).join("") || empty("এই পরীক্ষার শিক্ষার্থী পাওয়া যায়নি।")}</div>`;
     } else {
       const list = docs.filter((x) => x.category === S.sub);
-      sub = `${list.length ? `<div class="ln-docs">${list.map((x) => docCard(x)).join("")}</div>` : empty(S.sub === "question" ? "প্রশ্নপত্র এখনো দেওয়া হয়নি।" : "উত্তরপত্র এখনো দেওয়া হয়নি।")}${uploader(ex.id, S.sub, "", i.a)}`;
+      sub = `${list.length ? `<div class="ln-docs">${list.map((x) => docCard(x)).join("")}</div>` : empty(S.sub === "qa" ? "প্রশ্ন ও উত্তরপত্র এখনো দেওয়া হয়নি।" : S.sub === "question" ? "প্রশ্নপত্র এখনো দেওয়া হয়নি।" : "উত্তরপত্র এখনো দেওয়া হয়নি।")}${uploader(ex.id, S.sub, "", i.a)}`;
     }
     return head + `<section class="card" style="margin-top:14px"><div class="ln-subs">${SUBS.map(([k, t]) => `<button type="button" data-sub="${k}" class="${S.sub === k ? "on" : ""}">${t} <i>${bn(docs.filter((x) => x.category === k).length)}</i></button>`).join("")}</div>${sub}</section>`;
   }
@@ -477,7 +481,7 @@ window.SICExams = function (X) {
     X.openModal({
       title: "ডকুমেন্ট সম্পাদনা",
       body: `<div class="fgrid"><label class="wide">শিরোনাম<input name="title" value="${esc(d.title)}" required></label><label class="wide">নোট<textarea name="note" rows="3">${esc(d.note || "")}</textarea></label>
-        ${d.category !== "script" ? `<label>ধরন<select name="category">${X.opt([["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"]], d.category)}</select></label>` : ""}${d.file ? "" : `<label class="wide">লিংক<input name="url" value="${esc(d.url || "")}"></label>`}</div>`,
+        ${d.category !== "script" ? `<label>ধরন<select name="category">${X.opt([["question", "প্রশ্ন"], ["answer", "উত্তরপত্র"], ["qa", "প্রশ্ন ও উত্তরপত্র"]], d.category)}</select></label>` : ""}${d.file ? "" : `<label class="wide">লিংক<input name="url" value="${esc(d.url || "")}"></label>`}</div>`,
       onSave: async () => {
         const v = (n) => { const el = $(`#modalBody [name="${n}"]`); return el ? el.value.trim() : undefined; };
         await X.save("docs", { ...d, title: v("title") || d.title, note: v("note") || "", category: v("category") || d.category, url: d.file ? "" : v("url") || d.url }, d.id);

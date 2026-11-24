@@ -632,3 +632,5 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 /* তারিখ বাছার বোতাম (.sdp-field-এর min-width:220px) ঘরের বাইরে চলে যেত — ঘরের মাপেই থাকবে */
 .exam-builder-dialog .exam-batch-dates .sdp-field{display:block;width:100%;min-width:0}
 .exam-builder-dialog .exam-batch-dates .sdp-trigger{min-width:0}
+/* মাসের ক্যালেন্ডার: পরীক্ষার নামের নিচে ব্যাচের ছোট নাম, এক লাইনে */
+.mb-day button .mb-sub{display:block;margin-top:3px;font-weight:600;font-size:10.5px;line-height:1.25;color:color-mix(in srgb,var(--k) 70%,#000);overflow-wrap:anywhere}
