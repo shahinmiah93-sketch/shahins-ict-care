@@ -22,6 +22,11 @@ test('The evaluation area renders only the evaluation (overall, single student, 
   assert.match(results, /if \(AREA === "eval"\) \{ S\.tab = "eval"; C\.innerHTML = `<div class="ex-page rs-page">\$\{evalTab\(\)\}<\/div>`/);
   assert.match(results, /\["all", "সামগ্রিক"\], \["one", "একক"\], \["card", "মাসিক রিপোর্ট কার্ড"\]/);
 });
+test('Individual Result (exam results page) shows exams only; attendance, homework and lessons live in the evaluation report', () => {
+  assert.match(results, /\$\{profileHtml\(d, true\)\}<\/div>/); // একক রেজাল্ট পর্দা = শুধু পরীক্ষা + কুইজ
+  assert.match(results, /examsOnly \? "" : `<section class="card" style="margin-top:12px"><h3>হাজিরা/); // হাজিরা / বাড়ির কাজ / পড়া শুধু পুরো প্রতিবেদনে
+  assert.match(results, /progressReport\(d, true\)/); // মূল্যায়নের একক ভিউ = পুরো প্রতিবেদন
+});
 test('Old #results/eval links still land on the evaluation; a student id opens the right view in each area', () => {
   assert.match(results, /AREA = arg === "eval" \|\| area === "eval" \? "eval" : "results"/);
   assert.match(results, /S\.emode = "one"; S\.eid = s\.id;/);

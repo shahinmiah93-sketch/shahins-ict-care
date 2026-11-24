@@ -541,7 +541,7 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
     return `<section class="card"><div class="rs-bar"><label>আইডি দিয়ে খুঁজুন<span class="rs-idfind"><input data-one-id inputmode="numeric" placeholder="যেমন: 270001" autocomplete="off"><button type="button" class="btn gold sm" data-one-go>খুঁজুন</button></span></label>
         <span class="rs-or">অথবা</span>${filtersHtml(["session", "batch"])}<label class="grow">শিক্ষার্থী নির্বাচন করুন<select data-one>${studs.map((s) => `<option value="${esc(s.id)}"${s.id === S.pid ? " selected" : ""}>${esc(`${s.id} — ${s.name} (${X.batchName(s.batchId)})`)}</option>`).join("") || '<option value="">এই ব্যাচে শিক্ষার্থী নেই</option>'}</select></label>
         <span class="rs-btns">${d ? '<button type="button" class="btn line sm" data-print-one>Print / PDF</button><button type="button" class="btn gold sm" data-print-profile>Student’s Progress Report</button>' : ""}</span></div></section>
-      ${d ? `<div style="margin-top:14px">${profileHtml(d)}</div>` : `<section class="card" style="margin-top:14px">${empty("একজন শিক্ষার্থী বেছে নিন।")}</section>`}`;
+      ${d ? `<div style="margin-top:14px">${profileHtml(d, true)}</div>` : `<section class="card" style="margin-top:14px">${empty("একজন শিক্ষার্থী বেছে নিন।")}</section>`}`;
   }
 
   // ================= Online Quiz =================
