@@ -418,7 +418,7 @@ window.SICExams = function (X) {
       S.rtTitle = ""; await X.load(); render(); toast("রুটিন যোগ হয়েছে — শিক্ষার্থীরা নিজের প্যানেলে পাবে");
     } catch (e) { toast(e.message, true); btn.disabled = false; if (prog) prog.hidden = true; }
   }
-  const examDateOf = (d) => String((exById(d.examId) || {}).date || ""); // ডকুমেন্টের তালিকা: নতুন পরীক্ষা আগে (০৪, ০৩, ০২, ০১)
+  const examDateOf = (d) => String(dateOf(exById(d.examId) || {}, 0)); // ডকুমেন্টের তালিকা: নতুন পরীক্ষা আগে (০৪, ০৩, ০২, ০১)
   function docsTab() {
     const nd = DB().docs.filter((d) => exams().some((e) => e.id === d.examId)), q = S.q.toLowerCase();
     const list = nd.filter((d) => !q || `${d.title} ${(exById(d.examId) || {}).title} ${d.note || ""} ${d.studentId || ""}`.toLowerCase().includes(q)).sort((a, b) => examDateOf(b).localeCompare(examDateOf(a)) || String(b.createdAt).localeCompare(String(a.createdAt)));
