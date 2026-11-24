@@ -598,7 +598,7 @@ ${list.map(receiptHtml).join("")}
   const examShell = (key, fn) => (c, arg) => {
     const own = ["model", "gk", "special"], ex = arg && DB.exams.find((e) => e.id === arg);
     const on = key === "talent" || key === "quiz" ? key : own.includes(arg) ? "exams/" + arg : ex && own.includes(ex.type) ? "exams/" + ex.type : "exams";
-    c.innerHTML = `<div class="ln-tabs ex-switch sub-switch no-print">${[["exams", "পরীক্ষা <small>সাপ্তাহিক · মাসিক · অধ্যায়</small>"], ["exams/model", "মডেল টেস্ট"], ["exams/gk", "সাপ্তাহিক জিকে টেস্ট"], ["exams/special", "বিশেষ পরীক্ষা"], ["quiz", "অনলাইন কুইজ"], ["talent", "ট্যালেন্ট হান্ট"]].map(([k, t]) => `<a href="#${k}" class="${k === on ? "on" : ""}">${t}</a>`).join("")}</div><div class="ex-sub-page"></div>`;
+    c.innerHTML = `<div class="ln-tabs ex-switch sub-switch no-print">${[["exams", "পরীক্ষা <small>সাপ্তাহিক · মাসিক · অধ্যায় · ক্লাস অ্যাসেসমেন্ট</small>"], ["exams/model", "মডেল টেস্ট"], ["exams/gk", "সাপ্তাহিক জিকে টেস্ট"], ["exams/special", "বিশেষ পরীক্ষা"], ["quiz", "অনলাইন কুইজ"], ["talent", "ট্যালেন্ট হান্ট"]].map(([k, t]) => `<a href="#${k}" class="${k === on ? "on" : ""}">${t}</a>`).join("")}</div><div class="ex-sub-page"></div>`;
     return fn($(".ex-sub-page", c), arg);
   };
 
