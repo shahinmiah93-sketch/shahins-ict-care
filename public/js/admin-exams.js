@@ -519,7 +519,7 @@ window.SICExams = function (X) {
           <label>পরীক্ষার নাম<input name="title" required placeholder="যেমন: Weekly Test-01"></label>
           <label>প্রশ্নের ধরন<select name="mode">${EC.MODES.map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join("")}</select></label>
 
-          <label>পূর্ণমান<input name="full" class="calculated-full-marks" readonly placeholder="—" aria-label="নির্বাচিত বিষয়গুলোর মোট পূর্ণমান"></label>
+
         </div>
         <div class="form-grid exam-builder-more">
           <label>সেশন<select name="session"></select></label>
@@ -533,7 +533,7 @@ window.SICExams = function (X) {
           <p><b>Chapter Final Test — একই অধ্যায়ে ৩ বার পরীক্ষা।</b> ফলাফল = যতবার দিয়েছে তার গড় (সবচেয়ে ভালোটা নয়)। ১ম বারের তারিখ নিচে ব্যাচ অনুযায়ী দিন।</p>
           <label>২য় বারের তারিখ<input type="date" name="d2"></label><label>৩য় বারের তারিখ<input type="date" name="d3"></label>
         </div>
-        <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>বিষয় ও পূর্ণমান</b><small>প্রতিটি বিষয়ে CQ/MCQ রাখা বা বাদ দেওয়া যাবে</small></div><button type="button" class="btn line" data-add-subject>＋ বিষয় যোগ করুন</button></div><div class="exam-subject-builder"></div></section>
+        <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>বিষয় ও নম্বর</b><small>CQ ও MCQ-এর নম্বর দিন; মোট পূর্ণমান নিজে হিসাব হবে।</small></div><button type="button" class="btn line" data-add-subject>＋ বিষয় যোগ করুন</button></div><div class="exam-subject-builder"></div><div class="exam-full-summary">মোট পূর্ণমান <output data-total-full aria-live="polite">—</output></div></section>
         <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>পরীক্ষার্থী নির্বাচন</b><small data-pmeta>সেশন অনুযায়ী শিক্ষার্থী দেখানো হবে</small></div><button type="button" class="btn line" data-toggle-all>সব নির্বাচন করুন</button></div>
           <div class="exam-student-course-filter fgrid"><label>সেশন<select data-picker-session></select></label><div class="exam-batch-filter"><span>ব্যাচ</span><details data-picker-batches><summary data-batch-summary>সব ব্যাচ</summary><div data-batch-options></div></details></div></div><div class="exam-student-picker"></div><div class="exam-batch-dates" data-batch-dates></div></section>
       </div>
@@ -588,7 +588,7 @@ window.SICExams = function (X) {
   function addRow(name, cq, mcq, cqOn = true, mcqOn = true) {
     const box = $(".exam-subject-builder", dlg), row = document.createElement("div");
     row.className = "exam-subject-row";
-    const part = (k, v, on) => `<div class="builder-mark-part builder-${k}-wrap${on ? "" : " part-removed"}"><div class="builder-mark-part-head"><span>${k.toUpperCase()} পূর্ণমান</span><button type="button" class="toggle-exam-part" data-part="${k}" aria-label="${on ? `${k.toUpperCase()} অংশ বাদ দিন` : `${k.toUpperCase()} অংশ ফিরিয়ে আনুন`}">${on ? "×" : "＋ " + k.toUpperCase()}</button></div><input class="builder-${k}-mark" inputmode="decimal" value="${v === "" || v === undefined || v === 0 ? "" : esc(v)}" placeholder="${k.toUpperCase()} পূর্ণমান"${on ? "" : " disabled"}></div>`;
+    const part = (k, v, on) => `<div class="builder-mark-part builder-${k}-wrap${on ? "" : " part-removed"}"><div class="builder-mark-part-head"><span>${k.toUpperCase()} নম্বর</span><button type="button" class="toggle-exam-part" data-part="${k}" aria-label="${on ? `${k.toUpperCase()} অংশ বাদ দিন` : `${k.toUpperCase()} অংশ ফিরিয়ে আনুন`}">${on ? "×" : "＋ " + k.toUpperCase()}</button></div><input class="builder-${k}-mark" inputmode="decimal" value="${v === "" || v === undefined || v === 0 ? "" : esc(v)}" placeholder="${k.toUpperCase()} পূর্ণমান"${on ? "" : " disabled"}></div>`;
     row.innerHTML = `<label>বিষয়ের নাম *<input class="builder-subject-name" value="${esc(name)}" placeholder="বিষয়ের নাম" required></label>${part("cq", cq, cqOn)}${part("mcq", mcq, mcqOn)}<button type="button" class="remove-exam-subject" aria-label="বিষয় বাদ দিন">×</button>`;
     box.append(row);
     refreshMode();
@@ -607,7 +607,7 @@ window.SICExams = function (X) {
       return { name: $(".builder-subject-name", r).value.trim(), cq: v("cq"), mcq: v("mcq"), cqOn: on("cq"), mcqOn: on("mcq") };
     });
   }
-  function calcFull() { const t = readSubjects().reduce((n, s) => n + s.cq + s.mcq, 0); F().full.value = t ? bn(t) : ""; }
+  function calcFull() { const t = readSubjects().reduce((n, s) => n + s.cq + s.mcq, 0); $("[data-total-full]", dlg).textContent = t ? bn(t) : "—"; }
   function onType() {
     const f = F(), type = f.type.value;
     $("[data-only-ch]", dlg).hidden = type !== "chapter";
