@@ -261,7 +261,7 @@ window.SICHomework = function (X) {
       <section class="card"><h3>শিক্ষার্থী অনুযায়ী হিসাব <small class="ln-count">${esc(S.f.batch ? "ব্যাচ " + X.batchName(S.f.batch) : session())}${mo ? " · " + U.month(mo) : ""} · করেছে = ১ পয়েন্ট, অনুপস্থিত গোনা হয় না</small></h3>
       <div class="tbl-wrap"><table class="exam-entry-table"><thead><tr><th>শিক্ষার্থী</th><th>ব্যাচ</th><th class="num">বাড়ির কাজ<small>করেছে / মোট</small></th><th class="num">হার</th><th class="num">পড়া<small>পেরেছে / মোট</small></th><th class="num">হার</th><th class="num">পয়েন্ট</th><th>অবস্থা</th></tr></thead><tbody>
       ${rows.map((r) => { const [t, k] = lv(r.all); return `<tr><td><b>${esc(r.s.name)}</b><small>${esc(r.s.id)}</small></td><td>${esc(X.batchName(r.s.batchId))}</td><td class="num">${bn(r.h.done)}/${bn(r.h.done + r.h.not)}${r.h.absent ? `<small>অনু ${bn(r.h.absent)}</small>` : ""}</td><td class="num"><b>${pct(r.h.pct)}</b></td><td class="num">${bn(r.l.done)}/${bn(r.l.done + r.l.not)}${r.l.absent ? `<small>অনু ${bn(r.l.absent)}</small>` : ""}</td><td class="num"><b>${pct(r.l.pct)}</b></td><td class="num">${bn(r.pts)}/${bn(r.poss)}</td><td>${k ? `<span class="chip ${k}">${t}</span>` : "—"}</td></tr>`; }).join("") || '<tr><td colspan="8" class="empty">কোনো শিক্ষার্থী নেই</td></tr>'}</tbody></table></div>
-      <p class="ex-rule">হার = করেছে ÷ (করেছে + করেনি)। অনুপস্থিত দিনের কাজ হিসাবে ধরা হয় না, আর এই হিসাব পরীক্ষার মেধাক্রমে মেশে না। "ফলাফল ব্যবস্থাপনা → Performance"-এও দেখায়।</p></section>`;
+      <p class="ex-rule">হার = করেছে ÷ (করেছে + করেনি)। অনুপস্থিত দিনের কাজ হিসাবে ধরা হয় না, আর এই হিসাব পরীক্ষার মেধাক্রমে মেশে না। "শিক্ষার্থীর মূল্যায়ন → সামগ্রিক"-এও দেখায়।</p></section>`;
   }
 
   // ================= ঘটনা =================

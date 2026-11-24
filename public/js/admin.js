@@ -591,7 +591,7 @@ ${list.map(receiptHtml).join("")}
   const ensureResults = () => (resultsCtx = resultsCtx || window.SICResults({
     get DB() { return DB; }, load, printDoc, opt, studentById, batchById, batchName, liveSessions,
   }));
-  const resultsPage = (c, arg) => ensureResults()(c, arg);
+  const resultsPage = (c, arg, area) => ensureResults()(c, arg, area);
   const evalReport = (id) => { ensureResults(); window.SICEvalReport(id); };
 
   // পরীক্ষা পাতার ভেতরেই সব: সাপ্তাহিক / মাসিক / জিকে / বিশেষ পরীক্ষা আর ট্যালেন্ট হান্ট — আলাদা মেনু নেই
@@ -606,7 +606,7 @@ ${list.map(receiptHtml).join("")}
   const SEC_NAME = { admission: "ভর্তি", students: "শিক্ষার্থী", exams: "পরীক্ষা ও ফলাফল", website: "ওয়েবসাইট", teachers: "সেটআপ" };
   const SECTIONS = [
     ["admission", [["admission", "ভর্তি ফর্ম"], ["applications", "অনলাইন আবেদন", "appBadge"], ["onlineApps", "অনলাইন কোর্সে ভর্তি", "oaBadge"], ["leads", "সম্ভাব্য শিক্ষার্থী", "enqBadge"]]],
-    ["exams", [["exams", "পরীক্ষা"], ["results", "ফলাফল ও মূল্যায়ন"]]],
+    ["exams", [["exams", "পরীক্ষা"], ["results", "পরীক্ষার ফলাফল"], ["evaluation", "শিক্ষার্থীর মূল্যায়ন"]]],
     ["website", [["banners", "বিজ্ঞাপন"], ["notices", "নোটিশ"], ["ebooks", "ই-বুক"], ["daily", "প্রতিদিন শিখি"], ["qna", "প্রশ্নোত্তর বক্স", "qnaBadge"], ["faqs", "সাধারণ প্রশ্ন (FAQ)"], ["gallery", "আমাদের দিনলিপি"], ["classMoments", "ক্লাসের ক্যানভাস"], ["achievers", "সফল শিক্ষার্থী"], ["ratings", "শিক্ষার্থীদের মতামত"], ["learn", "ফ্রি ক্লাস", "learnBadge"]]],
     ["teachers", [["teachers", "শিক্ষক ও একাডেমিক সহযোগী"], ["settings", "সেটিংস"]]],
   ];
@@ -638,7 +638,8 @@ ${list.map(receiptHtml).join("")}
     fees: ["ফি ও পেমেন্ট", fees],
     exams: ["পরীক্ষা", examShell("exams", examsPage)],
     quiz: ["পরীক্ষা — অনলাইন কুইজ", examShell("quiz", quizPage)],
-    results: ["ফলাফল ব্যবস্থাপনা", (c, arg) => resultsPage(c, arg)],
+    results: ["পরীক্ষার ফলাফল", (c, arg) => resultsPage(c, arg, "results")],
+    evaluation: ["শিক্ষার্থীর মূল্যায়ন", (c, arg) => resultsPage(c, arg, "eval")],
     homework: ["বাড়ির কাজ / পড়া", (c, arg) => homeworkPage(c, arg)],
     books: ["বই ও শিট", booksPage],
     sms: ["SMS প্যানেল", smsPage],

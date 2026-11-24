@@ -24,7 +24,7 @@ window.SICResults = function (X) {
   const S = { mcat: "weekly", mexam: "", verified: {}, tab: "review", examId: "", scope: "all", scopeBatch: "", sheet: "session", sheetExam: "", q: "", sort: "merit", merit: "session", mod: "combined", meritExam: "", pid: "", month: today().slice(0, 7), land: false, emode: "one", eid: "", cardSel: null, f: { session: "", batch: "", type: "" } };
   try { Object.assign(S.f, JSON.parse(localStorage.getItem("sicResultFilter") || "{}")); } catch {}
   const keepFilter = () => { try { localStorage.setItem("sicResultFilter", JSON.stringify(S.f)); } catch {} };
-  let C = null, cache = new Map();
+  let C = null, cache = new Map(), AREA = "results"; // AREA: "results" = পরীক্ষার ফলাফল · "eval" = শিক্ষার্থীর মূল্যায়ন
 
   // ---------- তথ্য ----------
   const exById = (id) => DB().exams.find((e) => e.id === id);
@@ -109,11 +109,12 @@ window.SICResults = function (X) {
   function render() {
     if (!C) return;
     cache = new Map();
-    const tabs = [["eval", "মূল্যায়ন"], ["review", "Review & Publish"], ["sheets", "Overall Result Sheet"], ["profile", "Individual Result"], ["merit", "Merit Lists"], ["perf", "Performance"], ["quiz", "Online Quiz"], ["talent", "Talent Hunt"], ["reports", "Reports & PDF"]];
+    const tabs = [["review", "Review & Publish"], ["sheets", "Overall Result Sheet"], ["profile", "Individual Result"], ["merit", "Merit Lists"], ["quiz", "Online Quiz"], ["talent", "Talent Hunt"], ["reports", "Reports & PDF"]];
+    if (AREA === "eval") { S.tab = "eval"; C.innerHTML = `<div class="ex-page rs-page">${evalTab()}</div>`; if (S.emode === "one") fillEval(); return; }
     const all = exams({ anyType: true, batch: "" }), st = all.map((ex) => pubState(ex, reviewBatches(ex)));
     C.innerHTML = `<div class="ex-page rs-page">
       <section class="ln-banner"><div><span class="eyebrow">Shahin's ICT Care • Academic Control Center</span><h2>ফলাফল ব্যবস্থাপনা</h2>
-        <p>নম্বর যাচাই করে ব্যাচ ধরে ফলাফল প্রকাশ বা প্রত্যাহার, রেজাল্ট শিট, মেধাতালিকা, শিক্ষার্থীর অগ্রগতি আর প্রিন্টযোগ্য রিপোর্ট — এক জায়গায়। পরীক্ষা তৈরি আর নম্বর এন্ট্রি <a href="#exams" style="color:#ffe6a8">পরীক্ষা</a> পেজে।</p>
+        <p>নম্বর যাচাই করে ব্যাচ ধরে ফলাফল প্রকাশ বা প্রত্যাহার, রেজাল্ট শিট, মেধাতালিকা আর প্রিন্টযোগ্য রিপোর্ট — এক জায়গায়। পরীক্ষা তৈরি আর নম্বর এন্ট্রি <a href="#exams" style="color:#ffe6a8">পরীক্ষা</a> পেজে; শিক্ষার্থীর সামগ্রিক অগ্রগতি <a href="#evaluation" style="color:#ffe6a8">শিক্ষার্থীর মূল্যায়ন</a> পেজে।</p>
         <div class="ln-nums"><span><b>${bn(all.length)}</b>মোট পরীক্ষা (${esc(sessionLabel())})</span><span><b>${bn(st.filter((x) => x.state === "full").length)}</b>প্রকাশিত</span><span><b>${bn(st.filter((x) => x.state === "partial").length)}</b>আংশিক</span><span><b>${bn(st.filter((x) => x.state === "draft").length)}</b>Draft</span></div></div></section>
       <div class="ln-tabs">${tabs.map(([k, t]) => `<button type="button" data-tab="${k}" class="${S.tab === k ? "on" : ""}">${t}</button>`).join("")}</div>
       ${({ review, sheets, merit, perf, profile, quiz, talent, reports, eval: evalTab })[S.tab]()}</div>`;
@@ -750,8 +751,8 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
   const EV_STYLE = `<style>html{overflow:hidden}body{background:transparent!important;font-size:13.5px}.pb,.hd,.sg,.ft{display:none!important}.pg{width:auto!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important;background:transparent!important;gap:16px!important}.bx,.sm{background-color:#fff;border-radius:16px!important;box-shadow:0 8px 24px rgba(30,58,138,.07)}.hero{border-radius:18px!important;padding:18px 22px!important}.t{border-radius:14px!important;padding:10px 12px!important}.t b{font-size:21px!important}.t small{font-size:11.5px!important}.ts,.row,.r2{gap:14px!important}.bx h3{font-size:16px!important}</style>`;
   function evalTab() {
     const segs = [["all", "সামগ্রিক"], ["one", "একক"], ["card", "মাসিক রিপোর্ট কার্ড"]];
-    const head = `<section class="card ev-top"><div><span class="eyebrow">সমন্বিত মূল্যায়ন</span><div class="ev-ttl"><h2>মূল্যায়ন</h2><div class="ev-seg">${segs.map(([k, t]) => `<button type="button" data-emode="${k}" class="${S.emode === k ? "on" : ""}">${t}</button>`).join("")}</div></div>
-      <p>পরীক্ষা, ক্লাস টেস্ট, উপস্থিতি ও বাড়ির কাজের ভিত্তিতে শিক্ষার্থীদের অগ্রগতি দেখুন।</p></div></section>`;
+    const head = `<section class="card ev-top"><div><span class="eyebrow">সমন্বিত মূল্যায়ন</span><div class="ev-ttl"><h2>শিক্ষার্থীর মূল্যায়ন</h2><div class="ev-seg">${segs.map(([k, t]) => `<button type="button" data-emode="${k}" class="${S.emode === k ? "on" : ""}">${t}</button>`).join("")}</div></div>
+      <p>পরীক্ষা, ফলাফল, ক্লাসের পড়া, উপস্থিতি ও বাড়ির কাজ — একজন শিক্ষার্থীর সব পারফরম্যান্স এক জায়গায়। সামগ্রিক লিডারবোর্ড, একক প্রতিবেদন আর মাসিক রিপোর্ট কার্ড।</p></div></section>`;
     if (S.emode === "all") return head + perf();
     const studs = students(S.f.batch);
     if (!studs.length) return head + `<section class="card">${filterBar(["session", "batch"])}${empty("এই সেশন / ব্যাচে কোনো সক্রিয় শিক্ষার্থী নেই।")}</section>`;
@@ -924,10 +925,17 @@ h1{margin:3mm 0 0;font:700 46px 'Hind Siliguri','Nirmala UI',sans-serif;color:#0
   // শিক্ষার্থীর পাতা থেকে সরাসরি "মূল্যায়ন প্রতিবেদন" (ফলাফল পাতা না খুলেই)
   window.SICEvalReport = (sid) => { const d = profileData(sid); if (!d) return toast("শিক্ষার্থী পাওয়া যায়নি", true); progressReport(d); };
   window.SICEvalHtml = (sid) => { const d = profileData(sid); return d ? progressReport(d, true) : ""; };
-  return function resultsPage(c, arg) {
+  return function resultsPage(c, arg, area) {
     C = c;
-    if (arg && X.studentById(arg)) openProfile(arg);
-    if (arg === "eval") S.tab = "eval"; else if (!arg && S.tab === "eval") S.tab = "review";
+    AREA = arg === "eval" || area === "eval" ? "eval" : "results"; // পুরোনো #results/eval লিংকও মূল্যায়নে
+    if (AREA === "eval") {
+      const s = arg && X.studentById(arg);
+      if (s) { S.f.session = s.session; S.f.batch = s.batchId || ""; keepFilter(); S.emode = "one"; S.eid = s.id; }
+      S.tab = "eval";
+    } else {
+      if (arg && X.studentById(arg)) openProfile(arg);
+      if (S.tab === "eval" || S.tab === "perf") S.tab = "review";
+    }
     if (!S.f.session) S.f.session = session();
     c.onclick = onClick; c.onchange = onChange; c.oninput = onInput; c.onkeydown = onKey;
     render();
