@@ -518,7 +518,7 @@ window.SICExams = function (X) {
           <label>পরীক্ষার ধরন<select name="type">${TYPES_HERE().map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join("")}</select></label>
           <label>পরীক্ষার নাম<input name="title" required placeholder="যেমন: Weekly Test-01"></label>
           <label>প্রশ্নের ধরন<select name="mode">${EC.MODES.map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join("")}</select></label>
-          <label>পরীক্ষার তারিখ<input name="date" type="date"></label>
+
           <label>পূর্ণমান<input name="full" class="calculated-full-marks" readonly placeholder="—" aria-label="নির্বাচিত বিষয়গুলোর মোট পূর্ণমান"></label>
         </div>
         <div class="form-grid exam-builder-more">
@@ -530,7 +530,7 @@ window.SICExams = function (X) {
         </div>
         <label class="exam-syllabus-row"><span>সিলেবাস (বিস্তারিত) <small>— যত খুশি লিখুন; Enter দিয়ে নতুন লাইন করা যায়, শিক্ষার্থী ঠিক এভাবেই দেখবে</small></span><textarea name="syllabus" rows="5" maxlength="5000" placeholder="যেমন:&#10;১. বাংলাদেশ পরিচিতি — পৃষ্ঠা ২&#10;২. অন্যান্য জাতীয় বিষয়াবলি — পৃষ্ঠা ৫–৮"></textarea></label>
         <div class="exam-chapter-dates" data-only-ch>
-          <p><b>Chapter Final Test — একই অধ্যায়ে ৩ বার পরীক্ষা।</b> ফলাফল = যতবার দিয়েছে তার গড় (সবচেয়ে ভালোটা নয়)। ১ম বার = উপরের তারিখ।</p>
+          <p><b>Chapter Final Test — একই অধ্যায়ে ৩ বার পরীক্ষা।</b> ফলাফল = যতবার দিয়েছে তার গড় (সবচেয়ে ভালোটা নয়)। ১ম বারের তারিখ নিচে ব্যাচ অনুযায়ী দিন।</p>
           <label>২য় বারের তারিখ<input type="date" name="d2"></label><label>৩য় বারের তারিখ<input type="date" name="d3"></label>
         </div>
         <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>বিষয় ও পূর্ণমান</b><small>প্রতিটি বিষয়ে CQ/MCQ রাখা বা বাদ দেওয়া যাবে</small></div><button type="button" class="btn line" data-add-subject>＋ বিষয় যোগ করুন</button></div><div class="exam-subject-builder"></div></section>
@@ -559,7 +559,7 @@ window.SICExams = function (X) {
     dlg.addEventListener("change", (e) => {
       const t = e.target;
       if (t.matches("[data-batch-date]")) { B.batchDates[t.dataset.batchDate] = t.value; return; }
-      if (t.name === "date") { drawBatchDates(); }
+
       if (t.name === "mode") { refreshMode(); calcFull(); }
       if (t.name === "type") { onType(); }
       if (t.matches("[data-picker-session]")) { F.session.value = t.value; F.session.dispatchEvent(new Event("change", { bubbles: true })); return; }
@@ -640,7 +640,7 @@ window.SICExams = function (X) {
   }
   function drawBatchDates() {
     const ids = [...new Set([...B.sel].map(id => X.studentById(id)?.batchId).filter(Boolean))];
-    $("[data-batch-dates]", dlg).innerHTML = '<h3>ব্যাচ অনুযায়ী পরীক্ষার তারিখ</h3><p>একই পরীক্ষা আলাদা দিনে নিতে প্রতিটি ব্যাচের তারিখ দিন। ফাঁকা রাখলে উপরের তারিখ প্রযোজ্য হবে।</p>' + ids.map(id => '<label><span>' + esc(X.batchName(id)) + '</span><input type="date" data-batch-date="' + esc(id) + '" value="' + esc(B.batchDates[id] || F().date.value) + '"></label>').join("");
+    $("[data-batch-dates]", dlg).innerHTML = '<h3>ব্যাচ অনুযায়ী পরীক্ষার তারিখ</h3><p>প্রতিটি নির্বাচিত ব্যাচের পরীক্ষার তারিখ দিন।</p>' + ids.map(id => '<label><span>' + esc(X.batchName(id)) + '</span><input type="date" data-batch-date="' + esc(id) + '" value="' + esc(B.batchDates[id] ?? B.defaultDate) + '"></label>').join("");
   }
   function drawPickerMeta() {
     const shown = pickerList();
@@ -662,7 +662,7 @@ window.SICExams = function (X) {
     f.type.innerHTML = X.opt(EC.TYPES.filter(([k]) => k === typeNow || TYPES_HERE().some(([h]) => h === k)), typeNow);
     f.mode.value = ex ? ex.mode : "both";
     f.passCq.value = ex ? ex.passCq || EC.passPctDefault(ex.type) : ""; f.passMcq.value = ex ? ex.passMcq || EC.passPctDefault(ex.type) : ""; f.passCq.dataset.auto = f.passMcq.dataset.auto = "";
-    f.date.value = ex ? ex.date || "" : date || today();
+    B.defaultDate = ex ? ex.date || "" : date || today();
     f.title.value = ex ? ex.title : ""; f.title.dataset.auto = "";
     f.chapter.value = ex ? ex.chapter || "" : ""; f.syllabus.value = ex ? ex.syllabus || "" : ""; f.time.value = ex ? ex.time || "" : "";
     f.d2.value = ex ? (ex.attemptDates || [])[1] || "" : ""; f.d3.value = ex ? (ex.attemptDates || [])[2] || "" : "";
@@ -690,11 +690,16 @@ window.SICExams = function (X) {
     const passCq = Number(enNum(f.passCq.value)), passMcq = Number(enNum(f.passMcq.value));
     if (f.mode.value !== "mcq" && !(passCq > 0 && passCq <= 100)) return err("CQ পাস মার্ক ১ থেকে ১০০-এর মধ্যে লিখুন (শতকরা হিসাবে)।", f.passCq);
     if (f.mode.value !== "cq" && !(passMcq > 0 && passMcq <= 100)) return err("MCQ পাস মার্ক ১ থেকে ১০০-এর মধ্যে লিখুন (শতকরা হিসাবে)।", f.passMcq);
+    const dateInputs = $$("[data-batch-date]", dlg);
+    const invalidDate = dateInputs.find(input => !input.value || !input.validity.valid);
+    if (invalidDate) return err("প্রতিটি ব্যাচের পরীক্ষার তারিখ দিন।", invalidDate);
+    const batchDates = Object.fromEntries(dateInputs.map(input => [input.dataset.batchDate, input.value]));
+    const examDate = Object.values(batchDates).sort()[0];
     const ex = B.edit, type = f.type.value;
     const body = {
-      type, passCq: passCq || 0, passMcq: passMcq || 0, mode: f.mode.value, title, date: f.date.value, time: f.time.value.trim(), session: f.session.value, chapter: f.chapter.value.trim(), syllabus: f.syllabus.value.trim(),
-      attemptDates: type === "chapter" ? [f.date.value, f.d2.value, f.d3.value] : [],
-      batchDates: Object.fromEntries($$("[data-batch-date]", dlg).map(input => [input.dataset.batchDate, input.value || f.date.value])),
+      type, passCq: passCq || 0, passMcq: passMcq || 0, mode: f.mode.value, title, date: examDate, time: f.time.value.trim(), session: f.session.value, chapter: f.chapter.value.trim(), syllabus: f.syllabus.value.trim(),
+      attemptDates: type === "chapter" ? [examDate, f.d2.value, f.d3.value] : [],
+      batchDates,
       subjects: subjects.map(({ name, cq, mcq }) => ({ name, cq, mcq })), studentIds: [...B.sel],
       batchIds: [...new Set([...B.sel].map((id) => (X.studentById(id) || {}).batchId).filter(Boolean))], marks: ex ? ex.marks : {},
     };
