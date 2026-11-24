@@ -1354,7 +1354,7 @@ async function quizAction(req, res, act, m, url, sid, allowed) {
 function scheduleFor(s) {
   const mine = (e) => (e.studentIds || []).includes(s.id) || (e.marks && e.marks[s.id]) || ((!e.session || e.session === s.session) && ((e.batchIds || []).length ? e.batchIds.includes(s.batchId) : !(e.studentIds || []).length));
   return db.exams.filter(mine).flatMap((e) => {
-    const dates = e.type === "chapter" && (e.attemptDates || []).some(Boolean) ? e.attemptDates : [e.date];
+    const dates = e.type === "chapter" && (e.attemptDates || []).some(Boolean) ? e.attemptDates.map((date, i) => i === 0 ? e.batchDates?.[s.batchId] || date : date) : [e.batchDates?.[s.batchId] || e.date];
     return dates.map((date, i) => ({ date, attempt: dates.length > 1 ? i : -1 })).filter((x) => x.date)
       .map((x) => ({ id: e.id, type: e.type, title: e.title, date: x.date, attempt: x.attempt, time: e.time, chapter: e.chapter, syllabus: e.syllabus, full: EC.fullOf(e) }));
   }).sort((a, b) => a.date.localeCompare(b.date));
@@ -1374,7 +1374,7 @@ function resultsFor(s) {
       if (!isPublishedFor(e, s)) {
         const docs = db.docs.filter((d) => d.examId === e.id && d.category !== "script")
           .map(({ id, category, title, note, kind, url, file, attempt, createdAt }) => ({ id, category, title, note, kind, url: kind === "link" || kind === "youtube" ? url : "", fileName: file ? file.name : "", size: file ? file.size : 0, attempt, createdAt }));
-        return { id: e.id, type: e.type, title: e.title, date: e.date, attemptDates: e.attemptDates || [], time: e.time, chapter: e.chapter, syllabus: e.syllabus, mode: e.mode, subjects: e.subjects, full: EC.fullOf(e), attempts: EC.attemptsOf(e), published: false, myMarks: [], me: { absent: true, pending: true }, docs };
+        return { id: e.id, type: e.type, title: e.title, date: e.batchDates?.[s.batchId] || e.date, attemptDates: (e.attemptDates || []).map((date, i) => i === 0 ? e.batchDates?.[s.batchId] || date : date), time: e.time, chapter: e.chapter, syllabus: e.syllabus, mode: e.mode, subjects: e.subjects, full: EC.fullOf(e), attempts: EC.attemptsOf(e), published: false, myMarks: [], me: { absent: true, pending: true }, docs };
       }
       const R = EC.results(e), me = R.rows.find((r) => r.sid === s.id) || EC.studentResult(e, s.id);
       // ব্যাচের ভেতরে অবস্থান: একই ব্যাচের পাস করা শিক্ষার্থীদের মধ্যে মোট নম্বর ধরে (সমান হলে একই)
@@ -1383,7 +1383,7 @@ function resultsFor(s) {
       const docs = db.docs.filter((d) => d.examId === e.id && (d.category !== "script" || d.studentId === s.id))
         .map(({ id, category, title, note, kind, url, file, attempt, createdAt }) => ({ id, category, title, note, kind, url: kind === "link" || kind === "youtube" ? url : "", fileName: file ? file.name : "", size: file ? file.size : 0, attempt, createdAt }));
       return {
-        id: e.id, type: e.type, title: e.title, date: e.date, attemptDates: e.attemptDates || [], time: e.time, chapter: e.chapter, syllabus: e.syllabus,
+        id: e.id, type: e.type, title: e.title, date: e.batchDates?.[s.batchId] || e.date, attemptDates: (e.attemptDates || []).map((date, i) => i === 0 ? e.batchDates?.[s.batchId] || date : date), time: e.time, chapter: e.chapter, syllabus: e.syllabus,
         mode: e.mode, subjects: e.subjects, full: EC.fullOf(e), attempts: EC.attemptsOf(e), published: true, myMarks: (e.marks || {})[s.id] || [],
         me, batchRank, batchOf: bRows.length, of: R.stats.ranked, sat: R.stats.sat, high: R.stats.high, avg: R.stats.avg, docs, // of = মেধাক্রমে কতজন (শুধু পাস)
       };
@@ -1518,6 +1518,7 @@ const CLEAN = {
     };
     // Chapter Final: ৩ বারের তারিখ (১ম বার = পরীক্ষার তারিখ)
     ex.attemptDates = type === "chapter" ? [ex.date, str((b.attemptDates || [])[1], 10), str((b.attemptDates || [])[2], 10)] : [];
+    ex.batchDates = Object.fromEntries(ex.batchIds.filter(id => /^\d{4}-\d{2}-\d{2}$/.test(b.batchDates?.[id] || "")).map(id => [id, b.batchDates[id]]));
     ex.marks = cleanMarks(ex, b.marks);
     return ex;
   },
