@@ -418,9 +418,10 @@ window.SICExams = function (X) {
       S.rtTitle = ""; await X.load(); render(); toast("রুটিন যোগ হয়েছে — শিক্ষার্থীরা নিজের প্যানেলে পাবে");
     } catch (e) { toast(e.message, true); btn.disabled = false; if (prog) prog.hidden = true; }
   }
+  const examDateOf = (d) => String((exById(d.examId) || {}).date || ""); // ডকুমেন্টের তালিকা: নতুন পরীক্ষা আগে (০৪, ০৩, ০২, ০১)
   function docsTab() {
     const nd = DB().docs.filter((d) => exams().some((e) => e.id === d.examId)), q = S.q.toLowerCase();
-    const list = nd.filter((d) => !q || `${d.title} ${(exById(d.examId) || {}).title} ${d.note || ""} ${d.studentId || ""}`.toLowerCase().includes(q)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const list = nd.filter((d) => !q || `${d.title} ${(exById(d.examId) || {}).title} ${d.note || ""} ${d.studentId || ""}`.toLowerCase().includes(q)).sort((a, b) => examDateOf(b).localeCompare(examDateOf(a)) || String(b.createdAt).localeCompare(String(a.createdAt)));
     // নতুন ডকুমেন্ট: আগে পরীক্ষার ধরন, তারপর সেই ধরনের পরীক্ষার নাম, তারপর ডকুমেন্টের ধরন ও ফাইল
     const typesHere = TYPES_HERE(), docEx = exById(S.docTarget), docType = docEx ? docEx.type : S.docType || (typesHere.length === 1 ? typesHere[0][0] : "");
     const targets = docType ? exams().filter((e) => e.type === docType).sort(EC.byTitle) : [];
