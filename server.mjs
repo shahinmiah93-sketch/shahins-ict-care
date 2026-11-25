@@ -201,7 +201,17 @@ function rememberLists(st) {
   add("EXAMS", st.sscExam);
 }
 
+function syncExamParticipants() {
+  for (const ex of db.exams || []) {
+    if (ex.participantMode !== "batch") continue;
+    const batches = new Set(ex.batchIds || []), excluded = new Set(ex.excludedStudentIds || []);
+    const ids = db.students.filter(s => s.status !== "inactive" && batches.has(s.batchId) && (!ex.session || s.session === ex.session) && !excluded.has(s.id)).map(s => s.id);
+    // Keep previously recorded results even after a batch/status change.
+    ex.studentIds = [...new Set([...ids, ...(ex.studentIds || []).filter(id => ex.marks?.[id] && !excluded.has(id))])];
+  }
+}
 function saveDb() {
+  syncExamParticipants();
   db.meta = { ...(db.meta || {}), version: DB_VERSION, updated: new Date().toISOString() };
   writeJsonAtomic(DB_FILE, db);
   dailyBackup();
@@ -1518,6 +1528,8 @@ const CLEAN = {
     };
     // Chapter Final: ৩ বারের তারিখ (১ম বার = পরীক্ষার তারিখ)
     ex.attemptDates = type === "chapter" ? [ex.date, str((b.attemptDates || [])[1], 10), str((b.attemptDates || [])[2], 10)] : [];
+    ex.participantMode = b.participantMode === "batch" ? "batch" : "manual";
+    ex.excludedStudentIds = (Array.isArray(b.excludedStudentIds) ? b.excludedStudentIds : []).filter(id => db.students.some(s => s.id === id));
     ex.batchTimes = Object.fromEntries(ex.batchIds.filter(id => str(b.batchTimes?.[id], 40)).map(id => [id, str(b.batchTimes[id], 40)]));
     ex.batchDates = Object.fromEntries(ex.batchIds.filter(id => /^\d{4}-\d{2}-\d{2}$/.test(b.batchDates?.[id] || "")).map(id => [id, b.batchDates[id]]));
     ex.marks = cleanMarks(ex, b.marks);

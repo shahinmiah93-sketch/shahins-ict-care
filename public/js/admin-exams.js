@@ -539,7 +539,7 @@ window.SICExams = function (X) {
 
         </div>
         <div class="form-grid exam-builder-more">
-          <label>সেশন<select name="session"></select></label>
+
           <label class="span2" title="অধ্যায়ভিত্তিক ফলাফলের হিসাবে এই ঘর ধরা হয়">অধ্যায় / সিলেবাস<input name="chapter" maxlength="120" placeholder="যেমন: অধ্যায় ১ — তথ্য ও যোগাযোগ প্রযুক্তি"></label>
           <div class="exam-time-field"><label>সময় (ঐচ্ছিক)<select name="timeMode"><option value="common">সবার একই সময়</option><option value="batch">নিজ নিজ ব্যাচের সময়</option></select></label><input name="time" aria-label="সবার পরীক্ষার সময়" maxlength="40" placeholder="যেমন: সকাল ১০:০০"></div>
           <label class="builder-pass-cq">CQ পাস (%)<input name="passCq" inputmode="decimal" autocomplete="off"></label>
@@ -552,7 +552,7 @@ window.SICExams = function (X) {
         </div>
         <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>বিষয় ও নম্বর</b><small>CQ ও MCQ-এর নম্বর দিন; মোট পূর্ণমান নিজে হিসাব হবে।</small></div><button type="button" class="btn line" data-add-subject>＋ বিষয় যোগ করুন</button></div><div class="exam-subject-builder"></div><div class="exam-full-summary">মোট পূর্ণমান <output data-total-full aria-live="polite">—</output></div></section>
         <section class="exam-builder-section"><div class="exam-builder-section-head"><div><b>পরীক্ষার্থী নির্বাচন</b><small data-pmeta>সেশন অনুযায়ী শিক্ষার্থী দেখানো হবে</small></div><button type="button" class="btn line" data-toggle-all>সব নির্বাচন করুন</button></div>
-          <div class="exam-student-course-filter fgrid"><label>সেশন<select data-picker-session></select></label><div class="exam-batch-filter"><span>ব্যাচ</span><details data-picker-batches><summary data-batch-summary>সব ব্যাচ</summary><div data-batch-options></div></details></div></div><div class="exam-student-picker"></div><div class="exam-batch-dates" data-batch-dates></div></section>
+          <div class="exam-student-course-filter fgrid"><label>সেশন<select name="session" data-picker-session></select></label><div class="exam-batch-filter"><span>ব্যাচ</span><details data-picker-batches><summary data-batch-summary>সব ব্যাচ</summary><div data-batch-options></div></details></div></div><details class="exam-participant-details"><summary>পরীক্ষার্থী দেখুন / পরিবর্তন করুন <span data-participant-count></span></summary><p>নির্বাচিত ব্যাচে নতুন ভর্তি হলে পরীক্ষার্থী স্বয়ংক্রিয়ভাবে যুক্ত হবে। চাইলে নিচে কাউকে বাদ দিতে পারবেন।</p><div class="exam-student-picker"></div></details><div class="exam-batch-dates" data-batch-dates></div></section>
       </div>
       <div class="dialog-actions"><span class="ex-berr"></span><button type="button" class="btn line" data-x>Cancel</button><button type="submit" class="btn gold" data-bsave>OK — নম্বর এন্ট্রি তৈরি করুন</button></div></form>`;
     const F = $("form", dlg), rowsBox = $(".exam-subject-builder", dlg);
@@ -590,7 +590,6 @@ window.SICExams = function (X) {
 
       if (t.name === "mode") { refreshMode(); calcFull(); }
       if (t.name === "type") { onType(); }
-      if (t.matches("[data-picker-session]")) { F.session.value = t.value; F.session.dispatchEvent(new Event("change", { bubbles: true })); return; }
       if (t.matches("[data-picker-batch],[data-picker-all]")) {
         if (t.matches("[data-picker-all]")) B.views = t.checked ? null : [];
         else { const ids = new Set(B.views === null ? activeIn(F.session.value).map(s => s.batchId) : B.views); t.checked ? ids.add(t.value) : ids.delete(t.value); B.views = [...ids]; }
@@ -661,7 +660,6 @@ window.SICExams = function (X) {
   function drawPicker() {
     const session = F().session.value, studs = activeIn(session), batches = DB().batches.filter((b) => !session || b.session === session);
     const sessionSelect = $("[data-picker-session]", dlg);
-    sessionSelect.innerHTML = F().session.innerHTML;
     sessionSelect.value = session;
     const available = batches.filter(batch => studs.some(student => student.batchId === batch.id));
     $("[data-batch-summary]", dlg).textContent = B.views === null ? "সব ব্যাচ" : B.views.length ? bn(B.views.length) + "টি ব্যাচ নির্বাচিত" : "ব্যাচ বেছে নিন";
@@ -671,22 +669,25 @@ window.SICExams = function (X) {
     drawPickerMeta();
     drawBatchDates();
   }
+  const selectedBatchIds = () => B.views === null ? DB().batches.filter(b => !F().session.value || b.session === F().session.value).map(b => b.id) : B.views;
   function drawBatchDates() {
-    const ids = [...new Set([...B.sel].map(id => X.studentById(id)?.batchId).filter(Boolean))];
+    const ids = selectedBatchIds();
     const vals = ids.map(id => B.batchDates[id] ?? B.defaultDate), same = vals.length && vals.every(v => v === vals[0]) ? vals[0] : "";
     $("[data-batch-dates]", dlg).innerHTML = '<h3>ব্যাচ অনুযায়ী পরীক্ষার তারিখ</h3><p>প্রতিটি নির্বাচিত ব্যাচের পরীক্ষার তারিখ দিন।</p>' + (ids.length > 1 ? '<label class="all-batch-date"><span><b>সব ব্যাচের একই তারিখ</b></span><input type="date" data-all-date value="' + esc(same) + '"></label>' : '') + ids.map(id => '<label><span>' + esc(X.batchName(id)) + '</span><input type="date" data-batch-date="' + esc(id) + '" value="' + esc(B.batchDates[id] ?? B.defaultDate) + '"></label>').join("");
   }
   function drawPickerMeta() {
     const shown = pickerList();
+    $("[data-participant-count]", dlg).textContent = "(" + bn(B.sel.size) + " জন)";
     $("[data-pmeta]", dlg).textContent = `${bn(B.sel.size)} জন নির্বাচিত · ${F().session.value || "উভয়"}${B.views !== null ? " · " + bn(B.views.length) + "টি ব্যাচ" : " · সব ব্যাচ"}`;
     $("[data-toggle-all]", dlg).disabled = !shown.length;
     $("[data-toggle-all]", dlg).textContent = shown.length && shown.every((s) => B.sel.has(s.id)) ? "দেখানো সবাইকে বাদ দিন" : "দেখানো সবাইকে নির্বাচন করুন";
   }
   function openBuilder(ex, date) {
     builderDialog();
+    $(".exam-participant-details", dlg).open = false;
     const f = F(), preferred = S.f.session || X.liveSessions()[0]?.name || "";
     const session = ex ? ex.session : activeIn(preferred).length ? preferred : (DB().sessions.find((s) => activeIn(s.name).length)?.name || preferred);
-    B = { edit: ex || null, views: ex ? [...new Set(DB().students.filter(s => (ex.studentIds || []).includes(s.id)).map(s => s.batchId))] : activeIn(session).some((s) => s.batchId === S.f.batch) ? [S.f.batch] : null, sel: new Set(), batchDates: { ...(ex?.batchDates || {}) }, batchTimes: { ...(ex?.batchTimes || {}) } };
+    B = { edit: ex || null, views: ex ? [...new Set([...(ex.batchIds || []), ...DB().students.filter(s => (ex.studentIds || []).includes(s.id)).map(s => s.batchId)])] : activeIn(session).some((s) => s.batchId === S.f.batch) ? [S.f.batch] : null, sel: new Set(), batchDates: { ...(ex?.batchDates || {}) }, batchTimes: { ...(ex?.batchTimes || {}) } };
     $("[data-btitle]", dlg).textContent = ex ? "পরীক্ষা সম্পাদনা" : "নতুন পরীক্ষা";
     $("[data-bsave]", dlg).textContent = ex ? "সংরক্ষণ করুন" : "OK — নম্বর এন্ট্রি তৈরি করুন";
     $(".ex-berr", dlg).textContent = "";
@@ -706,7 +707,7 @@ window.SICExams = function (X) {
     $(".exam-subject-builder", dlg).innerHTML = "";
     if (ex) (ex.subjects || []).forEach((s) => addRow(s.name, s.cq, s.mcq, s.cq > 0 || ex.mode === "mcq", s.mcq > 0 || ex.mode === "cq"));
     else addRow("ICT", "", "");
-    if (ex) { B.sel = new Set(ex.studentIds || []); (ex.batchIds || []).forEach(id => { B.batchDates[id] ||= ex.date || ""; }); }
+    if (ex) { B.sel = new Set([...activeIn(session).filter(st => B.views === null || B.views.includes(st.batchId)).filter(st => !(ex.excludedStudentIds || []).includes(st.id)).map(st => st.id), ...(ex.studentIds || []).filter(id => ex.marks?.[id])]); (ex.batchIds || []).forEach(id => { B.batchDates[id] ||= ex.date || ""; }); }
     else B.sel = new Set(activeIn(session).filter((s) => B.views === null || B.views.includes(s.batchId)).map((s) => s.id));
     $("[data-only-ch]", dlg).hidden = f.type.value !== "chapter";
     if (!ex) onType(); else calcFull();
@@ -736,10 +737,12 @@ window.SICExams = function (X) {
     const body = {
       type, passCq: passCq || 0, passMcq: passMcq || 0, mode: f.mode.value, title, date: examDate, time: f.timeMode.value === "common" ? f.time.value.trim() : "", session: f.session.value, chapter: f.chapter.value.trim(), syllabus: f.syllabus.value.trim(),
       attemptDates: type === "chapter" ? [examDate, f.d2.value, f.d3.value] : [],
+      participantMode: "batch",
+      excludedStudentIds: pickerList().filter(s => !B.sel.has(s.id)).map(s => s.id),
       batchDates,
-      batchTimes: f.timeMode.value === "batch" ? Object.fromEntries([...new Set([...B.sel].map(id => X.studentById(id)?.batchId).filter(Boolean))].map(id => [id, DB().batches.find(batch => batch.id === id)?.time || ""])) : {},
+      batchTimes: f.timeMode.value === "batch" ? Object.fromEntries(selectedBatchIds().map(id => [id, DB().batches.find(batch => batch.id === id)?.time || ""])) : {},
       subjects: subjects.map(({ name, cq, mcq }) => ({ name, cq, mcq })), studentIds: [...B.sel],
-      batchIds: [...new Set([...B.sel].map((id) => (X.studentById(id) || {}).batchId).filter(Boolean))], marks: ex ? ex.marks : {},
+      batchIds: selectedBatchIds(), marks: ex ? ex.marks : {},
     };
     if (ex) {
       // বাদ দেওয়া বিষয় / অংশ / শিক্ষার্থীর নম্বর থাকলে আগে জানানো
