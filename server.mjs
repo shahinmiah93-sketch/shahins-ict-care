@@ -1366,7 +1366,7 @@ function scheduleFor(s) {
   return db.exams.filter(mine).flatMap((e) => {
     const dates = e.type === "chapter" && (e.attemptDates || []).some(Boolean) ? e.attemptDates.map((date, i) => i === 0 ? e.batchDates?.[s.batchId] || date : date) : [e.batchDates?.[s.batchId] || e.date];
     return dates.map((date, i) => ({ date, attempt: dates.length > 1 ? i : -1 })).filter((x) => x.date)
-      .map((x) => ({ id: e.id, type: e.type, title: e.title, date: x.date, attempt: x.attempt, time: e.batchTimes?.[s.batchId] || e.time, chapter: e.chapter, syllabus: e.syllabus, full: EC.fullOf(e) }));
+      .map((x) => ({ id: e.id, type: e.type, title: e.title, date: x.date, attempt: x.attempt, time: e.batchTimes?.[s.batchId] || e.time, chapter: e.chapter, syllabus: e.syllabus, full: EC.fullOf(e), cq: EC.parts(e).filter(p => p.part === "cq").reduce((n, p) => n + p.full, 0), mcq: EC.parts(e).filter(p => p.part === "mcq").reduce((n, p) => n + p.full, 0) }));
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
 const routineForStudent = (r, s) => !!r.pdf && (!r.session || r.session === s.session) && (!(r.batchIds || []).length || r.batchIds.includes(s.batchId));

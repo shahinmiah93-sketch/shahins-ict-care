@@ -342,7 +342,7 @@ ${inner}
         const dt = new Date(x.date + "T00:00"), left = Math.round((dt - new Date(t + "T00:00")) / 864e5);
         const badge = past ? "" : x.date === t ? '<span class="ex-badge now">📌 আজ</span>' : `<span class="ex-badge">আর ${bn(left)} দিন</span>`;
         return `<li class="ex-card${x.date === t ? " today" : ""}"><div class="ex-date"><b>${bn(dt.getDate())}</b><small>${dt.toLocaleDateString("bn-BD", { month: "long" })}</small><em>${dayName(x.date)}</em></div><div class="ex-body"><div class="ex-top"><h3>${esc(examName(x))}</h3>${badge}</div>
-          <div class="ex-meta"><span><small>তারিখ ও বার</small><b>${esc(U.dateWithWeekday(x.date))}</b></span><span><small>সময়</small><b>${x.time ? esc(x.time) : "—"}</b></span><span><small>পূর্ণমান</small><b>${bn(x.full)}</b></span></div>
+          <div class="ex-meta ex-routine-meta"><span><small>তারিখ ও বার</small><b>${esc(U.dateWithWeekday(x.date))}</b></span><span><small>সময়</small><b>${x.time ? esc(x.time) : "—"}</b></span>${x.cq > 0 ? `<span><small>CQ পূর্ণমান</small><b>${bn(x.cq)}</b></span>` : ""}${x.mcq > 0 ? `<span><small>MCQ পূর্ণমান</small><b>${bn(x.mcq)}</b></span>` : ""}${(x.cq > 0 && x.mcq > 0) || (!x.cq && !x.mcq) ? `<span><small>মোট পূর্ণমান</small><b>${bn(x.full)}</b></span>` : ""}</div>
           ${x.chapter ? `<div class="ex-chap"><small>অধ্যায় / সিলেবাস</small><b>${esc(x.chapter)}</b></div>` : ""}
           ${x.syllabus ? `<div class="ex-syl"><small>বিস্তারিত সিলেবাস</small><div class="pre">${esc(x.syllabus)}</div></div>` : ""}</div></li>`;
       };

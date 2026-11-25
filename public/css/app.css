@@ -1342,3 +1342,7 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 @media print{.pay-hist .pay-receipt{display:none}}
 
 .exam-batch-filter{min-width:220px;flex:1}.exam-batch-filter>span{display:block;margin-bottom:6px;font-size:13px;font-weight:600}.exam-batch-filter details{position:relative}.exam-batch-filter summary{padding:11px 14px;background:white;border:1px solid #cbdcd8;border-radius:10px;cursor:pointer}.exam-batch-filter [data-batch-options]{position:absolute;z-index:10;top:100%;left:0;min-width:100%;width:max-content;max-width:min(480px,80vw);max-height:270px;overflow:auto;background:white;border:1px solid #cbdcd8;border-radius:10px;box-shadow:0 8px 25px #123f3625;padding:8px}.exam-batch-filter [data-batch-options] label{display:flex;flex-direction:row;align-items:center;gap:9px;padding:10px;border-radius:7px;cursor:pointer}.exam-batch-filter [data-batch-options] label:hover{background:#eaf6f1}.exam-batch-filter input{width:17px;height:17px;flex:none;accent-color:#16816c}
+
+/* Exam routine: date/time and applicable mark components. */
+.ex-meta.ex-routine-meta{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+@media(max-width:600px){.ex-meta.ex-routine-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.ex-routine-meta>span:first-child{grid-column:1/-1}}
