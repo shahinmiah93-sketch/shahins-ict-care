@@ -634,3 +634,5 @@ tr.rs-top td{background:#fffbea;font-weight:700}
 .exam-builder-dialog .exam-batch-dates .sdp-trigger{min-width:0}
 /* মাসের ক্যালেন্ডার: পরীক্ষার নামের নিচে ব্যাচের ছোট নাম, এক লাইনে */
 .mb-day button .mb-sub{display:block;margin-top:3px;font-weight:600;font-size:10.5px;line-height:1.25;color:color-mix(in srgb,var(--k) 70%,#000);overflow-wrap:anywhere}
+
+.exam-builder-dialog .exam-time-field{display:grid;gap:6px;min-width:0}.exam-builder-dialog .exam-time-field .btn{min-height:30px;font-size:12px;padding:5px 8px;white-space:nowrap}.exam-batch-times{border-top:1px solid #d8e2ec;margin-top:16px;padding-top:14px}
