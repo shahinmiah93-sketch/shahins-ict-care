@@ -541,7 +541,7 @@ window.SICExams = function (X) {
         <div class="form-grid exam-builder-more">
           <label>সেশন<select name="session"></select></label>
           <label class="span2" title="অধ্যায়ভিত্তিক ফলাফলের হিসাবে এই ঘর ধরা হয়">অধ্যায় / সিলেবাস<input name="chapter" maxlength="120" placeholder="যেমন: অধ্যায় ১ — তথ্য ও যোগাযোগ প্রযুক্তি"></label>
-          <div class="exam-time-field"><label>সময় (ঐচ্ছিক)<input name="time" placeholder="সবার একই সময় হলে লিখুন"></label><button type="button" class="btn line sm" data-use-batch-times>◷ ব্যাচের সময় বসান</button></div>
+          <div class="exam-time-field"><label>সময় (ঐচ্ছিক)<input name="time" placeholder="সবার একই সময় হলে লিখুন"></label><button type="button" class="btn exam-use-times" data-use-batch-times><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>ব্যাচের সময় বসান</span></button><small data-time-feedback role="status" hidden></small></div>
           <label class="builder-pass-cq">CQ পাস (%)<input name="passCq" inputmode="decimal" autocomplete="off"></label>
           <label class="builder-pass-mcq">MCQ পাস (%)<input name="passMcq" inputmode="decimal" autocomplete="off"></label>
         </div>
@@ -561,10 +561,20 @@ window.SICExams = function (X) {
       if (e.target.closest("[data-use-batch-times]")) {
         const ids = [...new Set([...B.sel].map(id => X.studentById(id)?.batchId).filter(Boolean))];
         if (!ids.length) return toast("আগে ব্যাচ ও পরীক্ষার্থী নির্বাচন করুন", true);
-        let count = 0;
-        ids.forEach(id => { const time = DB().batches.find(b => b.id === id)?.time; if (time) { B.batchTimes[id] = time; count++; } });
+        const missing = [], applied = [];
+        ids.forEach(id => { const batch = DB().batches.find(b => b.id === id), time = String(batch?.time || '').trim(); if (time) { B.batchTimes[id] = time; applied.push(time); } else missing.push(X.batchName(id)); });
+        const unique = [...new Set(applied)];
+        if (unique.length === 1 && !missing.length) F.time.value = unique[0];
+        else if (unique.length > 1) { F.time.value = ''; F.time.placeholder = 'ব্যাচভেদে সময় বসানো আছে ↓'; }
         drawBatchDates();
-        toast(count ? bn(count) + "টি ব্যাচের সময় বসানো হয়েছে। নিচে দেখে সংরক্ষণ করুন।" : "এই ব্যাচগুলোর ক্লাসের সময় দেওয়া নেই", !count);
+        const feedback = $("[data-time-feedback]", dlg);
+        feedback.hidden = false;
+        feedback.textContent = applied.length ? '✓ ' + bn(applied.length) + 'টি ব্যাচের সময় বসেছে।' + (missing.length ? ' সময় নেই: ' + missing.join(', ') : ' নিচে দেখে সংরক্ষণ করুন।') : 'এই ব্যাচগুলোর ক্লাসের সময় দেওয়া নেই। নিচে সময় লিখুন।';
+        if (applied.length) {
+          const target = $(".exam-batch-times", dlg);
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.remove('times-applied'); void target.offsetWidth; target.classList.add('times-applied');
+        }
         return;
       }
       if (e.target.closest("[data-add-subject]")) { addRow("", "", ""); return calcFull(); }
@@ -700,6 +710,8 @@ window.SICExams = function (X) {
     $("[data-btitle]", dlg).textContent = ex ? "পরীক্ষা সম্পাদনা" : "নতুন পরীক্ষা";
     $("[data-bsave]", dlg).textContent = ex ? "সংরক্ষণ করুন" : "OK — নম্বর এন্ট্রি তৈরি করুন";
     $(".ex-berr", dlg).textContent = "";
+    $("[data-time-feedback]", dlg).hidden = true;
+    f.time.placeholder = "সবার একই সময় হলে লিখুন";
     f.session.innerHTML = X.opt([...DB().sessions.map((s) => [s.name, s.name + (s.active === false ? " — বন্ধ" : "")]), ...(DB().sessions.length > 1 ? [["", "উভয়"]] : [])], session);
     // ফর্ম একবারই তৈরি হয়, তাই ধরনের তালিকা প্রতিবার এই ট্যাব অনুযায়ী (মডেল টেস্ট ট্যাবে শুধু Model Test)
     const typeNow = ex ? ex.type : S.only || S.f.type || "weekly";
