@@ -63,3 +63,5 @@ test('four days within either half cost half, crossing the 15th/16th costs full'
  }
  const f=setup();assert.equal(f.ctx.activeMonthFee(800,['2026-11-01','2026-11-02','2026-11-03','2026-11-04','2026-11-05'],'2026-11-30').fee,800);
 });
+
+test('December deactivation preserves the settled November fee',()=>{const f=setup('2026-12-05',[2]);f.student.status='active';f.student.pauses=[];const before=f.row().fee;assert.equal(before,50);f.student.status='inactive';f.student.pauses=[{from:'2026-12-05',to:''}];assert.equal(f.row().fee,before);assert.equal(f.ctx.enrollmentDue(f.enrollment).breakdown[1].pauseRule,'free');});

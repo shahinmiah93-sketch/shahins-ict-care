@@ -726,7 +726,7 @@ function enrollmentDue(e, context = {}) {
       if (i === 0) { firstNet = row.fee; firstClasses = row.got; firstTotal = row.total; }
       continue;
     }
-    if (month >= "2026-11" && s && s.status !== "inactive" && b && wd.length) {
+    if (month >= "2026-11" && s && (s.status !== "inactive" || pauseDates.some(date => date.slice(0, 7) > month)) && b && wd.length) {
       const monthEnd = ymd(new Date(Y, M + 1, 0));
       const cutoff = [monthEnd, end, today()].sort()[0];
       const dates = Object.entries(db.attendance || {}).filter(([key, marks]) => key.slice(0, 7) === month && key.slice(0, 10) >= e.startDate && key.slice(0, 10) <= cutoff && marks[s.id] === "P").map(([key]) => key.slice(0, 10));
@@ -1013,7 +1013,7 @@ function feeCoverage(p) {
   if (!it || !it.monthly || !it.startDate) return null;
   const pays = db.payments.filter((x) => x.studentId === s.id && (x.enrollmentId === it.enrollmentId || (solo && !x.enrollmentId)))
     .sort((a, b) => (a.date + String(a.receiptNo).padStart(8, "0")).localeCompare(b.date + String(b.receiptNo).padStart(8, "0")));
-  const feeOf = (mk) => { const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
+  const feeOf = (mk) => { if (Array.isArray(it.breakdown)) return it.breakdown.find(row => row.month === mk)?.fee || 0; const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
   const next = (mk) => { let [Y, M] = mk.split("-").map(Number); M++; if (M > 12) { M = 1; Y++; } return `${Y}-${String(M).padStart(2, "0")}`; };
   const last = today().slice(0, 7), left = {};
   let mk = it.startDate.slice(0, 7), out = null, advance = 0;
@@ -1021,8 +1021,8 @@ function feeCoverage(p) {
     let amt = (x.amount || 0) + (x.discount || 0); // ছাড়ও মাসের ফি শোধ করে
     const mine = x.id === p.id ? [] : null;
     while (amt > 0) {
+      if (mk > last) break;
       if (!(mk in left)) left[mk] = feeOf(mk);
-      if (mk > last && left[mk] > 0) break; // সামনের মাসের ফি এখনো ধরা হয়নি — বাকিটা অগ্রিম
       const take = Math.min(amt, left[mk]);
       if (take > 0 && mine) mine.push({ mk, amt: take, fee: feeOf(mk), rest: left[mk] - take });
       left[mk] -= take; amt -= take;

@@ -418,7 +418,7 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     if (!it || !it.monthly || !it.startDate) return null;
     const pays = DB.payments.filter((x) => x.studentId === s.id && (x.enrollmentId === it.enrollmentId || (solo && !x.enrollmentId)))
       .sort((a, b) => (a.date + String(a.receiptNo).padStart(8, "0")).localeCompare(b.date + String(b.receiptNo).padStart(8, "0")));
-    const feeOf = (mk) => { const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
+    const feeOf = (mk) => { if (Array.isArray(it.breakdown)) return it.breakdown.find(row => row.month === mk)?.fee || 0; const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
     const next = (mk) => { let [Y, M] = mk.split("-").map(Number); M++; if (M > 12) { M = 1; Y++; } return `${Y}-${String(M).padStart(2, "0")}`; };
     const last = thisMonth(), left = {};
     let mk = it.startDate.slice(0, 7), out = null, advance = 0;
@@ -426,8 +426,8 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
       let amt = (x.amount || 0) + (x.discount || 0); // ছাড়ও মাসের ফি শোধ করে
       const mine = x.id === p.id ? [] : null;
       while (amt > 0) {
+        if (mk > last) break;
         if (!(mk in left)) left[mk] = feeOf(mk);
-        if (mk > last && left[mk] > 0) break; // সামনের মাসের ফি এখনো ধরা হয়নি — বাকিটা অগ্রিম
         const take = Math.min(amt, left[mk]);
         if (take > 0 && mine) mine.push({ mk, amt: take, fee: feeOf(mk), rest: left[mk] - take });
         left[mk] -= take; amt -= take;
@@ -2480,8 +2480,8 @@ ${list.map(receiptHtml).join("")}
       onSave: async (d) => {
         delete d.idQ;
         if (!(d.amount > 0 || d.discount > 0)) throw new Error("টাকার পরিমাণ বা ছাড় দিন");
-        const st0 = studentById(d.studentId), owe = st0 ? Math.max(0, st0.fees.balance) : 0;
-        if (d.discount > owe) throw new Error("ছাড় বকেয়ার চেয়ে বেশি হতে পারে না (এখন বকেয়া " + money(owe) + ")");
+        const st0 = paymentMonthStudent(studentById(d.studentId), d.month), owe = st0 ? Math.max(0, st0.fees.balance) : 0;
+        if (d.discount > owe) throw new Error("ছাড় নির্বাচিত মাস পর্যন্ত পাওনার চেয়ে বেশি হতে পারে না (পাওনা " + money(owe) + ")");
         const r = await save("payments", d);
         await load();
         if (location.hash.startsWith("#fees")) route();
@@ -2919,6 +2919,14 @@ ${list.map(receiptHtml).join("")}
     if (!from) return out;
     const solo = s.fees.items.length === 1; // একটাই মডিউল হলে "সাধারণ" পেমেন্টও এই মডিউলের
     let pool = DB.payments.filter((p) => p.studentId === s.id && (p.enrollmentId === it.enrollmentId || (solo && !p.enrollmentId))).reduce((t, p) => t + p.amount + (p.discount || 0), 0);
+    // Use authoritative monthly charges; ended modules have no later charge rows.
+    if (Array.isArray(it.breakdown)) {
+      for (const row of [...it.breakdown].filter(r => r.month >= from && r.month <= to).sort((a,b) => a.month.localeCompare(b.month))) {
+        const fee = Number(row.fee) || 0, paid = Math.min(pool, fee);
+        pool -= paid; out[row.month] = fee - paid;
+      }
+      return out;
+    }
     let [Y, M] = from.split("-").map(Number);
     for (let mk = from; mk <= to; ) {
       const adj = (it.adjust || []).find((x) => x.month === mk), fee = adj ? adj.fee : it.net, got = Math.min(pool, fee);

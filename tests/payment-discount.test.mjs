@@ -34,7 +34,7 @@ test('Screens, receipt, month coverage and Excel all know about the discount', (
   assert.match(admin, /let amt = \(x\.amount \|\| 0\) \+ \(x\.discount \|\| 0\)/);
   assert.match(admin, /discounts=mine\.reduce/);
   assert.match(admin, /"টাকা", "ছাড়", "নোট"/);
-  assert.match(admin, /ছাড় বকেয়ার চেয়ে বেশি হতে পারে না/);
+  assert.match(admin, /ছাড় নির্বাচিত মাস পর্যন্ত পাওনার চেয়ে বেশি হতে পারে না/);
   const student = fs.readFileSync(new URL('../public/js/student.js', import.meta.url), 'utf8');
   assert.match(student, /f\.discounts > 0/);
 });
