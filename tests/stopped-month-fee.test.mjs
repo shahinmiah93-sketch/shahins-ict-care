@@ -36,7 +36,19 @@ test('monthly discount is applied before the half rule; following stopped months
   const result=f.ctx.enrollmentDue(f.enrollment);assert.equal(result.breakdown[0].fee,300);assert.equal(result.breakdown[1].fee,0);
   f.ctx.db.payments.push({studentId:'s1',amount:100,discount:0});assert.equal(f.ctx.feeSummary(f.student).balance,200);
 });
-test('active students and future pauses keep normal fees; cancelled pause restores normal calculation',()=>{
+test('inactive future pauses keep normal fees; active students use attendance fees',()=>{
   const f=setup('2026-11-26',[23]);f.student.pauses[0].startPending=true;assert.equal(f.row().fee,800);
-  f.student.pauses=[];f.student.status='active';assert.equal(f.row().fee,800);
+  f.student.pauses=[];f.student.status='active';assert.equal(f.row().fee,62);
+});
+
+test('active monthly fee boundaries and effective month',()=>{
+ for(const day of [15,16,30]) for(let count=0;count<=6;count++){
+  const f=setup();const dates=Array.from({length:count},(_,i)=>'2026-11-'+String(i+1).padStart(2,'0'));
+  const r=f.ctx.activeMonthFee(1200,dates,'2026-11-'+day,12);
+  assert.equal(r.fee,count===0?0:count<=3?count*100:day===15||count===4?600:1200);
+ }
+ const f=setup('2026-11-19',[2,4]);f.student.status='active';f.student.pauses=[];f.enrollment.startDate='2026-10-01';
+ const rows=f.ctx.enrollmentDue(f.enrollment).breakdown;assert.equal(rows[0].fee,800);assert.equal(rows[1].fee,123);assert.equal(rows[2].fee,0);
+ f.ctx.db.attendance['2026-11-02|other']={s1:'P'};f.ctx.db.attendance['2026-11-09|b1']={s1:'A'};assert.equal(f.ctx.enrollmentDue(f.enrollment).breakdown[1].got,2);
+ f.enrollment.discountPct=25;assert.equal(f.ctx.enrollmentDue(f.enrollment).breakdown[1].fee,92);
 });
