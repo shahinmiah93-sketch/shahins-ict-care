@@ -31,7 +31,7 @@ window.SICAbsence = function (X) {
     return Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0]));
   };
   const streakOf = (sid, date) => { let n = 0; for (const [d, st] of history(sid)) { if (d > date) continue; if (st !== "A") break; n++; } return n; };
-  const monthAbsent = (sid, date) => history(sid).filter(([d, st]) => d.slice(0, 7) === date.slice(0, 7) && d <= date && st === "A").length;
+  const monthAttendance = (sid, date) => history(sid).filter(([d]) => d.slice(0, 7) === date.slice(0, 7) && d <= date).reduce((counts, [, status]) => { counts[status === "P" ? "present" : "absent"]++; return counts; }, { present: 0, absent: 0 });
 
   const inScope = (s) => {
     const b = batchOf(s.batchId);
@@ -121,7 +121,7 @@ window.SICAbsence = function (X) {
     const { s, key, date } = r, c = calls()[key] || {};
     const pending = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
     const uid = `${esc(s.id)}-${r.follow ? "f" : "a"}`;
-    const streak = streakOf(s.id, date), mon = monthAbsent(s.id, date);
+    const streak = streakOf(s.id, date), mon = monthAttendance(s.id, S.date);
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
     const stBtns = `<div class="ab-call-controls"><span class="ab-group-label">কলের অবস্থা</span><div class="ab-st ab-status-grid">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}</div><div class="ab-st ab-student-actions">${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button></div></div>`;
@@ -130,7 +130,7 @@ window.SICAbsence = function (X) {
     return `<div class="ab-row ab-absence-row${isDone(c.status) ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small class="ab-identity">আইডি ${esc(s.id)} <span>· ${esc(X.batchName(s.batchId))}</span></small><div class="ab-facts-line"><div class="ab-att-context">${r.follow ? `<span class="chip warn">ফলো-আপ · ${esc(U.date(date))}</span>` : ""}${r.last ? `<span class="chip warn">গত ক্লাসে অনুপস্থিত · ${esc(U.date(date))}</span>` : ""}</div>
-          <div class="ab-fact-chips">${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${c.status === "nocall" ? ' <span class="chip ok">✓ কল ছাড়াই নিষ্পত্তি</span>' : ""}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</div></div>${stBtns}</div>
+          <div class="ab-fact-chips">${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon.present)} দিন উপস্থিত, ${bn(mon.absent)} দিন অনুপস্থিত</span> ${dueChip(s)}${c.status === "nocall" ? ' <span class="chip ok">✓ কল ছাড়াই নিষ্পত্তি</span>' : ""}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</div></div>${stBtns}</div>
         ${contact}
       </div>
       ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
