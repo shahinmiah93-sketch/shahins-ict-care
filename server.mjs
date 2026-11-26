@@ -686,9 +686,11 @@ function stoppedMonthFee(monthlyRate, presentDates, stopDate, totalClasses) {
   return { fee, got, total: totalClasses || STD_CLASSES, shut: 0, monthlyRate, pauseRule, stopDate, paused: false, late: false, reasons: ["পড়া বন্ধ"] };
 }
 function activeMonthFee(monthlyRate, presentDates, cutoff) {
-  const got = new Set(presentDates.filter(date => date.slice(0, 7) === cutoff.slice(0, 7) && date <= cutoff)).size;
+  const dates = [...new Set(presentDates.filter(date => date.slice(0, 7) === cutoff.slice(0, 7) && date <= cutoff))];
+  const got = dates.length;
+  const spansHalves = dates.some(date => Number(date.slice(8)) <= 15) && dates.some(date => Number(date.slice(8)) >= 16);
   const total = STD_CLASSES;
-  const attendanceRule = got === 0 ? "free" : got <= 3 ? "classes" : Number(cutoff.slice(8)) <= 15 || got === 4 ? "half" : "full";
+  const attendanceRule = got === 0 ? "free" : got <= 3 ? "classes" : got === 4 && !spansHalves ? "half" : "full";
   const fee = attendanceRule === "free" ? 0 : attendanceRule === "classes" ? Math.min(monthlyRate, Math.round((monthlyRate * got / total) / 50) * 50) : attendanceRule === "half" ? Math.round(monthlyRate / 2) : monthlyRate;
   return { fee, got, total, monthlyRate, attendanceRule, shut: 0, late: false, paused: false, reasons: ["উপস্থিতি অনুযায়ী ফি"] };
 }
