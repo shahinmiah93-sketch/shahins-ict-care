@@ -1374,3 +1374,9 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 
 .ab-facts-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .ab-facts-line .ab-att-context,.ab-facts-line .ab-fact-chips{display:contents}
+
+.ab-dues-row .ab-stu{gap:10px}
+.ab-dues-row .ab-dues-facts{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ab-dues-row .ab-dues-facts:empty{display:none}
+.ab-dues-row .ab-status-grid button:last-child{grid-column:1/-1}
+.ab-dues-row .chip{padding:4px 9px;border-radius:7px;line-height:1.6;white-space:normal}

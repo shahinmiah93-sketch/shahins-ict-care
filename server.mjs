@@ -3229,7 +3229,7 @@ async function api(req, res, url) {
   if (p === "/api/admin/due-call" && m === "POST") {
     const b = await readBody(req), sid = str(b.studentId, 40), status = str(b.status, 12);
     if (!db.students.some((s) => s.id === sid)) return send(res, 400, { error: "শিক্ষার্থী দিন" });
-    if (!["talked", "noanswer", "later", "promised"].includes(status)) { delete db.dueCalls[sid]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
+    if (!["talked", "nocall", "noanswer", "later", "promised"].includes(status)) { delete db.dueCalls[sid]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
     const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || "") ? v : ""), prev = db.dueCalls[sid], at = new Date().toISOString(), note = str(b.note, 300);
     const item = { status, reason: str(b.reason, 60), note, followUp: status === "later" ? day(b.followUp) : "", promiseDate: status === "promised" ? day(b.promiseDate) : "", at,
       log: (!prev || prev.status !== status ? [...((prev && prev.log) || []), { at, status, note }] : (prev.log || [])).slice(-20) };

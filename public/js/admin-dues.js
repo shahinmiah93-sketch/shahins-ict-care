@@ -12,7 +12,7 @@ window.SICDues = function (X) {
   const cleanPhone = (s) => enNum(s).replace(/\D/g, "").replace(/^88/, "");
   const addDays = (d, n) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("en-CA"); };
 
-  const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"], ["promised", "💰 টাকা দেওয়ার কথা দিয়েছেন", "ok"]];
+  const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["nocall", "✓ কল প্রয়োজন নেই", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"], ["promised", "💰 টাকা দেওয়ার কথা দিয়েছেন", "ok"]];
   const ST_TX = Object.fromEntries(STATUS.map(([k, t]) => [k, t.replace(/^\S+\s/, "")]));
   const REASONS = window.SICDues.reasons;
   // ফি পাতা আবার আঁকা হলেও (যেমন পেমেন্টের পর) বাছাই করা ফিল্টার থেকে যায়
@@ -67,17 +67,17 @@ window.SICDues = function (X) {
     const reasons = [...REASONS]; if (c.reason && !reasons.includes(c.reason)) reasons.push(c.reason);
     const promise = c.status === "promised" && c.promiseDate ? (c.promiseDate < t ? `<span class="chip bad">⚠ ${esc(U.date(c.promiseDate))}-এর মধ্যে দেওয়ার কথা ছিল, পেরিয়ে গেছে</span>` : `<span class="chip ok">💰 ${esc(U.date(c.promiseDate))}-এর মধ্যে দেবেন</span>`) : "";
     const follow = c.status === "later" && c.followUp ? (c.followUp <= t ? `<span class="chip warn">📌 আজ আবার ফোন করার কথা</span>` : `<span class="chip">🔁 ${esc(U.date(c.followUp))} আবার ফোন</span>`) : "";
-    const last = c.at ? `<span class="chip" title="${esc(c.note || "")}">শেষ কল ${esc(U.date(c.at.slice(0, 10)))} — ${esc(ST_TX[c.status] || "")}</span>` : "";
+    const last = c.at ? `<span class="chip" title="${esc(c.note || "")}">${c.status === "nocall" ? "নিষ্পত্তি" : "শেষ কল"} ${esc(U.date(c.at.slice(0, 10)))} — ${esc(ST_TX[c.status] || "")}</span>` : "";
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
-    const stBtns = `<div class="ab-st">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div>`;
+    const stBtns = `<div class="ab-call-controls"><span class="ab-group-label">কলের অবস্থা</span><div class="ab-st ab-status-grid">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div></div>`;
     // কয়েকদিন ${stk.n > 1 ? "টানা " : ""}অনুপস্থিত থাকলে বকেয়ার পাশেই চিহ্ন (শেষ ১৪ দিনের হাজিরা ধরে) — কলের সময় অভিভাবককে এটাও বলা যায়
     const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 0 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${stk.n === 1 ? "শেষ ক্লাসে অনুপস্থিত" : `${bn(stk.n)} দিন টানা অনুপস্থিত`}</span> ` : "";
     const log = (c.log || []).slice().reverse();
-    return `<div class="ab-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}">
+    return `<div class="ab-row ab-dues-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small>
-          <small>${absChip}<span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${f.discounts > 0 ? ` <span class="chip">ছাড় ${money(f.discounts)}</span>` : ""}${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
-          <small>${promise}${follow}${last}${smsChip(s)}</small>${stBtns}</div>
+          <small class="ab-dues-facts">${absChip}<span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${f.discounts > 0 ? ` <span class="chip">ছাড় ${money(f.discounts)}</span>` : ""}${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
+          <small class="ab-dues-facts">${promise}${follow}${last}${smsChip(s)}</small>${stBtns}</div>
         ${contact}
       </div>
       <div class="ab-note-row">
@@ -97,7 +97,7 @@ window.SICDues = function (X) {
         <label>সেশন<select id="dcSe"><option value="">সব সেশন</option>${sessions.map((x) => `<option value="${esc(x.name)}"${x.name === S.session ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label>ব্যাচ<select id="dcBa"></select></label>
         <label>খুঁজুন<input id="dcQ" class="dc-q" placeholder="নাম বা আইডি" value="${esc(S.q)}"></label>
-        <label class="ab-switch" title="যাদের কথা হয়ে গেছে বা টাকা দেওয়ার কথা দিয়েছেন, তাদের সরিয়ে শুধু যাদের এখন কল করা দরকার তাদের দেখান"><input type="checkbox" id="dcNeed"${S.need ? " checked" : ""}><i class="ab-sw"></i><span>শুধু যাদের এখন কল করা দরকার</span></label>
+        <label class="ab-switch" title="যাদের কথা হয়ে গেছে, কল প্রয়োজন নেই বা টাকা দেওয়ার কথা দিয়েছেন, তাদের সরিয়ে শুধু যাদের এখন কল করা দরকার তাদের দেখান"><input type="checkbox" id="dcNeed"${S.need ? " checked" : ""}><i class="ab-sw"></i><span>শুধু যাদের এখন কল করা দরকার</span></label>
       </div>
       <div class="ab-sum" id="dcSum"></div>
       <div id="dcList"></div>`;
@@ -108,7 +108,7 @@ window.SICDues = function (X) {
       const total = all.reduce((t, s) => t + s.fees.balance, 0);
       const n = (f) => all.filter((s) => f(priority(s.id))).length;
       const box = (tx, v, cls, raw) => `<article class="${cls || ""}"><small>${tx}</small><b>${raw ? v : bn(v)}</b></article>`;
-      $("#dcSum").innerHTML = box("মোট বকেয়া", money(total), total ? "bad" : "", true) + box("বকেয়া আছে", all.length) + box("কল করা হয়নি", n((p) => p === 2), n((p) => p === 2) ? "warn" : "") + box("টাকা দেওয়ার তারিখ পেরিয়েছে", n((p) => p === 0), n((p) => p === 0) ? "bad" : "") + box("আজ আবার ফোন", n((p) => p === 1), n((p) => p === 1) ? "warn" : "") + box("টাকা দেবেন বলেছেন", all.filter((s) => st(s) === "promised").length, "ok");
+      $("#dcSum").innerHTML = box("মোট বকেয়া", money(total), total ? "bad" : "", true) + box("বকেয়া আছে", all.length) + box("কল প্রয়োজন নেই", all.filter((s) => st(s) === "nocall").length, "ok") + box("কল করা হয়নি", n((p) => p === 2), n((p) => p === 2) ? "warn" : "") + box("টাকা দেওয়ার তারিখ পেরিয়েছে", n((p) => p === 0), n((p) => p === 0) ? "bad" : "") + box("আজ আবার ফোন", n((p) => p === 1), n((p) => p === 1) ? "warn" : "") + box("টাকা দেবেন বলেছেন", all.filter((s) => st(s) === "promised").length, "ok");
       const list = all.filter((s) => !S.need || priority(s.id) <= 3).sort((a, b) => priority(a.id) - priority(b.id) || b.fees.balance - a.fees.balance || String(a.id).localeCompare(String(b.id)));
       $("#dcList").innerHTML = list.map(rowHtml).join("") || `<div class="card empty">${all.length ? "এখন কাউকে কল করার দরকার নেই 🎉" : "কোনো বকেয়া নেই 🎉"}</div>`;
       // ওপরের ট্যাবের লাল সংখ্যা (ফি পাতার টুলবারে) — কল করার সাথে সাথে কমে
