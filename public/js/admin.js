@@ -2424,6 +2424,31 @@ ${list.map(receiptHtml).join("")}
   }
 
   // ---------- ফি ও পেমেন্ট ----------
+  // Future selected months are fee previews; never mutate the saved/current balance.
+  function paymentMonthStudent(s, month) {
+    if (!s || !/^\d{4}-\d{2}$/.test(month || "") || month <= thisMonth()) return s;
+    let extra = 0;
+    const items = s.fees.items.map(it => {
+      if (!it.monthly) return it;
+      const enr = DB.enrollments.find(e => e.id === it.enrollmentId) || it;
+      const rows = [...(it.adjust || [])], breakdown = [...(it.breakdown || [])];
+      let added = 0, [y,m] = thisMonth().split("-").map(Number);
+      for (let n=0;n<120;n++) {
+        if (++m > 12) { m=1; y++; }
+        const mk = y + "-" + String(m).padStart(2,"0"); if (mk > month) break;
+        if (mk < (it.startDate || "").slice(0,7)) continue;
+        const paused = (s.pauses || []).some(p => p.from && p.from.slice(0,7) <= mk && (!p.to || p.to.slice(0,7) > mk));
+        const ended = it.status === "ended" && (!enr.endDate || enr.endDate.slice(0,7) < mk);
+        const rate = U.monthlyFeeFor(courseById(it.courseId) || {}, enr, mk);
+        const fee = paused || ended || s.status === "inactive" ? 0 : rate;
+        const row = {month:mk,fee,monthlyRate:rate,projected:true,paused,got:0,total:12,shut:0,reasons:[]};
+        rows.push(row);breakdown.push(row);added += fee;
+      }
+      extra += added;
+      return {...it,adjust:rows,breakdown,due:it.due+added};
+    });
+    return {...s,fees:{...s.fees,items,totalDue:s.fees.totalDue+extra,balance:s.fees.balance+extra}};
+  }
   function paymentForm(studentId, onSaved) {
     const studs = DB.students.map((s) => [s.id, `${s.id} — ${s.name}${s.status === "inactive" ? " · নিষ্ক্রিয়" : ""}`]);
     openForm({
@@ -2457,6 +2482,8 @@ ${list.map(receiptHtml).join("")}
       },
     });
     const sel = $('#modalBody [name="studentId"]'), idQ = $('#modalBody [name="idQ"]'), amt = $('#modalBody [name="amount"]'), es = $('#modalBody [name="enrollmentId"]'), dsc = $('#modalBody [name="discount"]');
+    const monthInput = $('#modalBody [name="month"]');
+    const selectedStudent = () => paymentMonthStudent(studentById(sel.value), monthInput.value);
     let base = 0, touched = false, matches = []; // base = নিজে থেকে বসা টাকা; touched = নিজে বদলালে আর ছাড় দিয়ে নিজে থেকে কমে না
     const digitsOf = (v) => String(v || "").replace(/\D/g, "");
     const normQ = (v) => String(v || "").trim().replace(/[০-৯]/g, (x) => "০১২৩৪৫৬৭৮৯".indexOf(x)).toLowerCase();
@@ -2472,16 +2499,20 @@ ${list.map(receiptHtml).join("")}
     };
     const pick = (id) => { sel.value = id; idQ.value = id; matches = []; amt.value = ""; info(); drawSug(); };
     const after = () => {
-      const s = studentById(sel.value), el = $("#payAfter"); if (!el) return; if (!s) { el.textContent = ""; return; }
+      const s = selectedStudent(), el = $("#payAfter"); if (!el) return; if (!s) { el.textContent = ""; return; }
       const left = s.fees.balance - (Number(amt.value) || 0) - (Number(dsc.value) || 0);
       el.innerHTML = left > 0 ? `এই পেমেন্টের পর বকেয়া থাকবে <b style="color:var(--bad)">${money(left)}</b>` : left < 0 ? `<span style="color:var(--bad)">বকেয়ার চেয়ে ${money(-left)} বেশি — অগ্রিম ধরা হবে</span>` : '<b style="color:#187460">এই পেমেন্টে সব বকেয়া শোধ হবে</b>';
     };
-    const info = () => {
-      const s = studentById(sel.value), typed = idQ.value.trim();
+    const info = (keepEnrollment = false) => {
+      const s = selectedStudent(), typed = idQ.value.trim();
       $("#payInfo").innerHTML = s ? `<div class="pay-who"><span class="pay-tick" aria-hidden="true">✓</span><b>${esc(s.name)}${s.status === "inactive" ? " · নিষ্ক্রিয়" : ""}</b><small>${esc(s.id)} · ${esc(s.session || "")} · ${esc(batchName(s.batchId))}</small>${(() => { const bal = Number(s.fees && s.fees.balance) || 0; return bal > 0 ? `<span class="pay-due bad">বকেয়া <b>${money(bal)}</b></span>` : bal < 0 ? `<span class="pay-due ok">অগ্রিম <b>${money(-bal)}</b></span>` : '<span class="pay-due ok">বকেয়া নেই</span>'; })()}</div>` : typed ? (matches.length > 1 ? `<span style="color:var(--muted)">${matches.length}জন মিলেছে — নিচ থেকে শিক্ষার্থী বেছে নিন</span>` : `<span style="color:var(--bad)">এই আইডি / নাম / মোবাইলের কোনো শিক্ষার্থী পাওয়া যায়নি</span>`) : "";
+      const previousEnrollment = es.value;
       es.innerHTML = opt([["", "সাধারণ"], ...(s ? s.fees.items.filter((i) => i.status === "active").map((i) => [i.enrollmentId, `${i.course} — ${money(i.net)}${i.monthly ? "/মাস" : ""}`]) : [])], s && s.fees.items[0] ? s.fees.items[0].enrollmentId : "");
+      if ((keepEnrollment && previousEnrollment === "") || s?.fees.items.some(i => i.enrollmentId === previousEnrollment)) es.value = previousEnrollment;
       const it = s && s.fees.items.find((i) => i.enrollmentId === es.value);
-      if (s && !amt.value) { base = Math.max(0, Math.min(s.fees.balance, it && it.monthly ? it.net : s.fees.balance)); touched = false; amt.value = base ? String(Math.max(0, base - (Number(dsc.value) || 0))) : ""; }
+      const monthFee = it?.monthly ? (it.breakdown || []).find(r => r.month === monthInput.value)?.fee ?? it.net : s?.fees.balance;
+      if (s && !amt.value) { base = Math.max(0, Math.min(s.fees.balance, monthFee)); touched = false; amt.value = base ? String(Math.max(0, base - (Number(dsc.value) || 0))) : ""; }
+      if (s && monthInput.value > thisMonth()) $("#payInfo").insertAdjacentHTML("beforeend", `<small>নির্বাচিত মাসের নির্ধারিত ফিসহ হিসাব; মাস শুরু হলে উপস্থিতি অনুযায়ী সমন্বয় হবে।</small>`);
       after();
     };
     sel.addEventListener("change", () => { idQ.value = sel.value; amt.value = ""; info(); });
@@ -2491,6 +2522,8 @@ ${list.map(receiptHtml).join("")}
     idQ.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (matches.length > 1 && !studentById(sel.value)) pick(matches[0].id); } });
     amt.addEventListener("input", () => { touched = true; after(); });
     dsc.addEventListener("input", () => { if (!touched && base) amt.value = String(Math.max(0, base - (Number(dsc.value) || 0))); after(); });
+    es.addEventListener("change", () => { amt.value = ""; info(true); });
+    monthInput.addEventListener("change", () => { amt.value = ""; info(true); });
     info();
   }
   // ---------- ব্লাড ব্যাংক: শিক্ষার্থীর তথ্য থেকে — রক্তের গ্রুপ আর শিক্ষার্থী / অভিভাবক / বাবা / মায়ের নম্বর ----------
@@ -2580,7 +2613,8 @@ ${list.map(receiptHtml).join("")}
       <p class="bp-hint">যে টাকা দিচ্ছে তার Pay ঘরে টাকা লিখুন — শুধু তাদেরই পেমেন্ট সেভ হবে। Due = মোট বকেয়া থেকে Pay বাদে বাকি।</p>
       <div class="tbl-wrap"><table class="bp-tbl"><thead id="bpHead"></thead><tbody id="bpRows"></tbody></table></div>
       <div class="bp-foot"><span id="bpSum"></span><button type="button" class="btn gold" id="bpSave">সেভ করুন</button></div>`;
-    const studs = () => DB.students.filter((s) => (bpBatch === "*" ? sessBatches().some((b) => b.id === s.batchId) : s.batchId === bpBatch)).sort((a, b) => Number(a.status === "inactive") - Number(b.status === "inactive") || a.id.localeCompare(b.id));
+    const selectedStudent = (id) => paymentMonthStudent(studentById(id), $("#bpM").value);
+    const studs = () => DB.students.map(s => paymentMonthStudent(s, $("#bpM").value)).filter((s) => (bpBatch === "*" ? sessBatches().some((b) => b.id === s.batchId) : s.batchId === bpBatch)).sort((a, b) => Number(a.status === "inactive") - Number(b.status === "inactive") || a.id.localeCompare(b.id));
     const overdue = (students) => students.filter(s => s.fees.balance > 0);
     const dueTotal = (students) => students.reduce((total, s) => total + s.fees.balance, 0);
     $("#bpDues").onclick = () => {
@@ -2599,17 +2633,18 @@ ${list.map(receiptHtml).join("")}
     const last3 = () => { const [Y, M] = ($("#bpM").value || thisMonth()).split("-").map(Number); return [2, 1, 0].map((k) => { const d = new Date(Y, M - 1 - k, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }); };
     // মাসের বকেয়া: ভর্তির মাস থেকে প্রতি মাসের ফি (বন্ধ / ছুটিতে কম ধরা হলে সেটা); এই মডিউলে যত টাকা দেওয়া হয়েছে
     // তা পুরনো মাস থেকে শোধ ধরা হয় — তাই মাসের ঘরগুলো সবসময় মোট বকেয়ার সাথে মেলে। ভর্তির আগের বা সামনের মাস = "—"
-    const monthDue = (s, it, mk) => { if (!it || !it.monthly) return null; const d = monthDues(s, it); return mk in d ? d[mk] : null; };
+    const monthDue = (s, it, mk) => { if (!it || !it.monthly) return null; const d = monthDues(s, it, $("#bpM").value); return mk in d ? d[mk] : null; };
     const dueCell = (v, i) => v === null ? `<td class="c muted bp-m${i}">—</td>` : `<td class="c bp-m${i}">${v > 0 ? `<span class="chip bad">${money(v)}</span>` : '<span class="chip ok">পরিশোধ</span>'}</td>`;
     // মাসের ঘর: মাসিক মডিউলে মাসের বকেয়া, কোর্সে (মাসিক নয়) মাসিক ফির মতো "—"
     const midCells = (s, it) => last3().map((mk, i) => dueCell(it && it.monthly ? monthDue(s, it, mk) : null, i)).join("");
     const totCell = (s) => `<td class="num">${s.fees.balance > 0 ? `<span class="chip bad">${money(s.fees.balance)}</span>` : '<span class="chip ok">নেই</span>'}</td>`;
-    const feeCell = (it) => it && it.monthly ? money(it.net) : "—";
+    const feeCell = (it) => it && it.monthly ? money((it.breakdown || []).find(r => r.month === $("#bpM").value)?.monthlyRate ?? it.net) : "—";
     const left = (s, pay) => s.fees.balance - (Number(pay) || 0);
     const leftCell = (s, pay) => { const v = left(s, pay); return v > 0 ? `<b class="bp-due">${money(v)}</b>` : v < 0 ? `<b class="bp-adv">অগ্রিম ${money(-v)}</b>` : '<b class="bp-ok">০</b>'; };
     const draw = () => {
       const students = studs(), due = overdue(students);
-      $("#bpDueSummary").textContent = `বর্তমান মোট বকেয়া ${money(dueTotal(due))} · বকেয়া আছে ${bn(due.length)} জনের`;
+      $("#bpDueSummary").textContent = `${U.month($("#bpM").value)} পর্যন্ত মোট পাওনা ${money(dueTotal(due))} · বকেয়া আছে ${bn(due.length)} জনের`;
+      if ($("#bpM").value > thisMonth()) $("#bpDueSummary").textContent += " · সামনের মাসের নির্ধারিত ফি অন্তর্ভুক্ত; উপস্থিতি অনুযায়ী সমন্বয় হবে";
       $("#bpHead").innerHTML = `<tr><th rowspan="2">শিক্ষার্থী</th><th rowspan="2">মডিউল</th><th rowspan="2" class="c">মাসিক ফি</th><th colspan="3" class="c bp-grp">বকেয়া (শেষ ৩ মাস)</th><th rowspan="2" class="num">মোট বকেয়া</th><th rowspan="2" class="num">Pay</th><th rowspan="2" class="num">Due</th></tr>
         <tr>${last3().map((mk, i) => `<th class="c bp-m${i}">${U.month(mk)}</th>`).join("")}</tr>`;
       $("#bpRows").innerHTML = students.map((s) => {
@@ -2633,7 +2668,7 @@ ${list.map(receiptHtml).join("")}
     $("#bpPdf").onclick = () => {
       const months = last3(), st = DB.settings, org = st.nameBn || "শাহিন'স আইসিটি কেয়ার";
       const rows = [...$$("#bpRows tr[data-sid]")].map((tr) => {
-        const s = studentById(tr.dataset.sid), it = itemOf(s, $(".bp-enr", tr).value), pay = Number($(".bp-amt", tr).value) || 0;
+        const s = selectedStudent(tr.dataset.sid), it = itemOf(s, $(".bp-enr", tr).value), pay = Number($(".bp-amt", tr).value) || 0;
         return { s, it, pay, md: months.map((mk) => (it && it.monthly ? monthDue(s, it, mk) : null)), tot: s.fees.balance, left: s.fees.balance - pay };
       });
       if (!rows.length) return toast("এই ব্যাচে কোনো শিক্ষার্থী নেই", true);
@@ -2670,7 +2705,7 @@ ${list.map(receiptHtml).join("")}
           <table><thead><tr><th rowspan="2" class="c">নং</th><th rowspan="2">শিক্ষার্থী</th><th rowspan="2">মডিউল</th><th rowspan="2" class="c">মাসিক ফি</th><th colspan="3" class="c">বকেয়া (শেষ ৩ মাস)</th><th rowspan="2" class="n">মোট বকেয়া</th><th rowspan="2" class="n">Pay</th><th rowspan="2" class="n">Due</th></tr>
             <tr>${months.map((mk, i) => `<th class="c m${i}">${U.month(mk)}</th>`).join("")}</tr></thead>
             <tbody>${rows.map((r, k) => `<tr><td class="c">${bn(k + 1)}</td><td><b>${esc(r.s.name)}</b><small>${esc(r.s.id)}${bpBatch === "*" ? " · " + esc(batchName(r.s.batchId)) : ""}</small></td><td>${esc(r.it ? r.it.course : "সাধারণ")}</td>
-              <td class="c">${r.it && r.it.monthly ? money(r.it.net) : "—"}</td>${r.md.map((v, i) => `<td class="c m${i} ${v > 0 ? "due" : v === 0 ? "ok" : ""}">${m(v)}</td>`).join("")}
+              <td class="c">${r.it && r.it.monthly ? feeCell(r.it) : "—"}</td>${r.md.map((v, i) => `<td class="c m${i} ${v > 0 ? "due" : v === 0 ? "ok" : ""}">${m(v)}</td>`).join("")}
               <td class="n ${r.tot > 0 ? "due" : "ok"}">${r.tot > 0 ? money(r.tot) : "নেই"}</td><td class="n pay">${r.pay ? money(r.pay) : ""}</td><td class="n ${r.left > 0 ? "due" : "ok"}">${r.left > 0 ? money(r.left) : r.left < 0 ? "অগ্রিম " + money(-r.left) : "০"}</td></tr>`).join("")}</tbody>
             <tfoot><tr><td colspan="4" class="n">মোট</td>${months.map((mk, i) => `<td class="c m${i}">${money(sumOf((r) => r.md[i]))}</td>`).join("")}<td class="n">${money(sumOf((r) => Math.max(0, r.tot)))}</td><td class="n">${money(sumOf((r) => r.pay))}</td><td class="n">${money(sumOf((r) => Math.max(0, r.left)))}</td></tr></tfoot></table>
           <div class="sg"><span>হিসাবরক্ষকের স্বাক্ষর</span>${U.sig("পরিচালকের স্বাক্ষর")}</div>
@@ -2695,8 +2730,8 @@ ${list.map(receiptHtml).join("")}
       const bankTxt = String(st.payBank || "").split(/\r?\n/).map((x) => x.replace(/^[^:]*:\s*/, "").trim()).filter(Boolean).slice(0, 3).map((x) => (/^[0-9 -]{6,}$/.test(x) ? `<b>${esc(x)}</b>` : esc(x))).join(" · ");
       const payWays = `<div class="pw"><em>অফিসে</em><span>নগদ টাকায় সরাসরি পরিশোধ</span>${mobTxt ? `<em>মোবাইল ব্যাংকিং</em><span>${mobTxt}</span>` : ""}${bankTxt ? `<em>ব্যাংক</em><span>${bankTxt}</span>` : ""}</div>`;
       const card = (tr) => {
-        const s = studentById(tr.dataset.sid), it = itemOf(s, $(".bp-enr", tr).value), monthly = it && it.monthly;
-        const dues = monthly ? monthDues(s, it) : {};
+        const s = selectedStudent(tr.dataset.sid), it = itemOf(s, $(".bp-enr", tr).value), monthly = it && it.monthly;
+        const dues = monthly ? monthDues(s, it, $("#bpM").value) : {};
         const feeOf = (mk) => { const adj = (it.adjust || []).find((x) => x.month === mk); return adj ? adj.fee : it.net; };
         // পূর্বের পাওনা = দেখানো ৩ মাসের আগের সব মাস; মোট পাওনা = বাছাই করা মাস পর্যন্ত সব মাস
         const keys = Object.keys(dues).filter((mk) => mk <= mo), prev = keys.filter((mk) => mk < months[0]);
@@ -2712,8 +2747,8 @@ ${list.map(receiptHtml).join("")}
           <div class="hd"><img src="${location.origin}/images/logo-receipt.png" alt=""><div class="org"><b>${esc(org)}</b><small>${esc(st.address || "")}${st.phone ? " · " + esc(st.phone) : ""}</small></div>
             <div class="tt"><b>বেতন কার্ড</b><small>${esc(new Date(mo + "-01T00:00:00").toLocaleString("en-US", { month: "long" }) + "-" + mo.slice(2, 4))}</small></div></div>
           <div class="info"><span><i>নাম</i><b class="nm">${esc(s.name)}</b></span><span><i>আইডি</i><b>${esc(s.id)}</b></span><span><i>ভর্তির তারিখ</i><b>${s.admissionDate ? U.date(s.admissionDate) : "—"}</b></span><span><i>সেশন</i><b>${esc(s.session || "—")}</b></span><span><i>ব্যাচ</i><b>${(() => { const bt = DB.batches.find((x) => x.id === s.batchId); return esc(bt ? [bt.days, bt.time ? bt.time.replace(/s*টা$/, "") + " টা" : ""].filter(Boolean).join(": ") || bt.name : "—"); })()}</b></span>
-            <span><i>মডিউল</i><b class="cl">${esc(it ? it.course : "সাধারণ")}</b></span><span><i>${monthly ? "মাসিক ফি" : "কোর্স ফি"}</i><b>${it ? money(it.net) : "—"}</b></span></div>
-          <div class="body">${grid}<div class="nt"><div class="nt-m"><i>শিক্ষকের বার্তা</i><b>${esc(cardNote)}</b></div><div class="nt-p"><i>ফি দেওয়ার নিয়ম</i>${payWays}</div></div></div>
+            <span><i>মডিউল</i><b class="cl">${esc(it ? it.course : "সাধারণ")}</b></span><span><i>${monthly ? "মাসিক ফি" : "কোর্স ফি"}</i><b>${it ? (monthly ? feeCell(it) : money(it.net)) : "—"}</b></span></div>
+          <div class="body">${grid}${mo > thisMonth() ? '<p style="font-size:10px;margin:4px 0">সামনের মাসের নির্ধারিত ফি; উপস্থিতি অনুযায়ী সমন্বয় হবে।</p>' : ""}<div class="nt"><div class="nt-m"><i>শিক্ষকের বার্তা</i><b>${esc(cardNote)}</b></div><div class="nt-p"><i>ফি দেওয়ার নিয়ম</i>${payWays}</div></div></div>
           <div class="ft"><div class="sg">গ্রহণকারীর স্বাক্ষর</div></div>
         </section>`;
       };
@@ -2804,7 +2839,7 @@ ${list.map(receiptHtml).join("")}
     $("#bpM").onchange = draw;
     $("#bpRows").oninput = (e) => {
       const tr = e.target.closest("tr[data-sid]"); if (!tr) return;
-      const s = studentById(tr.dataset.sid);
+      const s = selectedStudent(tr.dataset.sid);
       if (e.target.classList.contains("bp-enr")) {
         const it = itemOf(s, e.target.value);
         $(".bp-fee", tr).innerHTML = feeCell(it);
@@ -2870,8 +2905,8 @@ ${list.map(receiptHtml).join("")}
     body.addEventListener("click", (e) => { const t = e.target.closest("[data-rc]"); if (t) printReceipt(DB.payments.find((p) => p.id === t.dataset.rc)); });
     draw();
   }
-  function monthDues(s, it) {
-    const out = {}, from = (it.startDate || "").slice(0, 7), to = thisMonth();
+  function monthDues(s, it, through = thisMonth()) {
+    const out = {}, from = (it.startDate || "").slice(0, 7), to = through || thisMonth();
     if (!from) return out;
     const solo = s.fees.items.length === 1; // একটাই মডিউল হলে "সাধারণ" পেমেন্টও এই মডিউলের
     let pool = DB.payments.filter((p) => p.studentId === s.id && (p.enrollmentId === it.enrollmentId || (solo && !p.enrollmentId))).reduce((t, p) => t + p.amount + (p.discount || 0), 0);
