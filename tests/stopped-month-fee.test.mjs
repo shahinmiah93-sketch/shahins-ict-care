@@ -48,9 +48,11 @@ test('active monthly fee boundaries and effective month',()=>{
   assert.equal(r.fee,count===0?0:count<=3?count*100:day===15||count===4?600:1200);
  }
  const f=setup('2026-11-19',[2,4]);f.student.status='active';f.student.pauses=[];f.enrollment.startDate='2026-10-01';
- const rows=f.ctx.enrollmentDue(f.enrollment).breakdown;assert.equal(rows[0].fee,800);assert.equal(rows[1].fee,150);assert.equal(rows[2].fee,0);
+ const rows=f.ctx.enrollmentDue(f.enrollment).breakdown;assert.equal(rows[0].fee,800);assert.equal(rows[1].fee,150);assert.equal(rows[2].fee,800);
  f.ctx.db.attendance['2026-11-02|other']={s1:'P'};f.ctx.db.attendance['2026-11-09|b1']={s1:'A'};assert.equal(f.ctx.enrollmentDue(f.enrollment).breakdown[1].got,2);
  f.enrollment.discountPct=25;assert.equal(f.ctx.enrollmentDue(f.enrollment).breakdown[1].fee,100);
 });
 
 test('active per-class fees use twelve classes and round the total to nearest fifty',()=>{const f=setup();for(const [count,fee] of [[1,50],[2,150],[3,200]]){const dates=Array.from({length:count},(_,i)=>'2026-11-'+String(i+1).padStart(2,'0'));for(const scheduled of [12,13,14]){const r=f.ctx.activeMonthFee(800,dates,'2026-11-26',scheduled);assert.equal(r.fee,fee);assert.equal(r.total,12);}}});
+
+test('current month stays full, next month settles attendance, zero presence settles to zero',()=>{const f=setup('2026-11-19',[2]);f.student.status='active';f.student.pauses=[];f.ctx.today=()=> '2026-11-26';let row=f.row();assert.equal(row.fee,800);assert.equal(row.settlementFee,50);assert.equal(row.currentMonth,true);f.ctx.today=()=> '2026-12-01';const rows=f.ctx.enrollmentDue(f.enrollment).breakdown;assert.equal(rows[0].fee,50);assert.equal(rows[1].fee,800);assert.equal(rows[1].settlementFee,0);});

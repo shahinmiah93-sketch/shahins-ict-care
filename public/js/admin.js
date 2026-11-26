@@ -71,7 +71,7 @@
 
   // কোন মাসে কেন ফি কম ধরা হয়েছে (দেরিতে ভর্তি / ব্যাচ বন্ধ)
   const monthName = (mk) => new Date(mk + "-01T00:00:00").toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
-  const feeAdjustHtml = (it) => (it.adjust || []).map((a) => a.attendanceRule ? `<small>${monthName(a.month)}: উপস্থিত ${bn(a.got)} দিন · ${a.attendanceRule === "free" ? "ফি নেই" : a.attendanceRule === "classes" ? "ক্লাস অনুযায়ী ফি" : a.attendanceRule === "half" ? "অর্ধেক মাসের ফি" : "পুরো মাসের ফি"} → ${money(a.fee)}</small>` : a.pauseRule ? `<small>${monthName(a.month)}: পড়া বন্ধ · ${a.pauseRule === "free" ? "৩ দিন বা কম উপস্থিত — ফি নেই" : a.pauseRule === "half" ? "২০ তারিখ বা পরে বন্ধ, ১৩ তারিখ বা পরে উপস্থিত — অর্ধেক ফি" : a.pauseRule === "full" ? "২৫ তারিখের পরে বন্ধ, ২২ তারিখের পরে উপস্থিত — পুরো ফি" : `${bn(a.got)}/${bn(a.total)} ক্লাসে উপস্থিতির অনুপাতে`} → ${money(a.fee)}</small>` : a.paused ? `<small>${monthName(a.month)}: ❚❚ পড়া বন্ধ → ${money(0)}</small>` : `<small>${monthName(a.month)}: ${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` · ${bn(a.shut)}টি বন্ধ${a.reasons.length ? ` (${esc(a.reasons.join(", "))})` : ""}` : ""}${a.scheduled ? ` · মাসভিত্তিক ফি ${money(a.monthlyRate)}` : ""}${a.late ? " · দেরিতে ভর্তি" : ""} → ${money(a.fee)}</small>`).join("");
+  const feeAdjustHtml = (it) => (it.adjust || []).map((a) => a.currentMonth ? `<small>${monthName(a.month)}: চলতি মাস — পুরো মাসের ফি → ${money(a.fee)}</small>` : a.attendanceRule ? `<small>${monthName(a.month)}: উপস্থিত ${bn(a.got)} দিন · ${a.attendanceRule === "free" ? "ফি নেই" : a.attendanceRule === "classes" ? "ক্লাস অনুযায়ী ফি" : a.attendanceRule === "half" ? "অর্ধেক মাসের ফি" : "পুরো মাসের ফি"} → ${money(a.fee)}</small>` : a.pauseRule ? `<small>${monthName(a.month)}: পড়া বন্ধ · ${a.pauseRule === "free" ? "৩ দিন বা কম উপস্থিত — ফি নেই" : a.pauseRule === "half" ? "২০ তারিখ বা পরে বন্ধ, ১৩ তারিখ বা পরে উপস্থিত — অর্ধেক ফি" : a.pauseRule === "full" ? "২৫ তারিখের পরে বন্ধ, ২২ তারিখের পরে উপস্থিত — পুরো ফি" : `${bn(a.got)}/${bn(a.total)} ক্লাসে উপস্থিতির অনুপাতে`} → ${money(a.fee)}</small>` : a.paused ? `<small>${monthName(a.month)}: ❚❚ পড়া বন্ধ → ${money(0)}</small>` : `<small>${monthName(a.month)}: ${bn(a.got)}/${bn(a.total)} ক্লাস${a.shut ? ` · ${bn(a.shut)}টি বন্ধ${a.reasons.length ? ` (${esc(a.reasons.join(", "))})` : ""}` : ""}${a.scheduled ? ` · মাসভিত্তিক ফি ${money(a.monthlyRate)}` : ""}${a.late ? " · দেরিতে ভর্তি" : ""} → ${money(a.fee)}</small>`).join("");
   // মাসিক কোর্সে ভর্তির মাসের ফি (সার্ভারের হিসাবের মতোই: ১–৬ তারিখে পুরো মাস, পরে হলে শুরুর দিন থেকে, "টাকা কমবে" এমন বন্ধ বাদ)
   function firstMonthDue(enr, net) {
     const s = studentById(enr.studentId), b = s && batchById(s.batchId);
@@ -2431,8 +2431,11 @@ ${list.map(receiptHtml).join("")}
     const items = s.fees.items.map(it => {
       if (!it.monthly) return it;
       const enr = DB.enrollments.find(e => e.id === it.enrollmentId) || it;
-      const rows = [...(it.adjust || [])], breakdown = [...(it.breakdown || [])];
-      let added = 0, [y,m] = thisMonth().split("-").map(Number);
+      let added = 0;
+      const settle = row => row.currentMonth && Number.isFinite(row.settlementFee) ? {...row, fee:row.settlementFee, attendanceRule:row.settlementRule, currentMonth:false} : {...row};
+      const breakdown = (it.breakdown || []).map(row => { const settled = settle(row); added += settled.fee - row.fee; return settled; });
+      const rows = (it.adjust || []).map(settle);
+      let [y,m] = thisMonth().split("-").map(Number);
       for (let n=0;n<120;n++) {
         if (++m > 12) { m=1; y++; }
         const mk = y + "-" + String(m).padStart(2,"0"); if (mk > month) break;
@@ -2512,7 +2515,7 @@ ${list.map(receiptHtml).join("")}
       const it = s && s.fees.items.find((i) => i.enrollmentId === es.value);
       const monthFee = it?.monthly ? (it.breakdown || []).find(r => r.month === monthInput.value)?.fee ?? it.net : s?.fees.balance;
       if (s && !amt.value) { base = Math.max(0, Math.min(s.fees.balance, monthFee)); touched = false; amt.value = base ? String(Math.max(0, base - (Number(dsc.value) || 0))) : ""; }
-      if (s && monthInput.value > thisMonth()) $("#payInfo").insertAdjacentHTML("beforeend", `<small>নির্বাচিত মাসের নির্ধারিত ফিসহ হিসাব; মাস শুরু হলে উপস্থিতি অনুযায়ী সমন্বয় হবে।</small>`);
+      if (s && monthInput.value > thisMonth()) $("#payInfo").insertAdjacentHTML("beforeend", `<small>আগের মাসের উপস্থিতি সমন্বয় ও নির্বাচিত মাসের পুরো ফিসহ হিসাব।</small>`);
       after();
     };
     sel.addEventListener("change", () => { idQ.value = sel.value; amt.value = ""; info(); });
@@ -2644,7 +2647,7 @@ ${list.map(receiptHtml).join("")}
     const draw = () => {
       const students = studs(), due = overdue(students);
       $("#bpDueSummary").textContent = `${U.month($("#bpM").value)} পর্যন্ত মোট পাওনা ${money(dueTotal(due))} · বকেয়া আছে ${bn(due.length)} জনের`;
-      if ($("#bpM").value > thisMonth()) $("#bpDueSummary").textContent += " · সামনের মাসের নির্ধারিত ফি অন্তর্ভুক্ত; উপস্থিতি অনুযায়ী সমন্বয় হবে";
+      if ($("#bpM").value > thisMonth()) $("#bpDueSummary").textContent += " · আগের মাসের উপস্থিতি সমন্বয় ও নির্বাচিত মাসের পুরো ফি অন্তর্ভুক্ত";
       $("#bpHead").innerHTML = `<tr><th rowspan="2">শিক্ষার্থী</th><th rowspan="2">মডিউল</th><th rowspan="2" class="c">মাসিক ফি</th><th colspan="3" class="c bp-grp">বকেয়া (শেষ ৩ মাস)</th><th rowspan="2" class="num">মোট বকেয়া</th><th rowspan="2" class="num">Pay</th><th rowspan="2" class="num">Due</th></tr>
         <tr>${last3().map((mk, i) => `<th class="c bp-m${i}">${U.month(mk)}</th>`).join("")}</tr>`;
       $("#bpRows").innerHTML = students.map((s) => {
@@ -2748,7 +2751,7 @@ ${list.map(receiptHtml).join("")}
             <div class="tt"><b>বেতন কার্ড</b><small>${esc(new Date(mo + "-01T00:00:00").toLocaleString("en-US", { month: "long" }) + "-" + mo.slice(2, 4))}</small></div></div>
           <div class="info"><span><i>নাম</i><b class="nm">${esc(s.name)}</b></span><span><i>আইডি</i><b>${esc(s.id)}</b></span><span><i>ভর্তির তারিখ</i><b>${s.admissionDate ? U.date(s.admissionDate) : "—"}</b></span><span><i>সেশন</i><b>${esc(s.session || "—")}</b></span><span><i>ব্যাচ</i><b>${(() => { const bt = DB.batches.find((x) => x.id === s.batchId); return esc(bt ? [bt.days, bt.time ? bt.time.replace(/s*টা$/, "") + " টা" : ""].filter(Boolean).join(": ") || bt.name : "—"); })()}</b></span>
             <span><i>মডিউল</i><b class="cl">${esc(it ? it.course : "সাধারণ")}</b></span><span><i>${monthly ? "মাসিক ফি" : "কোর্স ফি"}</i><b>${it ? (monthly ? feeCell(it) : money(it.net)) : "—"}</b></span></div>
-          <div class="body">${grid}${mo > thisMonth() ? '<p style="font-size:10px;margin:4px 0">সামনের মাসের নির্ধারিত ফি; উপস্থিতি অনুযায়ী সমন্বয় হবে।</p>' : ""}<div class="nt"><div class="nt-m"><i>শিক্ষকের বার্তা</i><b>${esc(cardNote)}</b></div><div class="nt-p"><i>ফি দেওয়ার নিয়ম</i>${payWays}</div></div></div>
+          <div class="body">${grid}${mo > thisMonth() ? '<p style="font-size:10px;margin:4px 0">আগের মাসের উপস্থিতি সমন্বয় ও নির্বাচিত মাসের পুরো ফি।</p>' : ""}<div class="nt"><div class="nt-m"><i>শিক্ষকের বার্তা</i><b>${esc(cardNote)}</b></div><div class="nt-p"><i>ফি দেওয়ার নিয়ম</i>${payWays}</div></div></div>
           <div class="ft"><div class="sg">গ্রহণকারীর স্বাক্ষর</div></div>
         </section>`;
       };

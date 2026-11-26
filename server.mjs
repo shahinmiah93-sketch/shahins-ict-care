@@ -727,9 +727,11 @@ function enrollmentDue(e, context = {}) {
     if (month >= "2026-11" && s && s.status !== "inactive" && b && wd.length) {
       const monthEnd = ymd(new Date(Y, M + 1, 0));
       const cutoff = [monthEnd, end, today()].sort()[0];
-      const dates = Object.entries(db.attendance || {}).filter(([key, marks]) => key.slice(0, 7) === month && key.slice(0, 10) >= e.startDate && marks[s.id] === "P").map(([key]) => key.slice(0, 10));
+      const dates = Object.entries(db.attendance || {}).filter(([key, marks]) => key.slice(0, 7) === month && key.slice(0, 10) >= e.startDate && key.slice(0, 10) <= cutoff && marks[s.id] === "P").map(([key]) => key.slice(0, 10));
       const monthlyRate = monthlyFeeFor(c, e, month);
-      const row = { month, ...activeMonthFee(monthlyRate, dates, cutoff) };
+      const settled = activeMonthFee(monthlyRate, dates, monthEnd);
+      const currentMonth = month === today().slice(0, 7);
+      const row = { month, ...settled, ...(currentMonth ? { fee: monthlyRate, attendanceRule: "full", currentMonth: true, settlementFee: settled.fee, settlementRule: settled.attendanceRule } : {}) };
       due += row.fee; breakdown.push(row); adjust.push(row);
       if (i === 0) { firstNet = row.fee; firstClasses = row.got; firstTotal = row.total; }
       continue;

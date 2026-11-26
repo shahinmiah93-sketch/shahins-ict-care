@@ -18,3 +18,5 @@ test('December preview includes scheduled fee, applies advance, leaves current t
 test('inactive, stopped and ended enrollments do not gain future fees',()=>{
  for(const kind of ['inactive','pause','ended']){const {c,student:s}=fixture();if(kind==='inactive')s.status='inactive';if(kind==='pause')s.pauses=[{from:'2026-12-01',to:''}];if(kind==='ended'){s.fees.items[0].status='ended';c.DB.enrollments[0].endDate='2026-11-26';}assert.equal(c.paymentMonthStudent(s,'2026-12').fees.balance,-200);}
 });
+
+test('selecting the next month settles the current month without mutating it',()=>{const {c,student:s}=fixture();s.fees.items[0].due=800;s.fees.totalDue=800;s.fees.balance=200;const row={month:'2026-11',fee:800,currentMonth:true,settlementFee:50,settlementRule:'classes',monthlyRate:800};s.fees.items[0].breakdown=[row];s.fees.items[0].adjust=[row];const p=c.paymentMonthStudent(s,'2026-12');assert.equal(p.fees.totalDue,850);assert.equal(p.fees.balance,250);assert.equal(p.fees.items[0].adjust[0].fee,50);assert.equal(c.monthDues(p,p.fees.items[0],'2026-12')['2026-12'],250);assert.equal(s.fees.items[0].breakdown[0].fee,800);});
