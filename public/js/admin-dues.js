@@ -110,7 +110,11 @@ window.SICDues = function (X) {
       const box = (tx, v, cls, raw) => `<article class="${cls || ""}"><small>${tx}</small><b>${raw ? v : bn(v)}</b></article>`;
       $("#dcSum").innerHTML = box("মোট বকেয়া", money(total), total ? "bad" : "", true) + box("বকেয়া আছে", all.length) + box("কল প্রয়োজন নেই", all.filter((s) => st(s) === "nocall").length, "ok") + box("কল করা হয়নি", n((p) => p === 2), n((p) => p === 2) ? "warn" : "") + box("টাকা দেওয়ার তারিখ পেরিয়েছে", n((p) => p === 0), n((p) => p === 0) ? "bad" : "") + box("আজ আবার ফোন", n((p) => p === 1), n((p) => p === 1) ? "warn" : "") + box("টাকা দেবেন বলেছেন", all.filter((s) => st(s) === "promised").length, "ok");
       const list = all.filter((s) => !S.need || priority(s.id) <= 3).sort((a, b) => priority(a.id) - priority(b.id) || b.fees.balance - a.fees.balance || String(a.id).localeCompare(String(b.id)));
-      $("#dcList").innerHTML = list.map(rowHtml).join("") || `<div class="card empty">${all.length ? "এখন কাউকে কল করার দরকার নেই 🎉" : "কোনো বকেয়া নেই 🎉"}</div>`;
+      const unanswered = list.filter(s => st(s) === "noanswer");
+      const remaining = list.filter(s => st(s) !== "noanswer");
+      const sections = (unanswered.length ? `<section class="dc-unanswered" aria-label="ফোন ধরেনি / বন্ধ"><h3 class="ab-batchhead">📌 আবার কল করতে হবে — ফোন ধরেনি / বন্ধ (${bn(unanswered.length)})</h3>${unanswered.map(rowHtml).join("")}</section>` : "") +
+        (remaining.length ? (unanswered.length ? `<h3 class="ab-batchhead">অন্যান্য বকেয়া কল</h3>` : "") + remaining.map(rowHtml).join("") : "");
+      $("#dcList").innerHTML = sections || `<div class="card empty">${all.length ? "এখন কাউকে কল করার দরকার নেই 🎉" : "কোনো বকেয়া নেই 🎉"}</div>`;
       // ওপরের ট্যাবের লাল সংখ্যা (ফি পাতার টুলবারে) — কল করার সাথে সাথে কমে
       const tab = document.querySelector('.toolbar a[href="#fees/calls"]');
       if (tab) { const n = render.pending(); let bd = tab.querySelector(".at-tabn"); if (!bd && n) { bd = document.createElement("span"); bd.className = "at-tabn"; tab.append(" ", bd); } if (bd) bd.textContent = n ? bn(n) : ""; }
