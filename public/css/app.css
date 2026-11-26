@@ -890,7 +890,7 @@ html.embed #tabBody[data-tab="hw"] > :is(.stu-hw-panel,.stu-hw-group).card {
 .ab-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
 .ab-sum article{border:1px solid #e3dccb;border-radius:14px;background:#fffdf8;padding:10px 14px}.ab-sum article.warn{border-color:#f3c55d;background:#fffaf0}.ab-sum article.ok{border-color:#9ad9b2;background:#f1fbf5}.ab-sum article.bad{border-color:#f1b0b6;background:#fff4f5}
 .ab-sum small{display:block;color:var(--muted);font-size:12px}.ab-sum b{font-size:22px}
-.ab-batchhead{margin:24px 0 12px;padding:13px 16px;border:1px solid #e8d8a9;border-left:5px solid #f2be45;border-radius:12px;background:#fff8e6;color:#173653;font-size:18px;font-weight:700;line-height:1.65;box-shadow:0 3px 10px #00000012;overflow-wrap:anywhere}
+.ab-batchhead{margin:24px 0 12px;padding:13px 16px;border:1px solid #bad2f3;border-left:5px solid #60a5fa;border-radius:12px;background:#eaf2ff;color:#123464;font-size:18px;font-weight:700;line-height:1.65;box-shadow:0 3px 10px #00000012;overflow-wrap:anywhere}
 .ab-batchhead .ab-lastd{display:block;margin-top:3px;color:#44566d;font-size:14px;font-weight:500;line-height:1.6}
 @media(max-width:600px){.ab-batchhead{padding:11px 12px;font-size:16px}.ab-batchhead .ab-lastd{font-size:13px}}
 .ab-row{border:1px solid #e3dccb;border-radius:16px;background:#fff;padding:14px 16px;margin-bottom:12px;display:grid;gap:12px}
