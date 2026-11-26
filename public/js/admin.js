@@ -246,6 +246,10 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
   // নামটা লিংক হয় শুধু যদি কাছের সারি / ঘরে (৫ ধাপ উপর পর্যন্ত) তার আইডিও থাকে — যাতে অন্য লেখায় ভুল লিংক না হয়
   function linkStudents() {
     const root = $("#content"), byName = new Map();
+    root.querySelectorAll("a.stu-link, a[data-profile], a[data-view]").forEach(link => {
+      const id = link.dataset.sid || link.dataset.profile || link.dataset.view;
+      if (id && studentById(id)) link.setAttribute("href", panelUrl(id));
+    });
     for (const s of DB.students || []) { const k = String(s.name || "").trim(); if (k) (byName.get(k) || byName.set(k, []).get(k)).push(s); }
     root.querySelectorAll("b,strong,td,span,div,h2,h3,p").forEach((el) => {
       if (el.dataset.sl || el.children.length || el.closest("a,button,label,select,option,textarea,.stu-link,.no-link")) return;
@@ -304,8 +308,10 @@ ${filt ? `<p style="margin:0 0 10px;font-weight:600;color:#33433f">${esc(filt)}<
     const link = e.target.closest("a.stu-link, a[data-profile], a[data-view]");
     const id = link && (link.dataset.sid || link.dataset.profile || link.dataset.view);
     if (!id || !studentById(id)) return;
-    e.preventDefault(); e.stopPropagation();
-    if (e.ctrlKey || e.metaKey) window.open("/admin.html" + panelUrl(id), "_blank"); else location.hash = panelUrl(id).slice(1);
+    e.stopPropagation();
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    location.hash = panelUrl(id).slice(1);
   }, true);
   let secTimer = 0;
   new MutationObserver(() => { clearTimeout(secTimer); secTimer = setTimeout(() => { addSectionPrints(); linkStudents(); }, 120); }).observe(document.getElementById("content"), { childList: true, subtree: true });
@@ -1901,7 +1907,7 @@ ${list.map(receiptHtml).join("")}
       $("#cnt").textContent = `${bn(l.length + legacyCount)} জন`;
       $("#rows").closest(".tbl-wrap").hidden = mode === "online" && !l.length && legacyCount > 0;
       $("#rows").innerHTML = l.map((s) => `<tr>
-        <td><b>${esc(s.id)}</b></td><td class="student-name-cell"><div class="student-name-line">${avatar(s.photo, "s", s.id, s.name, 32, s.gender)}<a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></div><small>${esc(s.college)}</small></td>
+        <td><b>${esc(s.id)}</b></td><td class="student-name-cell"><div class="student-name-line">${avatar(s.photo, "s", s.id, s.name, 32, s.gender)}<a href="${panelUrl(s.id)}" data-view="${s.id}"><b>${esc(s.name)}</b></a></div><small>${esc(s.college)}</small></td>
         <td>${esc(s.session || "—")}<small>${esc(batchName(s.batchId))}</small></td>
         <td>${listModules(s.id).map((n) => `<span class="chip" style="margin:1px">${esc(n)}</span>`).join("") || "—"}</td>
         <td>${esc(s.phone || "—")}<small>অভি: ${esc(s.guardianPhone || "—")}</small></td>
@@ -2025,7 +2031,7 @@ ${list.map(receiptHtml).join("")}
       $("#cnt").textContent = `${bn(l.length)} জন`;
       $("#rows").innerHTML = l.map((s) => {
         const others = DB.batches.filter(b => available(s, b));
-        return `<tr><td><input type="checkbox" data-bm-pick="${esc(s.id)}" aria-label="${esc(s.name)} বাছুন"${selected.has(s.id) ? " checked" : ""}></td><td><b>${esc(s.id)}</b></td><td><a href="#" data-view="${s.id}"><b>${esc(s.name)}</b></a></td><td>${esc(label(s.batchId))}</td>
+        return `<tr><td><input type="checkbox" data-bm-pick="${esc(s.id)}" aria-label="${esc(s.name)} বাছুন"${selected.has(s.id) ? " checked" : ""}></td><td><b>${esc(s.id)}</b></td><td><a href="${panelUrl(s.id)}" data-view="${s.id}"><b>${esc(s.name)}</b></a></td><td>${esc(label(s.batchId))}</td>
           <td>${others.length ? `<select data-move="${s.id}">${opt([["", "— বাছুন —"], ...others.map((b) => [b.id, U.batchLabel(b)])], moves.get(s.id) || "")}</select>` : '<span class="muted">এই সেশনে আর ব্যাচ নেই</span>'}</td></tr>`;
       }).join("") || `<tr><td colspan="5" class="empty">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>`;
     };
