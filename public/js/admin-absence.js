@@ -129,7 +129,7 @@ window.SICAbsence = function (X) {
     const contact = SICContacts.html(s, key, msgFor(s, date), dueUpdate); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
     return `<div class="ab-row ab-absence-row${isDone(c.status) ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
-        <div class="ab-stu"><b>${esc(s.name)}</b><small class="ab-identity">আইডি ${esc(s.id)} <span>· ${esc(X.batchName(s.batchId))}</span></small><div class="ab-facts-line"><div class="ab-att-context">${r.follow ? `<span class="chip warn">ফলো-আপ · ${esc(U.date(date))}</span>` : ""}${r.last ? `<span class="chip warn">শেষ ক্লাসে অনুপস্থিত · ${esc(U.date(date))}</span>` : ""}</div>
+        <div class="ab-stu"><b>${esc(s.name)}</b><small class="ab-identity">আইডি ${esc(s.id)} <span>· ${esc(X.batchName(s.batchId))}</span></small><div class="ab-facts-line"><div class="ab-att-context">${r.follow ? `<span class="chip warn">ফলো-আপ · ${esc(U.date(date))}</span>` : ""}${r.last ? `<span class="chip warn">গত ক্লাসে অনুপস্থিত · ${esc(U.date(date))}</span>` : ""}</div>
           <div class="ab-fact-chips">${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${c.status === "nocall" ? ' <span class="chip ok">✓ কল ছাড়াই নিষ্পত্তি</span>' : ""}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</div></div>${stBtns}</div>
         ${contact}
       </div>
