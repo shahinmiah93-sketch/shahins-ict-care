@@ -1380,3 +1380,6 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 .ab-dues-row .ab-dues-facts:empty{display:none}
 .ab-dues-row .ab-status-grid button:last-child{grid-column:1/-1}
 .ab-dues-row .chip{padding:4px 9px;border-radius:7px;line-height:1.6;white-space:normal}
+
+.ab-dues-row .ab-dues-summary{flex-wrap:nowrap;gap:4px;min-width:0;max-width:100%;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin}
+.ab-dues-row .ab-dues-summary .chip{flex:0 0 auto;white-space:nowrap;font-size:11px;padding:4px 6px}

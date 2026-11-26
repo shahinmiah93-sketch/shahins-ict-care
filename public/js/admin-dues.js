@@ -71,12 +71,12 @@ window.SICDues = function (X) {
     // কলের অবস্থার বাটন — নাম ও চিহ্নের ঠিক নিচে (ডানের যোগাযোগ কার্ডের পাশের ফাঁকা জায়গায়)
     const stBtns = `<div class="ab-call-controls"><span class="ab-group-label">কলের অবস্থা</span><div class="ab-st ab-status-grid">${STATUS.map(([v, tx, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-dst="${v}">${tx}</button>`).join("")}</div></div>`;
     // কয়েকদিন ${stk.n > 1 ? "টানা " : ""}অনুপস্থিত থাকলে বকেয়ার পাশেই চিহ্ন (শেষ ১৪ দিনের হাজিরা ধরে) — কলের সময় অভিভাবককে এটাও বলা যায়
-    const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 0 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${stk.n === 1 ? "শেষ ক্লাসে অনুপস্থিত" : `${bn(stk.n)} দিন টানা অনুপস্থিত`}</span> ` : "";
+    const stk = SICContacts.streak(DB().attendance, s.id, t), absChip = stk.n > 0 && stk.last >= addDays(t, -14) ? `<span class="chip bad" title="শেষ হাজিরা ${esc(U.date(stk.last))}">${stk.n === 1 ? "গত ক্লাসে অনুপস্থিত" : `${bn(stk.n)} দিন টানা অনুপস্থিত`}</span> ` : "";
     const log = (c.log || []).slice().reverse();
     return `<div class="ab-row ab-dues-row${pr === 6 ? " done" : ""}${pr <= 1 ? " fu" : ""}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}</small>
-          <small class="ab-dues-facts">${absChip}<span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${f.discounts > 0 ? ` <span class="chip">ছাড় ${money(f.discounts)}</span>` : ""}${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
+          <small class="ab-dues-facts ab-dues-summary">${absChip}<span class="chip bad" title="মোট ফি ${esc(money(f.totalDue))} · জমা ${esc(money(f.paid))}">বকেয়া ${money(f.balance)}</span> <span class="chip">মোট ${money(f.totalDue)} · জমা ${money(f.paid)}</span>${f.discounts > 0 ? ` <span class="chip">ছাড় ${money(f.discounts)}</span>` : ""}${lp ? ` <span class="chip">শেষ পেমেন্ট ${esc(U.date(lp.date))} · ${money(lp.amount)}</span>` : ` <span class="chip warn">এখনো কোনো পেমেন্ট নেই</span>`}</small>
           <small class="ab-dues-facts">${promise}${follow}${last}${smsChip(s)}</small>${stBtns}</div>
         ${contact}
       </div>
