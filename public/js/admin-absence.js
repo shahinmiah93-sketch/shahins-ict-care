@@ -177,7 +177,7 @@ window.SICAbsence = function (X) {
       if (fol.length) html += `<h3 class="ab-batchhead">📌 আগের ফলো-আপ — আজ আবার ফোন করার কথা (${bn(fol.length)})</h3>` + sorted(fol).map(rowHtml).join("");
       html += batchOrder.map((k) => `<h3 class="ab-batchhead">${esc(X.batchName(k))} — ${bn(byBatch.get(k).length)} জন অনুপস্থিত${byBatch.get(k)[0].last ? ` <small class="ab-lastd">· সর্বশেষ হাজিরা: ${esc(U.date(byBatch.get(k)[0].date))}</small>` : ""}</h3>${byBatch.get(k).map(rowHtml).join("")}`).join("");
       if (completed.length) {
-        html += `<h3 class="ab-batchhead">✓ নিষ্পত্তি হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
+        html += `<h3 class="ab-batchhead">নিষ্পত্তি হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
       }
       const stopped = Object.entries(calls()).flatMap(([key, call]) => {
         const [date, sid] = key.split("|");
