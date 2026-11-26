@@ -3286,7 +3286,7 @@ async function api(req, res, url) {
     const student = db.students.find((s) => s.id === sid);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !student) return send(res, 400, { error: "তারিখ ও শিক্ষার্থী দিন" });
     const key = `${date}|${sid}`;
-    if (!["talked", "noanswer", "later"].includes(status)) { delete db.absenceCalls[key]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
+    if (!["talked", "nocall", "noanswer", "later"].includes(status)) { delete db.absenceCalls[key]; saveDb(); return send(res, 200, { ok: true, removed: true }); }
     const followUp = /^\d{4}-\d{2}-\d{2}$/.test(b.followUp || "") ? b.followUp : "";
     const item = { status, reason: str(b.reason, 60), note: str(b.note, 300), followUp: status === "later" ? followUp : "", at: new Date().toISOString() };
     const previous = db.absenceCalls[key];

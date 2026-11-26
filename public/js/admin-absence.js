@@ -10,7 +10,8 @@ window.SICAbsence = function (X) {
   const cleanPhone = (s) => enNum(s).replace(/\D/g, "").replace(/^88/, "");
   const addDays = (d, n) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("en-CA"); };
 
-  const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"]];
+  const STATUS = [["talked", "✅ কথা হয়েছে", "ok"], ["nocall", "✓ কল প্রয়োজন নেই", "ok"], ["noanswer", "📵 ফোন ধরেনি / বন্ধ", "bad"], ["later", "🔁 পরে ফোন করব", "warn"]];
+  const isDone = (status) => status === "talked" || status === "nocall";
   const REASONS = window.SICAbsence.reasons;
   const S = { date: X.callDate || today(), session: "", batch: "", hideDone: false };
 
@@ -126,10 +127,10 @@ window.SICAbsence = function (X) {
     const stBtns = `<div class="ab-st">${STATUS.map(([v, t, cls]) => `<button type="button" class="${cls}${c.status === v ? " on" : ""}" data-abst="${v}">${t}</button>`).join("")}<button type="button" class="move" data-abmove>🔄 ব্যাচ বদল</button>${pending ? "" : `<button type="button" class="stop" data-abstop>⏸ আর পড়বে না</button>`}</div>`;
     const dueUpdate = s.fees?.balance > 0 ? '<button type="button" class="ab-btn ab-cross-update" data-ab-due>বকেয়ার আপডেট</button>' : "";
     const contact = SICContacts.html(s, key, msgFor(s, date), dueUpdate); // অভিভাবক · বাবা · মা · শিক্ষার্থী — যাকে বাছবেন তার নম্বরে কল / WhatsApp / SMS
-    return `<div class="ab-row${c.status === "talked" ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
+    return `<div class="ab-row${isDone(c.status) ? " done" : ""}${r.follow ? " fu" : ""}" data-key="${esc(key)}" data-saved-status="${esc(c.status || "")}" data-sid="${esc(s.id)}" data-date="${esc(date)}">
       <div class="ab-top">
         <div class="ab-stu"><b>${esc(s.name)}</b><small>${esc(s.id)} · ${esc(X.batchName(s.batchId))}${r.follow ? ` · <span class="chip warn">ফলো-আপ — ${esc(U.date(date))}-এর অনুপস্থিতি</span>` : ""}${r.last ? ` · <span class="chip warn">সর্বশেষ হাজিরা (${esc(U.date(date))})-এর অনুপস্থিতি</span>` : ""}</small>
-          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small>${stBtns}</div>
+          <small>${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon)} দিন অনুপস্থিত</span> ${dueChip(s)}${c.status === "nocall" ? ' <span class="chip ok">✓ কল ছাড়াই নিষ্পত্তি</span>' : ""}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</small>${stBtns}</div>
         ${contact}
       </div>
       ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
@@ -150,7 +151,7 @@ window.SICAbsence = function (X) {
         <label>তারিখ<input type="date" id="abD" value="${esc(S.date)}" max="${today()}"></label>
         <label>সেশন<select id="abSe"><option value="">সব সেশন</option>${sessions.map((x) => `<option value="${esc(x.name)}"${x.name === S.session ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label>ব্যাচ<select id="abBa"></select></label>
-        <label class="ab-switch" title="যাদের সাথে কথা হয়ে গেছে, তাদের সারি তালিকা থেকে সরিয়ে রাখুন"><input type="checkbox" id="abHide"${S.hideDone ? " checked" : ""}><i class="ab-sw"></i><span>কথা হয়ে গেছে যাদের, লুকান</span></label>
+        <label class="ab-switch" title="কথা হয়েছে বা কল প্রয়োজন নেই—এমন সারি লুকিয়ে রাখুন"><input type="checkbox" id="abHide"${S.hideDone ? " checked" : ""}><i class="ab-sw"></i><span>নিষ্পত্তি হয়েছে যাদের, লুকান</span></label>
       </div>
       <div class="ab-sum" id="abSum"></div>
       <div id="abNote"></div>
@@ -162,13 +163,13 @@ window.SICAbsence = function (X) {
       const st = (r) => (calls()[r.key] || {}).status || "";
       const n = (f) => abs.filter((r) => st(r) === f).length, pend = abs.filter((r) => !st(r)).length;
       const box = (t, v, cls) => `<article class="${cls || ""}"><small>${t}</small><b>${bn(v)}</b></article>`;
-      $("#abSum").innerHTML = box("মোট অনুপস্থিত", abs.length) + box("এখনো কল করা হয়নি", pend, pend ? "warn" : "") + box("কথা হয়েছে", n("talked"), "ok") + box("ফোন ধরেনি", n("noanswer"), n("noanswer") ? "bad" : "") + box("পরে ফোন করব", n("later")) + box("আগের ফলো-আপ", fol.length, fol.length ? "warn" : "");
+      $("#abSum").innerHTML = box("মোট অনুপস্থিত", abs.length) + box("এখনো কল করা হয়নি", pend, pend ? "warn" : "") + box("কথা হয়েছে", n("talked"), "ok") + box("কল প্রয়োজন নেই", n("nocall"), "ok") + box("ফোন ধরেনি", n("noanswer"), n("noanswer") ? "bad" : "") + box("পরে ফোন করব", n("later")) + box("আগের ফলো-আপ", fol.length, fol.length ? "warn" : "");
       const un = unsavedBatches(S.date), withLast = [], without = [];
       for (const b of un) { const ld = lastSaved(b.id, S.date); (ld ? withLast : without).push({ b, ld }); }
       $("#abNote").innerHTML = (withLast.length ? `<p class="ab-info">ℹ ${U.date(S.date)} তারিখের হাজিরা এখনো সেভ হয়নি, তাই এই ব্যাচগুলোর <b>সর্বশেষ সেভ করা হাজিরার</b> অনুপস্থিতি দেখানো হচ্ছে: ${withLast.map(({ b, ld }) => `<b>${esc(b.name)}</b> (${esc(U.date(ld))})`).join(", ")}। আজকের হাজিরা সেভ করলে এখানে আজকের অনুপস্থিতিই আসবে।</p>` : "") + (without.length ? `<p class="ab-warn">⚠ এই ব্যাচগুলোর হাজিরা এখনো সেভ হয়নি (আগের কোনো হাজিরাও নেই), তাই এদের অনুপস্থিতি এখানে আসেনি: ${without.map(({ b }) => esc(b.name)).join(", ")}</p>` : "");
-      const completed = S.hideDone ? [] : abs.filter((row) => st(row) === "talked");
-      const order = { "": 0, noanswer: 1, later: 2, talked: 3 };
-      const sorted = (list) => list.filter((row) => st(row) !== "talked").sort((a, b) => order[st(a)] - order[st(b)] || streakOf(b.s.id, S.date) - streakOf(a.s.id, S.date) || String(a.s.id).localeCompare(String(b.s.id)));
+      const completed = S.hideDone ? [] : abs.filter((row) => isDone(st(row)));
+      const order = { "": 0, noanswer: 1, later: 2, talked: 3, nocall: 3 };
+      const sorted = (list) => list.filter((row) => !isDone(st(row))).sort((a, b) => order[st(a)] - order[st(b)] || streakOf(b.s.id, S.date) - streakOf(a.s.id, S.date) || String(a.s.id).localeCompare(String(b.s.id)));
       const byBatch = new Map();
       for (const r of sorted(abs)) { const k = r.s.batchId; if (!byBatch.has(k)) byBatch.set(k, []); byBatch.get(k).push(r); }
       const batchOrder = [...byBatch.keys()].sort((a, b) => (DB().batches.findIndex((x) => x.id === a)) - (DB().batches.findIndex((x) => x.id === b)));
@@ -176,7 +177,7 @@ window.SICAbsence = function (X) {
       if (fol.length) html += `<h3 class="ab-batchhead">📌 আগের ফলো-আপ — আজ আবার ফোন করার কথা (${bn(fol.length)})</h3>` + sorted(fol).map(rowHtml).join("");
       html += batchOrder.map((k) => `<h3 class="ab-batchhead">${esc(X.batchName(k))} — ${bn(byBatch.get(k).length)} জন অনুপস্থিত${byBatch.get(k)[0].last ? ` <small class="ab-lastd">· সর্বশেষ হাজিরা: ${esc(U.date(byBatch.get(k)[0].date))}</small>` : ""}</h3>${byBatch.get(k).map(rowHtml).join("")}`).join("");
       if (completed.length) {
-        html += `<h3 class="ab-batchhead">✓ কথা হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
+        html += `<h3 class="ab-batchhead">✓ নিষ্পত্তি হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
       }
       const stopped = Object.entries(calls()).flatMap(([key, call]) => {
         const [date, sid] = key.split("|");
@@ -188,7 +189,7 @@ window.SICAbsence = function (X) {
         return linked ? [{ s, key, date }] : [];
       });
       if (stopped.length) html += '<h3 class="ab-batchhead">পড়া বন্ধ — কারণ বদলে সক্রিয় করতে পারবেন</h3>' + stopped.map(rowHtml).join("");
-      $("#abList").innerHTML = html || `<div class="card empty">${abs.length ? "সবার সাথে কথা হয়ে গেছে 🎉" : `${esc(U.date(S.date))} তারিখে কোনো অনুপস্থিত শিক্ষার্থী নেই (বা হাজিরা এখনো সেভ হয়নি)।`}</div>`;
+      $("#abList").innerHTML = html || `<div class="card empty">${abs.length ? "সবার কলের কাজ নিষ্পত্তি হয়েছে 🎉" : `${esc(U.date(S.date))} তারিখে কোনো অনুপস্থিত শিক্ষার্থী নেই (বা হাজিরা এখনো সেভ হয়নি)।`}</div>`;
       const badge = $("#attCallN"); if (badge) badge.textContent = pendingCount(today()) || "";
       drafts.restore(host);
     };
