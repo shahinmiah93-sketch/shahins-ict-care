@@ -115,7 +115,7 @@ window.SICDues = function (X) {
       const pending = list.filter(s => priority(s.id) >= 2 && priority(s.id) <= 5 && st(s) !== "noanswer");
       const completed = list.filter(s => priority(s.id) === 6);
       const group = (title, rows) => rows.length ? `<section class="dc-call-group"><h3 class="ab-batchhead">${title} (${bn(rows.length)})</h3>${rows.map(rowHtml).join("")}</section>` : "";
-      const sections = group("📌 আগের ফলো-আপ — আজ আবার ফোন করার কথা", followups) + group("📌 আবার কল করতে হবে — ফোন ধরেনি / বন্ধ", unanswered) + group("কল বাকি", pending) + group("নিষ্পত্তি হয়েছে", completed);
+      const sections = group("📌 আগের ফলো-আপ — আজ আবার ফোন করার কথা", followups) + group("📌 আবার কল করতে হবে — ফোন ধরেনি / বন্ধ / ফলো-আপ", unanswered) + group("কল বাকি", pending) + group("নিষ্পত্তি হয়েছে", completed);
       $("#dcList").innerHTML = sections || `<div class="card empty">${all.length ? "এখন কাউকে কল করার দরকার নেই 🎉" : "কোনো বকেয়া নেই 🎉"}</div>`;
       // ওপরের ট্যাবের লাল সংখ্যা (ফি পাতার টুলবারে) — কল করার সাথে সাথে কমে
       const tab = document.querySelector('.toolbar a[href="#fees/calls"]');
