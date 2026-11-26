@@ -1364,3 +1364,10 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 .ab-status-grid button:focus-visible,.ab-student-actions button:focus-visible{outline:2px solid #178575;outline-offset:2px}
 .ab-stu .ab-student-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e0e7f0}
 .ab-stu .ab-student-actions button{flex:0 1 auto;min-height:36px;padding:6px 12px;border-radius:8px;font-size:12px}
+
+.ab-stu .ab-student-actions{justify-content:center;gap:12px;padding-top:12px}
+.ab-stu .ab-student-actions button{min-width:132px;min-height:40px;border-style:solid;border-width:1px;font-size:13px;font-weight:700;box-shadow:0 2px 5px #15304b12;transition:background .15s,border-color .15s}
+.ab-stu .ab-student-actions button.stop{background:#ffe4e8;border-color:#f39aa9;color:#9f1239}
+.ab-stu .ab-student-actions button.stop:hover{background:#fecdd6;border-color:#e65b77}
+.ab-stu .ab-student-actions button.move{background:#dbeafe;border-color:#8cb9ef;color:#17478a}
+.ab-stu .ab-student-actions button.move:hover{background:#bfdbfe;border-color:#5b96e3}
