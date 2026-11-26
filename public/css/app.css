@@ -1349,3 +1349,18 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 .ex-meta.ex-routine-meta{grid-template-columns:minmax(240px,1.6fr);grid-auto-columns:minmax(0,1fr);grid-auto-flow:column}
 .ex-routine-meta>span:first-child b{white-space:nowrap}
 @media(max-width:760px){.ex-meta.ex-routine-meta{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row}.ex-routine-meta>span:first-child{grid-column:1/-1}}
+
+/* Absence calls: separate identity, facts, status and student actions. */
+.ab-absence-row .ab-stu{gap:10px}
+.ab-absence-row .ab-identity{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:13px;line-height:1.6}
+.ab-att-context:empty{display:none}
+.ab-att-context,.ab-fact-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ab-absence-row .chip{white-space:normal;line-height:1.6;padding:4px 9px;border-radius:7px;font-size:12px}
+.ab-call-controls{margin-top:3px;padding:12px;background:#f5f8fc;border:1px solid #e0e7f0;border-radius:12px}
+.ab-group-label{display:block;margin-bottom:8px;font-size:12px;font-weight:600;color:#52657b}
+.ab-stu .ab-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.ab-stu .ab-status-grid button{display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px;border-radius:8px;background:#fff;border-color:#d4deea;font-size:13px;line-height:1.5}
+.ab-status-grid button:hover{border-color:#569b91;background:#f0faf7}
+.ab-status-grid button:focus-visible,.ab-student-actions button:focus-visible{outline:2px solid #178575;outline-offset:2px}
+.ab-stu .ab-student-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e0e7f0}
+.ab-stu .ab-student-actions button{flex:0 1 auto;min-height:36px;padding:6px 12px;border-radius:8px;font-size:12px}
