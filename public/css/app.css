@@ -1383,3 +1383,18 @@ html .cal .d.closed{background:#e9ddff!important;border:1px solid #bd9bf0!import
 
 .ab-dues-row .ab-dues-summary{flex-wrap:nowrap;gap:4px;min-width:0;max-width:100%;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin}
 .ab-dues-row .ab-dues-summary .chip{flex:0 0 auto;white-space:nowrap;font-size:11px;padding:4px 6px}
+
+/* Previous contact summary on continuing absence cards. */
+.ab-contact-history{margin:0 0 14px;border:1px solid #c9dedb;border-left:4px solid #168575;border-radius:14px;background:#fff;overflow:hidden;color:#173f43}
+.ab-contact-history-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#eff8f5}
+.ab-contact-history-head>div{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ab-contact-history-label{font-size:12px;font-weight:600;color:#526c70}
+.ab-contact-history-head strong{font-size:14px;font-weight:700;color:#153e43}
+.ab-contact-history-status{flex-shrink:0;padding:5px 12px;border:1px solid #b8dfcf;border-radius:999px;background:#dbf2e7;color:#14664b;font-size:12px;font-weight:700;white-space:nowrap}
+.ab-contact-history-details{display:flex;gap:24px;padding:14px 16px}
+.ab-contact-history-details>div{min-width:0}
+.ab-contact-history-reason{flex:0 1 28%}
+.ab-contact-history-note{flex:1}
+.ab-contact-history-details span{display:block;margin-bottom:4px;color:#637779;font-size:11px;font-weight:600}
+.ab-contact-history-details p{margin:0;color:#243f44;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:600px){.ab-contact-history-head{align-items:flex-start;padding:12px}.ab-contact-history-head>div{display:grid;gap:3px}.ab-contact-history-details{flex-direction:column;gap:12px;padding:12px}.ab-contact-history-status{font-size:11px;padding:4px 9px}}
