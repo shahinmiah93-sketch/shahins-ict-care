@@ -77,7 +77,16 @@ window.SICAbsence = function (X) {
     for (const b of unsavedBatches(date)) { const ld = lastSaved(b.id, date); if (!ld) continue; for (const r of absentRows(ld)) if (r.s.batchId === b.id) out.push({ ...r, last: true }); }
     return out;
   };
-  const pendingCount = (date) => [...absentRows(date), ...lastRows(date)].filter((r) => !calls()[r.key]).length;
+  // A resolved call remains separate while the same absence streak continues.
+  const previousContact = (r) => {
+    if (calls()[r.key]?.status) return null;
+    const latest = Object.entries(calls()).filter(([key]) => { const [date, sid] = key.split("|"); return sid === r.s.id && date < r.date; }).sort((a,b) => b[0].localeCompare(a[0]))[0];
+    if (!latest || !isDone(latest[1].status)) return null;
+    const date = latest[0].split("|")[0];
+    if (history(r.s.id).some(([d,status]) => d > date && d <= r.date && status === "P")) return null;
+    return { ...latest[1], date };
+  };
+  const pendingCount = (date) => [...absentRows(date), ...lastRows(date)].filter((r) => !calls()[r.key] && !previousContact(r)).length;
   // হাজিরা এখনো সেভ হয়নি এমন ব্যাচ (ছুটি / বন্ধ বাদে) — তাদের অনুপস্থিতি এই তালিকায় আসবে না
   const unsavedBatches = (date) => DB().batches.filter((b) => b.active !== false && (!S.session || b.session === S.session) && (!S.batch || b.id === S.batch)
     && DB().students.some((s) => s.batchId === b.id && s.status !== "inactive") && !DB().attendance[`${date}|${b.id}`] && !U.closureOn(DB().closures, b.id, date));
@@ -119,6 +128,7 @@ window.SICAbsence = function (X) {
 
   const rowHtml = (r) => {
     const { s, key, date } = r, c = calls()[key] || {};
+    const previous = previousContact(r);
     const pending = (s.pauses || []).find((p) => !p.to && p.startPending); // সামনের তারিখে বন্ধ ঠিক করা আছে
     const uid = `${esc(s.id)}-${r.follow ? "f" : "a"}`;
     const streak = streakOf(s.id, date), mon = monthAttendance(s.id, S.date);
@@ -133,6 +143,7 @@ window.SICAbsence = function (X) {
           <div class="ab-fact-chips">${streak > 1 ? `<span class="chip bad">${bn(streak)} দিন টানা অনুপস্থিত</span> ` : ""}${date === today() && !(streak > 1) ? '<span class="chip bad">আজ অনুপস্থিত</span> ' : ""}<span class="chip">এই মাসে ${bn(mon.present)} দিন উপস্থিত, ${bn(mon.absent)} দিন অনুপস্থিত</span> ${dueChip(s)}${c.status === "nocall" ? ' <span class="chip ok">✓ কল ছাড়াই নিষ্পত্তি</span>' : ""}${smsChip(s)}${pending ? ` <span class="chip warn">⏸ ${esc(U.date(pending.from))} থেকে পড়া বন্ধ হবে</span>` : ""}</div></div>${stBtns}</div>
         ${contact}
       </div>
+      ${previous ? `<div class="ab-info"><b>আগের যোগাযোগ: ${esc(U.date(previous.date))} — ${previous.status === "nocall" ? "কল প্রয়োজন নেই" : "কথা হয়েছে"}</b>${previous.reason ? `<div>কারণ: ${esc(previous.reason)}</div>` : ""}${previous.note ? `<div>নোট: ${esc(previous.note)}</div>` : ""}</div>` : ""}
       ${moveHtml(s)}${pending ? "" : stopHtml(s, uid)}
       <div class="ab-note-row">
         <label class="ab-field ab-field-reason"><span>কারণ</span><select class="ab-reason"><option value="">কারণ (ঐচ্ছিক)</option>${reasons.map((x) => `<option value="${esc(x)}"${c.reason === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>
@@ -161,21 +172,23 @@ window.SICAbsence = function (X) {
       const fol = followRows(S.date), folKeys = new Set(fol.map((r) => r.key));
       const abs = [...absentRows(S.date), ...lastRows(S.date).filter((r) => !folKeys.has(r.key))]; // আজকের হাজিরা সেভ না হলে ব্যাচের সর্বশেষ হাজিরার অনুপস্থিতি
       const st = (r) => (calls()[r.key] || {}).status || "";
-      const n = (f) => abs.filter((r) => st(r) === f).length, pend = abs.filter((r) => !st(r)).length;
+      const n = (f) => abs.filter((r) => st(r) === f).length, pend = abs.filter((r) => !st(r) && !previousContact(r)).length;
       const box = (t, v, cls) => `<article class="${cls || ""}"><small>${t}</small><b>${bn(v)}</b></article>`;
       $("#abSum").innerHTML = box("মোট অনুপস্থিত", abs.length) + box("এখনো কল করা হয়নি", pend, pend ? "warn" : "") + box("কথা হয়েছে", n("talked"), "ok") + box("কল প্রয়োজন নেই", n("nocall"), "ok") + box("ফোন ধরেনি", n("noanswer"), n("noanswer") ? "bad" : "") + box("পরে ফোন করব", n("later")) + box("আগের ফলো-আপ", fol.length, fol.length ? "warn" : "");
       const un = unsavedBatches(S.date), withLast = [], without = [];
       for (const b of un) { const ld = lastSaved(b.id, S.date); (ld ? withLast : without).push({ b, ld }); }
       $("#abNote").innerHTML = (withLast.length ? `<p class="ab-info">ℹ ${U.date(S.date)} তারিখের হাজিরা এখনো সেভ হয়নি, তাই এই ব্যাচগুলোর <b>সর্বশেষ সেভ করা হাজিরার</b> অনুপস্থিতি দেখানো হচ্ছে: ${withLast.map(({ b, ld }) => `<b>${esc(b.name)}</b> (${esc(U.date(ld))})`).join(", ")}। আজকের হাজিরা সেভ করলে এখানে আজকের অনুপস্থিতিই আসবে।</p>` : "") + (without.length ? `<p class="ab-warn">⚠ এই ব্যাচগুলোর হাজিরা এখনো সেভ হয়নি (আগের কোনো হাজিরাও নেই), তাই এদের অনুপস্থিতি এখানে আসেনি: ${without.map(({ b }) => esc(b.name)).join(", ")}</p>` : "");
+      const contacted = abs.filter(r => previousContact(r));
       const completed = S.hideDone ? [] : abs.filter((row) => isDone(st(row)));
       const order = { "": 0, noanswer: 1, later: 2, talked: 3, nocall: 3 };
       const sorted = (list) => list.filter((row) => !isDone(st(row))).sort((a, b) => order[st(a)] - order[st(b)] || streakOf(b.s.id, S.date) - streakOf(a.s.id, S.date) || String(a.s.id).localeCompare(String(b.s.id)));
       const byBatch = new Map();
-      for (const r of sorted(abs)) { const k = r.s.batchId; if (!byBatch.has(k)) byBatch.set(k, []); byBatch.get(k).push(r); }
+      for (const r of sorted(abs.filter(r => !previousContact(r)))) { const k = r.s.batchId; if (!byBatch.has(k)) byBatch.set(k, []); byBatch.get(k).push(r); }
       const batchOrder = [...byBatch.keys()].sort((a, b) => (DB().batches.findIndex((x) => x.id === a)) - (DB().batches.findIndex((x) => x.id === b)));
       let html = "";
       if (fol.length) html += `<h3 class="ab-batchhead">📌 আবার কল করতে হবে — ফোন ধরেনি / বন্ধ / ফলো-আপ (${bn(fol.length)})</h3>` + sorted(fol).map(rowHtml).join("");
       html += batchOrder.map((k) => `<h3 class="ab-batchhead">${esc(X.batchName(k))} — ${bn(byBatch.get(k).length)} জন অনুপস্থিত${byBatch.get(k)[0].last ? ` <small class="ab-lastd">· সর্বশেষ হাজিরা: ${esc(U.date(byBatch.get(k)[0].date))}</small>` : ""}</h3>${byBatch.get(k).map(rowHtml).join("")}`).join("");
+      if (contacted.length) html += `<h3 class="ab-batchhead">আগে যোগাযোগ হয়েছে — এখনও অনুপস্থিত (${bn(contacted.length)})</h3>` + contacted.map(rowHtml).join("");
       if (completed.length) {
         html += `<h3 class="ab-batchhead">নিষ্পত্তি হয়েছে (${bn(completed.length)})</h3>` + completed.map(rowHtml).join("");
       }
